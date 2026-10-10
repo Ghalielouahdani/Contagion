@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : les 8 étapes du mode prévention sont terminées ; nouveau mode « crise en cours » : étapes 9 et 10 faites (branche `feat/p3-crisis-advisor`)
+> État : les 8 étapes du mode prévention sont terminées ; nouveau mode « crise en cours » : étapes 9, 10 et 11 faites (branche `feat/p3-crisis-advisor`)
 
 ---
 
@@ -664,9 +664,63 @@ Si deux stratégies aboutissent à la même combinaison, la seconde porte `same_
 
 Suite complète du repo : **441 tests verts**.
 
+### Étape 11 : le conseiller IA (`advisor.py`)
+
+**Le principe : le code calcule, l'IA explique et compose.**
+
+```
+plan calculé (crisis + hedging) ──► contexte JSON ──► Gemini (réponse JSON imposée)
+                                                          │
+          résultats recalculés par CrisisModel.evaluate ◄─┘ 3 stratégies (actions, sans chiffres)
+```
+
+**Ce que l'IA reçoit** (`build_context`) :
+- le scénario, ses paramètres et la profondeur de crise ;
+- pour chaque position : la perte si on garde, le HF / LTV (liquidable ou non), la perte déjà subie en réaction tardive, et **la liste des actions disponibles** avec leurs résultats chiffrés ;
+- les stratégies candidates de l'étape 10 ;
+- les couvertures utilisables et non chiffrées.
+
+Elle ne reçoit **aucune adresse ni aucun secret**.
+
+**Ce qu'elle doit rendre** (schéma `OUTPUT_SCHEMA`, vérifié côté serveur) :
+- une explication simple du scénario ;
+- un diagnostic par position ;
+- **exactement 3 stratégies**, chacune avec un moment (tôt / tard), des actions par position, une justification, des avantages et des inconvénients ;
+- l'index de la stratégie recommandée et sa justification ;
+- des notes de couverture, où ce qui n'est pas chiffré est indiqué comme tel ;
+- des mises en garde.
+
+C'est l'IA qui décide quelles positions garder (« conviction »), à partir des chiffres qu'elle voit.
+
+**Les garde-fous :**
+1. **Recalcul systématique** : chaque stratégie de l'IA est réévaluée par le moteur (vente groupée comprise). Le champ `computed_result` est la seule source de chiffres à afficher.
+2. **Action impossible ou position inconnue** : toute la réponse est rejetée. Le plan calculé reste disponible, et `advice_error` explique pourquoi.
+3. **Schéma non respecté** (par exemple 2 stratégies au lieu de 3) : rejet.
+4. **Chiffres inventés** : tout nombre écrit par l'IA qui n'existe pas dans les données envoyées, sous une forme acceptable (tel quel, en %, en milliers ou millions, arrondi), est listé dans `ungrounded_numbers`.
+5. **Sans clé** : erreur claire (« requires GEMINI_API_KEY »), sans appel réseau.
+
+**Fournisseur interchangeable :** un client est une simple fonction `llm(system, context, schema) -> dict`. `GeminiClient` reprend le protocole de l'agent de scénarios de P2 :
+- même URL, même en-tête ;
+- `responseJsonSchema` ;
+- clé lue dans la variable d'environnement ou dans `.env` (exclu de git) ;
+- modèle réglable avec `ADVISOR_MODEL`, sinon celui de P2.
+
+Pour passer à Claude ou OpenAI, il suffit d'écrire un autre client.
+
+**Tests (`tests/test_advisor.py`, 6 tests, IA simulée, sans réseau) :**
+- les résultats affichés sont ceux du moteur, pas de l'IA ;
+- le contexte ne contient ni adresse ni clé ;
+- une action indisponible est rejetée mais le plan reste ;
+- une position inconnue et une violation du schéma sont rejetées ;
+- un chiffre inventé est signalé, alors que « 75 % » (présent dans les données) ne l'est pas ;
+- sans clé, l'erreur est claire.
+
+Suite complète du repo : **447 tests verts**.
+
+**À faire de ton côté :** ajouter ta clé dans un fichier `.env` à la racine (`GEMINI_API_KEY=...`). Ce fichier n'est jamais commité.
+
 ### Suite prévue
 
 | Étape | Contenu |
 |---|---|
-| 11 | Conseiller IA (Gemini, sur le modèle de `backend/api/risk_assistant.py` de P2) : il explique le calcul et compose 3 stratégies **sans chiffres** ; le code calcule leurs résultats |
-| 12 | Point d'entrée API, README, journal |
+| 12 | Point d'entrée API (`POST /api/v1/crisis-advice`), README, journal |

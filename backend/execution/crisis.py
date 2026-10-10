@@ -331,9 +331,14 @@ def crisis_plan(portfolio: dict, snapshot: dict, scenario_request: dict, risk_re
                 include_strategies: bool = False, quote_source=None) -> dict:
     """Plan « crise en cours » : options chiffrées par position (tôt / tard), stratégies de portefeuille
     et univers de couverture. `quote_source` (réseau) active les cotations à la demande des couvertures."""
+    model = CrisisModel(portfolio, snapshot, scenario_request, risk_result)
+    return plan_from_model(model, snapshot, scenario_request, include_strategies, quote_source)
+
+
+def plan_from_model(model: CrisisModel, snapshot: dict, scenario_request: dict, include_strategies: bool = False,
+                    quote_source=None) -> dict:
     from backend.execution.hedging import hedge_universe, rotation_strategies
 
-    model = CrisisModel(portfolio, snapshot, scenario_request, risk_result)
     plan = {**model.meta(), "positions": model.plan_rows()}
     if include_strategies:
         universe = hedge_universe(snapshot, scenario_request, quote_source)
