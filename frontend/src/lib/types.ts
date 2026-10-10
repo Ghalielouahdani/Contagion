@@ -1,4 +1,10 @@
-export type ScenarioKind = "usde_depeg" | "liquidity_crisis";
+export type ScenarioKind =
+  | "usde_depeg"
+  | "liquidity_crisis"
+  | "combined_crisis"
+  | "governance_change"
+  | "carry_squeeze"
+  | "node_shock";
 export type View = "portfolio" | "graph" | "scenario" | "decision";
 export type DataMode = "fixture" | "api";
 
@@ -6,6 +12,14 @@ export type ScenarioInputs = {
   shockPct: number;
   horizonDays: number;
   liquidityLossPct: number;
+  /** governance_change: signed shift of liquidation thresholds, in points (e.g. -5). */
+  ltShiftPct: number;
+  /** carry_squeeze: sUSDe staking APY and borrow APY over the horizon, in percent. */
+  susdeApyPct: number;
+  borrowApyPct: number;
+  /** node_shock: graph node hit and the share of value lost there, in percent. */
+  nodeId: string;
+  nodeLossPct: number;
 };
 
 export type PortfolioPosition = {
@@ -145,6 +159,12 @@ export type RiskResult = {
   metadata?: Record<string, unknown>;
   warnings?: string[];
   contagion?: { graph_id: string | null; hubs: ContagionHub[]; warnings: string[] };
+  /** Scenarios C-F: reference runs and what this scenario adds on top of them. */
+  comparison?: {
+    runs: Array<{ run_id: string; description: string; total_conditional_loss_usd: string }>;
+    excess_loss_usd: string | null;
+    excess_meaning: string;
+  };
   [key: string]: unknown;
 };
 
@@ -229,6 +249,10 @@ export type AppData = {
   analytics: RiskAnalytics | null;
   /** How the risk numbers were produced: live engine, precomputed surface, or static fixture. */
   riskSource: "engine" | "surface" | "fixture";
+  /** Offline only: scenario parameters the precomputed surface could not apply (kept at the preset value). */
+  ignoredInputs: string[];
+  /** True when analytics come from a preset fixture rather than the current inputs. */
+  analyticsIsPreset: boolean;
 };
 
 export type DashboardAction =
@@ -259,11 +283,7 @@ export type AssistantRequest = {
   scenario: ScenarioKind;
   selectedPosition: string;
   inspectedExitFraction?: string | null;
-  scenarioInputs: {
-    shockPct: number;
-    horizonDays: number;
-    liquidityLossPct: number;
-  };
+  scenarioInputs: ScenarioInputs;
   data: AppData;
 };
 

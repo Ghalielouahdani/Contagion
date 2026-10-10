@@ -36,11 +36,44 @@ const surfaceLoaders = import.meta.glob("../../../contracts/fixtures/*/risk_surf
 
 export const defaultDataMode: DataMode = readFixtureDefault() ? "fixture" : "api";
 
+// File suffix per scenario in a fixture set (scenario_request<suffix>.json, risk_result<suffix>.json).
+const fileSuffix: Record<ScenarioKind, string> = {
+  usde_depeg: "",
+  liquidity_crisis: "_liquidity",
+  combined_crisis: "_combined",
+  governance_change: "_governance",
+  carry_squeeze: "_carry",
+  node_shock: "_node_shock",
+};
 const fileByKind = {
-  scenario: { usde_depeg: "scenario_request.json", liquidity_crisis: "scenario_request_liquidity.json" },
-  risk: { usde_depeg: "risk_result.json", liquidity_crisis: "risk_result_liquidity.json" },
-  decision: { usde_depeg: "decision_result.json", liquidity_crisis: "decision_result_liquidity.json" },
-} as const;
+  scenario: (kind: ScenarioKind) => `scenario_request${fileSuffix[kind]}.json`,
+  risk: (kind: ScenarioKind) => `risk_result${fileSuffix[kind]}.json`,
+  decision: (kind: ScenarioKind) => `decision_result${fileSuffix[kind]}.json`,
+};
+
+const pct = (value: number) => (value / 100).toFixed(2);
+
+/** Scenario parameters each control drives (the offline surface precomputes only the first one). */
+export const scenarioParams: Record<ScenarioKind, Array<{ param: string; value: (inputs: ScenarioInputs) => string }>> = {
+  usde_depeg: [{ param: "usde_spot_shock_pct", value: (i) => pct(-i.shockPct) }],
+  liquidity_crisis: [{ param: "exit_liquidity_reduction_pct", value: (i) => pct(i.liquidityLossPct) }],
+  combined_crisis: [
+    { param: "usde_spot_shock_pct", value: (i) => pct(-i.shockPct) },
+    { param: "exit_liquidity_reduction_pct", value: (i) => pct(i.liquidityLossPct) },
+  ],
+  governance_change: [
+    { param: "usde_spot_shock_pct", value: (i) => pct(-i.shockPct) },
+    { param: "liquidation_threshold_shift", value: (i) => pct(i.ltShiftPct) },
+  ],
+  carry_squeeze: [
+    { param: "borrow_apy_override", value: (i) => pct(i.borrowApyPct) },
+    { param: "susde_apy", value: (i) => pct(i.susdeApyPct) },
+  ],
+  node_shock: [
+    { param: "loss_pct", value: (i) => pct(i.nodeLossPct) },
+    { param: "node_id", value: (i) => i.nodeId },
+  ],
+};
 
 type SurfacePoint = { value: string; risk_result: RiskResult; decisions: Record<string, DecisionResult> };
 type RiskSurface = { scenarios: Record<string, { param: string; points: SurfacePoint[] }> };
@@ -61,12 +94,36 @@ const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.strin
 
 /** The set's scenario request with the slider values applied (decimal strings, as the contract requires). */
 export function buildScenarioRequest(scenario: ScenarioKind, inputs: ScenarioInputs) {
-  const base = loadFixture(fileByKind.scenario[scenario], () => createMockScenarioRequest(scenario)).data;
-  const request = JSON.parse(JSON.stringify(base));
+  const request = JSON.parse(JSON.stringify(baseScenarioRequest(scenario)));
   request.scenario.horizon_days = inputs.horizonDays;
-  if (scenario === "usde_depeg") request.scenario.parameters.usde_spot_shock_pct = (-inputs.shockPct / 100).toFixed(2);
-  else request.scenario.parameters.exit_liquidity_reduction_pct = (inputs.liquidityLossPct / 100).toFixed(2);
+  for (const { param, value } of scenarioParams[scenario]) request.scenario.parameters[param] = value(inputs);
   return request;
+}
+
+/** Slider values of a scenario's preset (its fixture request), so picking a preset shows exactly that preset. */
+export function presetInputs(scenario: ScenarioKind): Partial<ScenarioInputs> {
+  const request = baseScenarioRequest(scenario);
+  const p = request.scenario.parameters as Record<string, unknown>;
+  const percentOf = (key: string) => (p[key] == null ? undefined : Math.round(Number(p[key]) * 100));
+  const inputs: Partial<ScenarioInputs> = { horizonDays: request.scenario.horizon_days };
+  const shock = percentOf("usde_spot_shock_pct");
+  if (shock !== undefined) inputs.shockPct = Math.abs(shock);
+  const liquidity = percentOf("exit_liquidity_reduction_pct");
+  if (liquidity !== undefined) inputs.liquidityLossPct = liquidity;
+  const ltShift = percentOf("liquidation_threshold_shift");
+  if (ltShift !== undefined) inputs.ltShiftPct = ltShift;
+  const borrow = percentOf("borrow_apy_override");
+  if (borrow !== undefined) inputs.borrowApyPct = borrow;
+  const susde = percentOf("susde_apy");
+  if (susde !== undefined) inputs.susdeApyPct = susde;
+  const loss = percentOf("loss_pct");
+  if (loss !== undefined) inputs.nodeLossPct = loss;
+  if (typeof p.node_id === "string") inputs.nodeId = p.node_id;
+  return inputs;
+}
+
+function baseScenarioRequest(scenario: ScenarioKind) {
+  return loadFixture(fileByKind.scenario(scenario), () => createMockScenarioRequest(scenario)).data;
 }
 
 export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs): Promise<AppData> {
@@ -98,6 +155,8 @@ export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs
     decisions,
     analytics,
     riskSource: "engine",
+    ignoredInputs: [],
+    analyticsIsPreset: false,
   };
 }
 
@@ -107,17 +166,27 @@ async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs
   const points = surface?.scenarios[scenario]?.points;
   if (!points?.length) return base;
 
-  const target = scenario === "usde_depeg" ? -inputs.shockPct / 100 : inputs.liquidityLossPct / 100;
+  const [live, ...others] = scenarioParams[scenario];
+  const target = Number(live.value(inputs));
   const point = points.reduce((best, p) => (Math.abs(Number(p.value) - target) < Math.abs(Number(best.value) - target) ? p : best));
   const risk = withContagion(point.risk_result, base.risk);
+  // Offline, only the first parameter is precomputed; say which other inputs are held at the preset.
+  const preset = baseScenarioRequest(scenario);
+  const ignoredInputs = others
+    .filter(({ param, value }) => String((preset.scenario.parameters as Record<string, unknown>)[param]) !== value(inputs))
+    .map(({ param }) => param);
+  if (inputs.horizonDays !== preset.scenario.horizon_days) ignoredInputs.push("horizon_days");
+  const analytics = fixtureAnalytics(scenario, inputs);
   return {
     ...base,
     health: { ...base.health, source: "contracts fixtures · precomputed engine surface" },
     risk,
     decision: point.decisions.aave_01 ?? base.decision,
     decisions: point.decisions,
-    analytics: fixtureAnalytics(scenario, inputs),
+    analytics,
     riskSource: "surface",
+    ignoredInputs,
+    analyticsIsPreset: analytics !== null,
   };
 }
 
@@ -139,19 +208,18 @@ function withContagion(result: RiskResult, reference: RiskResult): RiskResult {
   };
 }
 
-/** Offline analytics only exist at the presets (-5% and -30% depeg); pick the closest. */
+/** Offline analytics only exist at the depeg presets (-5% and -30%); never show them for another scenario. */
 function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs): RiskAnalytics | null {
+  if (scenario !== "usde_depeg") return null;
   const preset = loadFixture<RiskAnalytics | null>("risk_analytics.json", () => null).data;
   const severe = loadFixture<RiskAnalytics | null>("risk_analytics_severe.json", () => null).data;
-  if (scenario === "usde_depeg" && severe && inputs.shockPct >= 17.5) return severe;
-  return preset;
+  return severe && inputs.shockPct >= 17.5 ? severe : preset;
 }
 
 export const marketSnapshot = buildFixtureAppData("usde_depeg").marketSnapshot;
-export const scenarioFixtures = {
-  usde_depeg: loadFixture(fileByKind.scenario.usde_depeg, () => createMockScenarioRequest("usde_depeg")).data,
-  liquidity_crisis: loadFixture(fileByKind.scenario.liquidity_crisis, () => createMockScenarioRequest("liquidity_crisis")).data,
-};
+export const scenarioFixtures = Object.fromEntries(
+  (Object.keys(fileSuffix) as ScenarioKind[]).map((kind) => [kind, baseScenarioRequest(kind)]),
+) as Record<ScenarioKind, ReturnType<typeof createMockScenarioRequest>>;
 
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
   if (mode === "api") {
@@ -176,13 +244,8 @@ export async function postAssistantMessage(request: AssistantRequest, mode: Data
 }
 
 function fixtureAssistantResponse(request: AssistantRequest): AssistantResponse {
-  return parseAssistantIntent({
-    ...request,
-    scenarioDataByKind: {
-      usde_depeg: buildFixtureAppData("usde_depeg"),
-      liquidity_crisis: buildFixtureAppData("liquidity_crisis"),
-    },
-  });
+  // The assistant answers from the results on screen (request.data), never from stored presets.
+  return parseAssistantIntent(request);
 }
 
 function buildFixtureAppData(scenario: ScenarioKind): AppData {
@@ -190,8 +253,9 @@ function buildFixtureAppData(scenario: ScenarioKind): AppData {
   const portfolio = readFixture<Portfolio>("portfolio.json", () => createMockPortfolio(), mockedFixtures);
   const graph = readFixture<DependencyGraph>("dependency_graph.json", () => createMockDependencyGraph(portfolio), mockedFixtures);
   const marketSnapshot = readFixture<MarketSnapshot>("market_snapshot.json", () => createMockMarketSnapshot(), mockedFixtures);
-  const risk = readFixture<RiskResult>(fileByKind.risk[scenario], () => createMockRiskResult(portfolio, scenario), mockedFixtures);
-  const decision = readFixture<DecisionResult>(fileByKind.decision[scenario], () => createMockDecisionResult(risk, scenario), mockedFixtures);
+  const risk = readFixture<RiskResult>(fileByKind.risk(scenario), () => createMockRiskResult(portfolio, scenario), mockedFixtures);
+  // Only the depeg has a decision fixture; other scenarios get their decisions from the surface or the API.
+  const decision = loadFixture<DecisionResult>(fileByKind.decision(scenario), () => createMockDecisionResult(risk, scenario)).data;
 
   return {
     health: { status: "ok", mode: "fixture", source: "contracts fixtures", mockedFixtures, fixtureSet },
@@ -203,6 +267,8 @@ function buildFixtureAppData(scenario: ScenarioKind): AppData {
     decisions: { [decision.position_id]: decision },
     analytics: null,
     riskSource: "fixture",
+    ignoredInputs: [],
+    analyticsIsPreset: false,
   };
 }
 
@@ -369,7 +435,7 @@ function createMockRiskResult(portfolio: Portfolio, scenario: ScenarioKind): Ris
       risk_metric: null,
       source_type: "mock",
       calculation_status: "mock",
-      warnings: [`Mock data: ${fileByKind.risk[scenario]} was generated because the fixture was missing.`],
+      warnings: [`Mock data: ${fileByKind.risk(scenario)} was generated because the fixture was missing.`],
     };
   });
   const total = positions.reduce((sum, position) => sum + Number(position.conditional_loss_usd), 0);
@@ -387,7 +453,7 @@ function createMockRiskResult(portfolio: Portfolio, scenario: ScenarioKind): Ris
       shared_liquidity_penalty_usd: scenario === "liquidity_crisis" ? (total * 0.12).toFixed(2) : "0",
       aggregation_status: "mock",
     },
-    warnings: [`Mock data: ${fileByKind.risk[scenario]} was generated because the fixture was missing.`],
+    warnings: [`Mock data: ${fileByKind.risk(scenario)} was generated because the fixture was missing.`],
   };
 }
 
@@ -430,6 +496,6 @@ function createMockDecisionResult(risk: RiskResult, scenario: ScenarioKind): Dec
       scenario === "liquidity_crisis"
         ? "Mock decision: reducing 25% lowers residual stress while keeping immediate proxy costs below half of the selected position loss."
         : "Mock decision: no scenario probability supplied, so the app shows break-even thresholds instead of inventing a conviction.",
-    warnings: [`Mock data: ${fileByKind.decision[scenario]} was generated because the fixture was missing.`],
+    warnings: [`Mock data: ${fileByKind.decision(scenario)} was generated because the fixture was missing.`],
   };
 }

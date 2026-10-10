@@ -21,6 +21,17 @@ from backend.risk import simulate
 DEPEG_SHOCKS = [-i / 100 for i in range(0, 41)]  # 0% .. -40%
 LIQUIDITY_LOSSES = [i / 20 for i in range(0, 20)]  # 0% .. 95%
 
+# scenario_id -> (request file in the set, slider parameter, values). One live slider per
+# scenario offline; the other parameters keep the request's values. Missing files are skipped.
+SLIDERS = {
+    "usde_depeg": ("scenario_request", "usde_spot_shock_pct", DEPEG_SHOCKS),
+    "liquidity_crisis": ("scenario_request_liquidity", "exit_liquidity_reduction_pct", LIQUIDITY_LOSSES),
+    "combined_crisis": ("scenario_request_combined", "usde_spot_shock_pct", DEPEG_SHOCKS),
+    "governance_change": ("scenario_request_governance", "usde_spot_shock_pct", DEPEG_SHOCKS),
+    "carry_squeeze": ("scenario_request_carry", "borrow_apy_override", [i / 20 for i in range(0, 21)]),  # 0% .. 100%
+    "node_shock": ("scenario_request_node_shock", "loss_pct", [i / 20 for i in range(0, 11)]),  # 0% .. 50%
+}
+
 
 def _point(portfolio: dict, snapshot: dict, request: dict, param: str, value: float) -> dict:
     r = copy.deepcopy(request)
@@ -34,31 +45,32 @@ def _point(portfolio: dict, snapshot: dict, request: dict, param: str, value: fl
     }
 
 
-def build(portfolio: dict, snapshot: dict, depeg_request: dict, liquidity_request: dict) -> dict:
+def build(portfolio: dict, snapshot: dict, requests: dict[str, dict]) -> dict:
+    """requests: scenario_id -> base scenario request (scenarios without one are skipped)."""
+    scenarios = {}
+    for scenario_id, (_, param, values) in SLIDERS.items():
+        request = requests.get(scenario_id)
+        if request is None:
+            continue
+        scenarios[scenario_id] = {
+            "param": param,
+            "base_request_id": request["request_id"],
+            "points": [_point(portfolio, snapshot, request, param, v) for v in values],
+        }
     return {
         "schema_version": "1.0",
         "surface_id": f"surface_{snapshot['snapshot_id']}",
         "portfolio_id": portfolio["portfolio_id"],
         "snapshot_id": snapshot["snapshot_id"],
-        "scenarios": {
-            "usde_depeg": {
-                "param": "usde_spot_shock_pct",
-                "base_request_id": depeg_request["request_id"],
-                "points": [_point(portfolio, snapshot, depeg_request, "usde_spot_shock_pct", v) for v in DEPEG_SHOCKS],
-            },
-            "liquidity_crisis": {
-                "param": "exit_liquidity_reduction_pct",
-                "base_request_id": liquidity_request["request_id"],
-                "points": [_point(portfolio, snapshot, liquidity_request, "exit_liquidity_reduction_pct", v) for v in LIQUIDITY_LOSSES],
-            },
-        },
+        "scenarios": scenarios,
     }
 
 
 def main(folder: str) -> None:
     root = Path(folder)
     load = lambda name: json.loads((root / f"{name}.json").read_text())  # noqa: E731
-    surface = build(load("portfolio"), load("market_snapshot"), load("scenario_request"), load("scenario_request_liquidity"))
+    requests = {sid: load(file) for sid, (file, _, _) in SLIDERS.items() if (root / f"{file}.json").is_file()}
+    surface = build(load("portfolio"), load("market_snapshot"), requests)
     (root / "risk_surface.json").write_text(json.dumps(surface, separators=(",", ":")) + "\n")
     manifest = load("manifest")
     manifest["files"]["risk_surface"] = {"path": "risk_surface.json", "schema": "../../schemas/v1/risk_surface.schema.json"}

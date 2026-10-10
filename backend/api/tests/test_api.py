@@ -1,7 +1,9 @@
 """API routes used by the frontend (frontend/src/data/api.ts)."""
 
 import copy
+import json
 from decimal import Decimal as D
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -78,3 +80,12 @@ def test_analyze_and_grid():
 
 def test_assistant_is_client_side():
     assert client.post("/api/v1/assistant", json={}).status_code == 501
+
+
+@pytest.mark.parametrize("set_name", ["demo_ethena_01", "verified_2026_10_10"])
+@pytest.mark.parametrize("suffix", ["", "_liquidity", "_combined", "_governance", "_carry", "_node_shock"])
+def test_every_scenario_runs_end_to_end(set_name, suffix):
+    request = json.loads((Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / set_name / f"scenario_request{suffix}.json").read_text())
+    for route, body in (("simulate", request), ("analyze", request), ("decide", {"request": request, "position_id": "morpho_01"})):
+        response = client.post(f"/api/v1/{route}?set={set_name}", json=body)
+        assert response.status_code == 200, (route, response.json())

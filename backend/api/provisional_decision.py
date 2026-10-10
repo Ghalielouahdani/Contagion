@@ -19,7 +19,8 @@ QUOTE_STATUS = {"executable_quote": "executable", "pool_reserves": "pool_reserve
 
 
 def _money(x: float) -> Decimal:
-    return Decimal(repr(float(x))).quantize(Decimal("0.01"), ROUND_HALF_UP)
+    value = Decimal(repr(float(x))).quantize(Decimal("0.01"), ROUND_HALF_UP)
+    return value if value else abs(value)  # never publish "-0.00"
 
 
 def _ratio(x: float) -> str:

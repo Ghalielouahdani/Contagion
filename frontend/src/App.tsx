@@ -50,7 +50,7 @@ import {
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
-import { defaultDataMode, loadAppData, postAssistantMessage } from "./data/api";
+import { defaultDataMode, loadAppData, postAssistantMessage, presetInputs } from "./data/api";
 import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
 import type {
   AppData,
@@ -63,6 +63,7 @@ import type {
   Portfolio,
   PortfolioPosition,
   RiskPosition,
+  ScenarioInputs,
   ScenarioKind,
   View,
 } from "./lib/types";
@@ -99,18 +100,54 @@ const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section:
   decision: { label: "Decision Engine", icon: BarChart3, section: "Run" },
 };
 
-const scenarioCopy = {
+const scenarioCopy: Record<ScenarioKind, { title: string; preset: string; summary: string }> = {
   usde_depeg: {
     title: "USDe depeg",
-    preset: "-5% spot shock",
-    summary: "USDe market price falls, affecting sUSDe, collateral valuation, PT pricing and liquidation distance.",
+    preset: "A · -5% spot shock",
+    summary: "USDe market price falls. sUSDe and PT reprice; lending positions move toward liquidation only if their oracle follows the market.",
   },
   liquidity_crisis: {
     title: "Liquidity crisis",
-    preset: "-80% exit depth",
+    preset: "B · -80% exit depth",
     summary: "Reference marks can remain stable while executable exits degrade through thin shared venues.",
   },
+  combined_crisis: {
+    title: "Depeg + liquidity crisis",
+    preset: "C · -30% and -80% depth",
+    summary: "The depeg triggers liquidations whose forced selling hits the same thin venues before the fund can exit.",
+  },
+  governance_change: {
+    title: "Governance or oracle change",
+    preset: "E · LT -5 pts, then -27%",
+    summary: "A protocol lowers liquidation thresholds or switches oracle, then the depeg hits on the new parameters.",
+  },
+  carry_squeeze: {
+    title: "Carry squeeze",
+    preset: "D · sUSDe 0%, borrow 60%",
+    summary: "No price shock: funding turns, the staking yield vanishes and borrow rates spike at the utilization kink.",
+  },
+  node_shock: {
+    title: "Dependency node failure",
+    preset: "F · Ethena backing -10%",
+    summary: "One node of the dependency graph fails (custodian, protocol, stablecoin) and the loss follows every path to it.",
+  },
 };
+
+const scenarioOrder: ScenarioKind[] = ["usde_depeg", "liquidity_crisis", "combined_crisis", "governance_change", "carry_squeeze", "node_shock"];
+
+// Controls shown per scenario (the horizon is always shown).
+const scenarioControls: Record<ScenarioKind, Array<"shock" | "liquidity" | "ltShift" | "carry" | "node">> = {
+  usde_depeg: ["shock"],
+  liquidity_crisis: ["liquidity"],
+  combined_crisis: ["shock", "liquidity"],
+  governance_change: ["shock", "ltShift"],
+  carry_squeeze: ["carry"],
+  node_shock: ["node"],
+};
+
+// Starting values of the scenario-specific controls, matching the fixture presets.
+const defaultExtraInputs = { ltShiftPct: -5, susdeApyPct: 0, borrowApyPct: 60, nodeId: "offchain:ethena_backing", nodeLossPct: 10 };
+type ExtraInputs = typeof defaultExtraInputs;
 
 // Left to right follows the direction of dependency: position -> market / exit venue -> oracle -> asset -> protocol.
 const graphColumn: Record<string, number> = {
@@ -177,6 +214,26 @@ function App() {
   const [shockPct, setShockPct] = useState(5);
   const [horizonDays, setHorizonDays] = useState(7);
   const [liquidityLossPct, setLiquidityLossPct] = useState(80);
+  const [extraInputs, setExtraInputs] = useState<ExtraInputs>(defaultExtraInputs);
+  const setExtraInput = <K extends keyof ExtraInputs>(key: K, value: ExtraInputs[K]) =>
+    setExtraInputs((current) => ({ ...current, [key]: value }));
+
+  // Picking a scenario loads its preset values, so the screen shows the preset the card announces.
+  function selectScenario(kind: ScenarioKind) {
+    const preset = presetInputs(kind);
+    setScenario(kind);
+    if (preset.shockPct !== undefined) setShockPct(preset.shockPct);
+    if (preset.liquidityLossPct !== undefined) setLiquidityLossPct(preset.liquidityLossPct);
+    if (preset.horizonDays !== undefined) setHorizonDays(preset.horizonDays);
+    const { ltShiftPct, susdeApyPct, borrowApyPct, nodeId, nodeLossPct } = preset;
+    setExtraInputs((current) => ({
+      ltShiftPct: ltShiftPct ?? current.ltShiftPct,
+      susdeApyPct: susdeApyPct ?? current.susdeApyPct,
+      borrowApyPct: borrowApyPct ?? current.borrowApyPct,
+      nodeId: nodeId ?? current.nodeId,
+      nodeLossPct: nodeLossPct ?? current.nodeLossPct,
+    }));
+  }
   const [commandOpen, setCommandOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [hasRun, setHasRun] = useState(true);
@@ -186,10 +243,17 @@ function App() {
   const deferredShock = useDeferredValue(shockPct);
   const deferredHorizon = useDeferredValue(horizonDays);
   const deferredLiquidity = useDeferredValue(liquidityLossPct);
+  const deferredExtra = useDeferredValue(extraInputs);
+  const scenarioInputs: ScenarioInputs = { shockPct, horizonDays, liquidityLossPct, ...extraInputs };
   const appQuery = useQuery({
-    queryKey: ["app-data", mode, scenario, deferredShock, deferredHorizon, deferredLiquidity],
+    queryKey: ["app-data", mode, scenario, deferredShock, deferredHorizon, deferredLiquidity, deferredExtra],
     queryFn: () =>
-      loadAppData(mode, scenario, { shockPct: deferredShock, horizonDays: deferredHorizon, liquidityLossPct: deferredLiquidity }),
+      loadAppData(mode, scenario, {
+        shockPct: deferredShock,
+        horizonDays: deferredHorizon,
+        liquidityLossPct: deferredLiquidity,
+        ...deferredExtra,
+      }),
     placeholderData: (previousData) => previousData,
   });
 
@@ -228,7 +292,7 @@ function App() {
       if (action.view) setView(action.view);
     }
     if (action.type === "set_scenario") {
-      setScenario(action.scenario);
+      selectScenario(action.scenario);
     }
     if (action.type === "set_shock") {
       setShockPct(action.shockPct);
@@ -243,7 +307,7 @@ function App() {
       setView("scenario");
     }
     if (action.type === "run_simulation") {
-      if (action.scenario) setScenario(action.scenario);
+      if (action.scenario && action.scenario !== scenario) selectScenario(action.scenario);
       setHasRun(true);
       setView("decision");
     }
@@ -267,6 +331,7 @@ function App() {
     setShockPct(5);
     setHorizonDays(7);
     setLiquidityLossPct(80);
+    setExtraInputs(defaultExtraInputs);
     setInspectedExitFraction(null);
     setHasRun(true);
     setView("portfolio");
@@ -348,7 +413,7 @@ function App() {
                   <ScenarioLab
                     data={data}
                     scenario={scenario}
-                    setScenario={setScenario}
+                    setScenario={selectScenario}
                     selectedPosition={selectedPosition}
                     setSelectedPosition={setSelectedPosition}
                     hoveredPosition={hoveredPosition}
@@ -359,6 +424,8 @@ function App() {
                     setHorizonDays={setHorizonDays}
                     liquidityLossPct={liquidityLossPct}
                     setLiquidityLossPct={setLiquidityLossPct}
+                    extraInputs={extraInputs}
+                    setExtraInput={setExtraInput}
                     runScenario={runScenario}
                   />
                 ) : null}
@@ -366,7 +433,7 @@ function App() {
                   <DecisionEngine
                     data={data}
                     scenario={scenario}
-                    scenarioInputs={{ shockPct, horizonDays, liquidityLossPct }}
+                    scenarioInputs={scenarioInputs}
                     hasRun={hasRun}
                     selectedRisk={selectedRisk}
                     selectedPortfolio={selectedPortfolio}
@@ -403,7 +470,7 @@ function App() {
           scenario={scenario}
           selectedPosition={selectedPosition}
           inspectedExitFraction={inspectedExitFraction}
-          scenarioInputs={{ shockPct, horizonDays, liquidityLossPct }}
+          scenarioInputs={scenarioInputs}
           executeAction={executeAction}
         />
       ) : null}
@@ -516,7 +583,7 @@ function PortfolioDashboard({
 
   return (
     <div className="page-stack">
-      <SummaryStrip portfolio={data.portfolio} risk={data.risk} analytics={data.analytics} />
+      <SummaryStrip portfolio={data.portfolio} risk={data.risk} analytics={data.analytics} analyticsIsPreset={data.analyticsIsPreset} />
       <section className="position-grid">
         {data.portfolio.positions.map((position) => {
           const risk = data.risk.positions.find((item) => item.position_id === position.position_id);
@@ -614,7 +681,17 @@ function PortfolioDashboard({
   );
 }
 
-function SummaryStrip({ portfolio, risk, analytics }: { portfolio: Portfolio; risk: AppData["risk"]; analytics: AppData["analytics"] }) {
+function SummaryStrip({
+  portfolio,
+  risk,
+  analytics,
+  analyticsIsPreset,
+}: {
+  portfolio: Portfolio;
+  risk: AppData["risk"];
+  analytics: AppData["analytics"];
+  analyticsIsPreset: boolean;
+}) {
   const headline = analytics?.headline;
   const tenPctNav = analytics?.breaking_points.nav_drawdown.find((row) => Number(row.nav_drawdown_pct) === 0.1);
   return (
@@ -639,7 +716,7 @@ function SummaryStrip({ portfolio, risk, analytics }: { portfolio: Portfolio; ri
           <Stat
             label="Act if probability >"
             value={percent(headline.targeted_plan_break_even_probability)}
-            detail={`targeted plan saves ${money(headline.derisking_savings_usd)}`}
+            detail={`targeted plan saves ${money(headline.derisking_savings_usd)}${analyticsIsPreset ? ` · at ${money(headline.scenario_loss_usd)} preset loss` : ""}`}
           />
         </>
       ) : null}
@@ -856,6 +933,8 @@ function ScenarioLab({
   setHorizonDays,
   liquidityLossPct,
   setLiquidityLossPct,
+  extraInputs,
+  setExtraInput,
   runScenario,
 }: {
   data: AppData;
@@ -871,6 +950,8 @@ function ScenarioLab({
   setHorizonDays: (value: number) => void;
   liquidityLossPct: number;
   setLiquidityLossPct: (value: number) => void;
+  extraInputs: ExtraInputs;
+  setExtraInput: <K extends keyof ExtraInputs>(key: K, value: ExtraInputs[K]) => void;
   runScenario: () => void;
 }) {
   const selectedRisk = data.risk.positions.find((position) => position.position_id === selectedPosition) ?? data.risk.positions[0];
@@ -881,16 +962,23 @@ function ScenarioLab({
     before: Number(position.net_equity_before_usd),
     after: Number(position.net_equity_after_usd),
   }));
+  const controls = scenarioControls[scenario];
+  // node_shock prices these node kinds; oracles and venues belong to other scenarios.
+  const shockableNodes = data.graph.nodes.filter((node) => ["asset", "protocol", "market", "offchain_entity"].includes(node.type));
+  const nodeLabel = (id: string) => data.graph.nodes.find((node) => node.id === id)?.label ?? id;
   const sourceCopy = {
-    engine: "Live risk engine result for the current sliders.",
-    surface: "Risk engine results precomputed for every slider value (offline mode).",
-    fixture: "Static fixture result: slider values are not applied.",
+    engine: "Live risk engine result for the current inputs.",
+    surface: "Risk engine results precomputed for the main slider (offline mode).",
+    fixture: "Static fixture result: inputs are not applied.",
   }[data.riskSource];
+  const ignoredCopy = data.ignoredInputs.length
+    ? ` Offline, ${data.ignoredInputs.map(labelize).join(", ")} stay at the preset; switch to Live API to apply them.`
+    : "";
 
   return (
     <div className="scenario-layout">
       <section className="preset-grid">
-        {(["usde_depeg", "liquidity_crisis"] as ScenarioKind[]).map((kind) => (
+        {scenarioOrder.map((kind) => (
           <button key={kind} className="preset-card" data-selected={scenario === kind} onClick={() => setScenario(kind)}>
             <span>{scenarioCopy[kind].preset}</span>
             <strong>{scenarioCopy[kind].title}</strong>
@@ -900,12 +988,73 @@ function ScenarioLab({
       </section>
 
       <section className="control-panel">
-        <Control label="USDe shock magnitude" value={signedPercent(-shockPct)}>
-          <input type="range" min="1" max="40" value={shockPct} onChange={(event) => setShockPct(Number(event.target.value))} />
-        </Control>
-        <Control label="Liquidity depth reduction" value={`${liquidityLossPct}%`}>
-          <input type="range" min="0" max="95" value={liquidityLossPct} onChange={(event) => setLiquidityLossPct(Number(event.target.value))} />
-        </Control>
+        {controls.includes("shock") ? (
+          <Control label="USDe shock magnitude" value={signedPercent(-shockPct)}>
+            <input type="range" min="1" max="40" value={shockPct} onChange={(event) => setShockPct(Number(event.target.value))} />
+          </Control>
+        ) : null}
+        {controls.includes("liquidity") ? (
+          <Control label="Liquidity depth reduction" value={`${liquidityLossPct}%`}>
+            <input type="range" min="0" max="95" value={liquidityLossPct} onChange={(event) => setLiquidityLossPct(Number(event.target.value))} />
+          </Control>
+        ) : null}
+        {controls.includes("ltShift") ? (
+          <Control label="Liquidation threshold shift" value={`${extraInputs.ltShiftPct > 0 ? "+" : ""}${extraInputs.ltShiftPct} pts`}>
+            <input
+              type="range"
+              min="-15"
+              max="5"
+              value={extraInputs.ltShiftPct}
+              onChange={(event) => setExtraInput("ltShiftPct", Number(event.target.value))}
+            />
+          </Control>
+        ) : null}
+        {controls.includes("carry") ? (
+          <>
+            <Control label="Borrow APY on all debt" value={`${extraInputs.borrowApyPct}%`}>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={extraInputs.borrowApyPct}
+                onChange={(event) => setExtraInput("borrowApyPct", Number(event.target.value))}
+              />
+            </Control>
+            <Control label="sUSDe staking APY" value={`${extraInputs.susdeApyPct}%`}>
+              <input
+                type="range"
+                min="-10"
+                max="15"
+                value={extraInputs.susdeApyPct}
+                onChange={(event) => setExtraInput("susdeApyPct", Number(event.target.value))}
+              />
+            </Control>
+          </>
+        ) : null}
+        {controls.includes("node") ? (
+          <>
+            <Control label="Failing node" value={nodeLabel(extraInputs.nodeId)}>
+              <select value={extraInputs.nodeId} onChange={(event) => setExtraInput("nodeId", event.target.value)} aria-label="Failing node">
+                {shockableNodes.map((node) => (
+                  <option key={node.id} value={node.id}>
+                    {node.label}
+                  </option>
+                ))}
+              </select>
+            </Control>
+            <Control label="Value lost at the node" value={`${extraInputs.nodeLossPct}%`}>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="5"
+                value={extraInputs.nodeLossPct}
+                onChange={(event) => setExtraInput("nodeLossPct", Number(event.target.value))}
+              />
+            </Control>
+          </>
+        ) : null}
         <Control label="Decision horizon" value={`${horizonDays} days`}>
           <input type="range" min="1" max="30" value={horizonDays} onChange={(event) => setHorizonDays(Number(event.target.value))} />
         </Control>
@@ -920,7 +1069,10 @@ function ScenarioLab({
           <div>
             <p className="eyebrow">Animated before / after</p>
             <h2>Net equity under stress</h2>
-            <p className="microcopy">{sourceCopy}</p>
+            <p className="microcopy">
+              {sourceCopy}
+              {ignoredCopy}
+            </p>
           </div>
           <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} aria-label="Select position">
             {data.portfolio.positions.map((position) => (
@@ -971,6 +1123,22 @@ function ScenarioLab({
         </div>
         {selectedRisk.risk_metric ? <RiskGauge metric={selectedRisk.risk_metric} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
       </section>
+
+      {data.risk.comparison ? (
+        <section className="gauge-panel">
+          <div>
+            <p className="eyebrow">What this scenario adds</p>
+            <h2>{data.risk.comparison.excess_loss_usd !== null ? money(data.risk.comparison.excess_loss_usd) : "n/a"}</h2>
+            <p>{data.risk.comparison.excess_meaning}</p>
+          </div>
+          <div className="evidence-card">
+            <Definition label="This scenario" value={money(data.risk.portfolio.total_conditional_loss_usd)} />
+            {data.risk.comparison.runs.map((run) => (
+              <Definition key={run.run_id} label={run.description} value={money(run.total_conditional_loss_usd)} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -992,11 +1160,7 @@ function DecisionEngine({
 }: {
   data: AppData;
   scenario: ScenarioKind;
-  scenarioInputs: {
-    shockPct: number;
-    horizonDays: number;
-    liquidityLossPct: number;
-  };
+  scenarioInputs: ScenarioInputs;
   hasRun: boolean;
   selectedRisk?: RiskPosition;
   selectedPortfolio?: PortfolioPosition;
@@ -1132,8 +1296,19 @@ function DecisionEngine({
         <p>{data.decision.reason}</p>
         <div className="scenario-receipt" aria-label="Scenario inputs used for the latest run">
           <MetricPair label="Scenario" value={scenarioCopy[scenario].title} />
-          <MetricPair label="USDe shock" value={signedPercent(-scenarioInputs.shockPct)} />
-          <MetricPair label="Liquidity loss" value={`${scenarioInputs.liquidityLossPct}%`} />
+          {/* Only the inputs this scenario actually uses. */}
+          {scenarioControls[scenario].includes("shock") ? <MetricPair label="USDe shock" value={signedPercent(-scenarioInputs.shockPct)} /> : null}
+          {scenarioControls[scenario].includes("liquidity") ? <MetricPair label="Liquidity loss" value={`${scenarioInputs.liquidityLossPct}%`} /> : null}
+          {scenarioControls[scenario].includes("ltShift") ? <MetricPair label="LT shift" value={`${scenarioInputs.ltShiftPct} pts`} /> : null}
+          {scenarioControls[scenario].includes("carry") ? (
+            <>
+              <MetricPair label="Borrow APY" value={`${scenarioInputs.borrowApyPct}%`} />
+              <MetricPair label="sUSDe APY" value={`${scenarioInputs.susdeApyPct}%`} />
+            </>
+          ) : null}
+          {scenarioControls[scenario].includes("node") ? (
+            <MetricPair label="Node shock" value={`${labelize(scenarioInputs.nodeId)} -${scenarioInputs.nodeLossPct}%`} />
+          ) : null}
           <MetricPair label="Horizon" value={`${scenarioInputs.horizonDays} days`} />
         </div>
         <button className="icon-button text-button" onClick={() => setView("graph")}>
@@ -1242,18 +1417,14 @@ function AssistantDock({
   scenario: ScenarioKind;
   selectedPosition: string;
   inspectedExitFraction: string | null;
-  scenarioInputs: {
-    shockPct: number;
-    horizonDays: number;
-    liquidityLossPct: number;
-  };
+  scenarioInputs: ScenarioInputs;
   executeAction: (action: DashboardAction) => void;
 }) {
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       id: "assistant-welcome",
       role: "assistant",
-      content: "Ask about the selected position, dependency evidence, scenario loss, or an exit fraction. I only use the visible fixture data.",
+      content: "Ask about the selected position, dependency evidence, scenario loss, or an exit fraction. I only use the results on screen.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -1363,7 +1534,7 @@ function AssistantDock({
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "The assistant endpoint is unavailable. Fixture chat still works in fixture mode; API mode needs POST /api/v1/assistant.",
+          content: "The assistant could not answer. It runs in the browser from the results on screen; try rephrasing.",
         },
       ]);
       setAssistantState("idle");

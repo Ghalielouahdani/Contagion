@@ -79,6 +79,8 @@ def _run(fn, *args):
         return fn(*args)
     except (ValueError, KeyError) as exc:
         raise HTTPException(422, str(exc).strip("'\"")) from exc
+    except ArithmeticError as exc:  # e.g. a scenario driving a value to zero: report it, never a 500
+        raise HTTPException(422, f"scenario cannot be computed for these inputs ({type(exc).__name__}: {exc})") from exc
 
 
 @app.get("/api/v1/health")

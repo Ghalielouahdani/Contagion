@@ -51,6 +51,38 @@
     "risk_surface": {
       "path": "risk_surface.json",
       "schema": "../../schemas/v1/risk_surface.schema.json"
+    },
+    "scenario_request_combined": {
+      "path": "scenario_request_combined.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_result_combined": {
+      "path": "risk_result_combined.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "scenario_request_carry": {
+      "path": "scenario_request_carry.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_result_carry": {
+      "path": "risk_result_carry.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "scenario_request_governance": {
+      "path": "scenario_request_governance.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_result_governance": {
+      "path": "risk_result_governance.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "scenario_request_node_shock": {
+      "path": "scenario_request_node_shock.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_result_node_shock": {
+      "path": "risk_result_node_shock.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
     }
   },
   "golden": false

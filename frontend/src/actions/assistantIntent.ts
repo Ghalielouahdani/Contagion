@@ -1,4 +1,4 @@
-import type { AppData, DashboardAction, ScenarioKind, View } from "../lib/types";
+import type { AppData, DashboardAction, ScenarioInputs, ScenarioKind, View } from "../lib/types";
 import { compactId, money, percent } from "../lib/format";
 import { ACTION_LIMITS, validateRange } from "./registry";
 
@@ -8,13 +8,8 @@ export type AssistantIntentContext = {
   scenario: ScenarioKind;
   selectedPosition: string;
   inspectedExitFraction?: string | null;
-  scenarioInputs: {
-    shockPct: number;
-    horizonDays: number;
-    liquidityLossPct: number;
-  };
+  scenarioInputs: ScenarioInputs;
   data: AppData;
-  scenarioDataByKind?: Record<ScenarioKind, AppData>;
 };
 
 export type ParsedAssistantIntent = {
@@ -36,7 +31,7 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   if (requestedScenario) {
     actions.push({ type: "set_scenario", scenario: requestedScenario });
     actions.push({ type: "navigate_view", view: "scenario" });
-    notes.push(requestedScenario === "usde_depeg" ? "Scenario A" : "Scenario B");
+    notes.push(scenarioNames[requestedScenario]);
   }
 
   if (shock !== null) {
@@ -58,8 +53,9 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   if (liquidity !== null) {
     const validation = validateRange("Liquidity loss", liquidity, ACTION_LIMITS.liquidityLossPct.min, ACTION_LIMITS.liquidityLossPct.max, ACTION_LIMITS.liquidityLossPct.unit);
     if (!validation.ok) return refuse(validation.message);
+    // Scenario first: selecting a scenario loads its preset, then the requested value overrides it.
+    if (!requestedScenario) actions.push({ type: "set_scenario", scenario: "liquidity_crisis" });
     actions.push({ type: "set_liquidity_loss", percent: liquidity });
-    actions.push({ type: "set_scenario", scenario: "liquidity_crisis" });
     actions.push({ type: "navigate_view", view: "scenario" });
     notes.push(`liquidity loss ${liquidity}%`);
   }
@@ -76,9 +72,13 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
 
   if (actions.length) {
     const didRun = actions.some((action) => action.type === "run_simulation");
+    // New inputs: the engine recomputes on screen; quoting the previous result would contradict it.
+    const changesInputs = actions.some((action) => ["set_scenario", "set_shock", "set_horizon", "set_liquidity_loss"].includes(action.type));
     return {
       actions: dedupeActions(actions),
-      message: `${notes.length ? `Set ${notes.join(", ")} — ` : ""}${didRun ? "running now" : "showing it now"}. ${summarizeCurrentOutcome(context, requestedScenario ?? context.scenario)}`,
+      message: `${notes.length ? `Set ${notes.join(", ")} — ` : ""}${didRun ? "running now" : "showing it now"}. ${
+        changesInputs ? "The risk engine recomputes the results on screen for these inputs." : summarizeCurrentOutcome(context)
+      }`,
     };
   }
 
@@ -88,7 +88,7 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   if (text.includes("recommend") || text.includes("verdict") || text.includes("stay") || text.includes("exit")) {
     return {
       actions: [{ type: "navigate_view", view: "decision" }],
-      message: `The decision fixture says ${context.data.decision.recommendation}. Reason: ${context.data.decision.reason}`,
+      message: `The decision on screen for ${compactId(context.data.decision.position_id)} is ${context.data.decision.recommendation}. Reason: ${context.data.decision.reason}`,
     };
   }
 
@@ -102,11 +102,25 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   return {
     actions: [],
     message:
-      "I can set Scenario A or B, shock between -1% and -25%, horizon 1 to 30 days, liquidity loss 0% to 95%, or inspect 0/25/50/75/100% exits. I only answer from fixture data on screen.",
+      "I can open scenarios A to F (depeg, liquidity crisis, both combined, carry squeeze, governance change, node failure), set a shock between -1% and -40%, a horizon of 1 to 30 days, a liquidity loss of 0% to 95%, or inspect 0/25/50/75/100% exits. I only answer from the results on screen.",
   };
 }
 
+const scenarioNames: Record<ScenarioKind, string> = {
+  usde_depeg: "Scenario A",
+  liquidity_crisis: "Scenario B",
+  combined_crisis: "Scenario C",
+  carry_squeeze: "Scenario D",
+  governance_change: "Scenario E",
+  node_shock: "Scenario F",
+};
+
 function parseScenario(text: string): ScenarioKind | null {
+  // Most specific first: "depeg and liquidity crisis" is C, not A.
+  if (/\bscenario\s*c\b/.test(text) || text.includes("combined") || (text.includes("depeg") && text.includes("liquidity"))) return "combined_crisis";
+  if (/\bscenario\s*d\b/.test(text) || /\b(carry|funding|squeeze|borrow rate)\b/.test(text)) return "carry_squeeze";
+  if (/\bscenario\s*e\b/.test(text) || /\b(governance|oracle switch|threshold change)\b/.test(text)) return "governance_change";
+  if (/\bscenario\s*f\b/.test(text) || /\b(node|custodian|exploit|hack|failure)\b/.test(text)) return "node_shock";
   if (/\bscenario\s*a\b/.test(text) || text.includes("depeg") || text.includes("usde")) return "usde_depeg";
   if (/\bscenario\s*b\b/.test(text) || text.includes("liquidity crisis") || text.includes("exit liquidity")) return "liquidity_crisis";
   return null;
@@ -166,25 +180,26 @@ function answerPositionQuestion(context: AssistantIntentContext, text: string): 
     if (text.includes("most at risk") && riskiest) {
       return {
         actions: [{ type: "select_position", positionId: riskiest.position_id, view: "decision" }],
-        message: `${compactId(riskiest.position_id)} has the largest conditional loss in the current fixture at ${money(riskiest.conditional_loss_usd)}.`,
+        message: `${compactId(riskiest.position_id)} has the largest conditional loss in the current result at ${money(riskiest.conditional_loss_usd)}.`,
       };
     }
     if (!selected?.risk_metric) {
-      return { actions: [], message: `${compactId(context.selectedPosition)} has no health-factor or LTV metric in this fixture.` };
+      return { actions: [], message: `${compactId(context.selectedPosition)} has no health-factor or LTV metric: it is not a lending position.` };
     }
     return {
       actions: [{ type: "select_position", positionId: selected.position_id, view: "scenario" }],
-      message: `${compactId(selected.position_id)} uses ${selected.risk_metric.type}. It moves from ${selected.risk_metric.before} to ${selected.risk_metric.after}; threshold is ${selected.risk_metric.threshold}. The fixture marks liquidatable as ${selected.risk_metric.liquidatable ? "true" : "false"}.`,
+      message: `${compactId(selected.position_id)} uses ${selected.risk_metric.type}. It moves from ${selected.risk_metric.before} to ${selected.risk_metric.after}; threshold is ${selected.risk_metric.threshold}, distance to liquidation ${percent(selected.risk_metric.distance_to_liquidation_after_pct)}. ${selected.risk_metric.liquidatable ? "It is liquidatable." : "It is not liquidatable."}`,
     };
   }
 
   return null;
 }
 
-function summarizeCurrentOutcome(context: AssistantIntentContext, scenario: ScenarioKind) {
-  const scenarioData = context.scenarioDataByKind?.[scenario] ?? context.data;
-  if (scenario === "liquidity_crisis") {
-    return `Current liquidity fixture total conditional loss is ${money(scenarioData.risk.portfolio.total_conditional_loss_usd)}, with shared liquidity penalty ${money(scenarioData.risk.portfolio.shared_liquidity_penalty_usd)}.`;
-  }
-  return `Current depeg fixture total conditional loss is ${money(scenarioData.risk.portfolio.total_conditional_loss_usd)}. Decision status is ${scenarioData.decision.recommendation}.`;
+/** Describe the result on screen (context.data), never a stored preset that may differ from it. */
+function summarizeCurrentOutcome(context: AssistantIntentContext) {
+  const risk = context.data.risk;
+  const penalty = Number(risk.portfolio.shared_liquidity_penalty_usd ?? 0);
+  return `Total conditional loss on screen is ${money(risk.portfolio.total_conditional_loss_usd)}${
+    penalty > 0 ? `, including ${money(penalty)} from exits sharing the same venue` : ""
+  }. Decision for ${compactId(context.data.decision.position_id)}: ${context.data.decision.recommendation}.`;
 }
