@@ -86,3 +86,7 @@ cd frontend
 npm run build
 npm run check:assistant
 ```
+
+## Préréglages visibles
+
+Scenario Lab conserve quatre cas de départ : dépeg USDe, crise de liquidité, compression du carry et cascade de liquidations. Le cas combiné, la gouvernance et la défaillance d'un nœud restent des mécanismes disponibles au chatbot, sans carte préréglée dans la grille. Chaque bouton Run d'une carte générée transmet sa requête complète, y compris les paramètres absents des sliders. Cliquer un préréglage quitte la sélection générée, même lorsque ses valeurs visibles coïncident.

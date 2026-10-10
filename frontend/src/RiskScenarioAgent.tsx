@@ -2,13 +2,13 @@ import { useEffect, useId, useRef, useState } from "react";
 import { compactId, labelize } from "./lib/format";
 import type { RiskAgentBatch, RiskScenarioProposal } from "./lib/types";
 
-export function GeneratedScenarioCard({ batch, proposal, onRun, canRun }: {
-  batch: RiskAgentBatch; proposal: RiskScenarioProposal; onRun: (proposal: RiskScenarioProposal) => void; canRun: boolean;
+export function GeneratedScenarioCard({ batch, proposal, onRun, canRun, selected }:  {
+  batch: RiskAgentBatch; proposal: RiskScenarioProposal; onRun: (proposal: RiskScenarioProposal) => void; canRun: boolean; selected?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const detailsButton = useRef<HTMLButtonElement>(null);
   return <>
-    <article className="preset-card generated-scenario-card">
+    <article className="preset-card generated-scenario-card" data-selected={selected}>
       <span>Generated · {labelize(proposal.request.scenario.scenario_id)}</span>
       <strong>{proposal.title}</strong>
       <p>{proposal.causalChain[0] || "Portfolio-specific stress hypothesis"}</p>

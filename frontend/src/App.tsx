@@ -187,10 +187,7 @@ function fixtureSetLabel(id: string) {
 const scenarioOrder: ScenarioKind[] = [
   "usde_depeg",
   "liquidity_crisis",
-  "combined_crisis",
-  "governance_change",
   "carry_squeeze",
-  "node_shock",
   "liquidation_cascade",
 ];
 
@@ -282,9 +279,12 @@ function App() {
   const setExtraInput = <K extends keyof ExtraInputs>(key: K, value: ExtraInputs[K]) =>
     setExtraInputs((current) => ({ ...current, [key]: value }));
 
+  const generatedDraft = useRef<EngineScenarioRequest | null>(null);
+
   // Picking a scenario loads its preset values, so the screen shows the preset the card announces.
   function selectScenario(kind: ScenarioKind, set = fixtureSet) {
     if (!availableScenarios(set).includes(kind)) return; // no preset in this data set: never show mock numbers
+    generatedDraft.current = null;
     const preset = presetInputs(kind, set);
     draft.current = { scenario: kind, inputs: { ...draft.current.inputs, ...preset } };
     setScenario(kind);
@@ -370,8 +370,10 @@ function App() {
   function runScenario() {
     const next = draft.current;
     if (!availableScenarios(fixtureSet).includes(next.scenario)) return;
+    const preserveGenerated = !hasPendingChanges && generatedDraft.current === submitted.customRequest;
+    if (!preserveGenerated) generatedDraft.current = null;
     setSubmitted((current) => ({ scenario: next.scenario, inputs: { ...next.inputs }, run: current.run + 1,
-      ...(!hasPendingChanges && current.customRequest ? { customRequest: current.customRequest, customTitle: current.customTitle } : {}) }));
+      ...(preserveGenerated && current.customRequest ? { customRequest: current.customRequest, customTitle: current.customTitle } : {}) }));
     setInspectedExitFraction(null);
     setHasRun(true);
     setSelectedEdge(null);
@@ -380,6 +382,7 @@ function App() {
 
   function runRiskProposal(proposal: RiskScenarioProposal) {
     if (mode !== "api" || proposal.request.portfolio_id !== baseline?.portfolio.portfolio_id) return;
+    generatedDraft.current = proposal.request;
     const kind = proposal.request.scenario.scenario_id;
     const inputs = inputsFromRequest(proposal.request, { ...scenarioInputs, ...presetInputs(kind, fixtureSet) });
     draft.current = { scenario: kind, inputs };
@@ -499,7 +502,7 @@ function App() {
             <h1>{viewMeta[view].label}</h1>
             <p className="lead">{isBaselineView ? (view === "portfolio" ? "Original holdings, debt and equity at the recorded market snapshot." : "Original dependencies between positions, assets, protocols, oracles and exit venues.") : scenarioCopy[scenario].summary}</p>
             <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.{fixtureSet === "stress_portfolio_01" ? " Synthetic allocations on real markets · recorded market observations." : ""}</p>
-            {!isBaselineView && data && hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {scenarioCopy[submitted.scenario].title}.</p> : null}
+            {!isBaselineView && data && hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {submitted.customTitle ?? scenarioCopy[submitted.scenario].title}.</p> : null}
           </div>
           <div className="topbar-actions">
             <button className="icon-button text-button" onClick={() => setCommandOpen(true)}>
@@ -545,6 +548,7 @@ function App() {
                     canRunGenerated={mode === "api" && !appQuery.isFetching}
                     onOpenChat={() => setAssistantOpen(true)}
                     customTitle={submitted.customTitle}
+                    selectedGeneratedId={generatedDraft.current?.request_id}
                     isRunning={appQuery.isFetching}
                     onAnalyze={() => setView("engine")}
                     scenario={scenario}
@@ -1169,7 +1173,7 @@ function DependencyGraphView({
 }
 
 function ScenarioLab({
-  batches, onRunGenerated, canRunGenerated, onOpenChat, customTitle,
+  batches, onRunGenerated, canRunGenerated, onOpenChat, customTitle, selectedGeneratedId,
   data,
   baseline,
   fixtureSet,
@@ -1196,6 +1200,7 @@ function ScenarioLab({
   canRunGenerated: boolean;
   onOpenChat: () => void;
   customTitle?: string;
+  selectedGeneratedId?: string;
   data?: AppData;
   baseline: PortfolioData;
   fixtureSet: string;
@@ -1242,13 +1247,13 @@ function ScenarioLab({
     <div className="scenario-layout">
       <section className="preset-grid">
         {scenarioOrder.filter((kind) => availableScenarios(fixtureSet).includes(kind)).map((kind) => (
-          <button key={kind} className="preset-card" data-selected={scenario === kind} onClick={() => setScenario(kind)}>
+          <button key={kind} className="preset-card" data-selected={!selectedGeneratedId && scenario === kind} onClick={() => setScenario(kind)}>
             <span>{presetLabel(kind, fixtureSet)}</span>
             <strong>{scenarioCopy[kind].title}</strong>
             <p>{scenarioCopy[kind].summary}</p>
           </button>
         ))}
-        {batches.flatMap(batch => batch.proposals.map(proposal => <GeneratedScenarioCard key={proposal.id} batch={batch} proposal={proposal} onRun={onRunGenerated} canRun={canRunGenerated} />))}
+        {batches.flatMap(batch => batch.proposals.map(proposal => <GeneratedScenarioCard key={proposal.id} batch={batch} proposal={proposal} selected={selectedGeneratedId === proposal.request.request_id} onRun={onRunGenerated} canRun={canRunGenerated} />))}
         <button className="preset-card" onClick={onOpenChat}><span>Global chatbot · Gemini</span><strong>Create a new scenario</strong><p>Describe a market event in the chatbot. Its scenarios will appear here with the other stress cases.</p></button>
       </section>
 

@@ -50,6 +50,37 @@ try {
     const execution = await api.postAssistantMessage({ ...request, message: 'USDe -10 %, liquidité -80 %, 7 jours', view: 'decision' }, 'api');
     assert.equal(execution.proposal.engineScenario.parameters.usde_spot_shock_pct, '-0.10');
     assert.deepEqual(execution.actions, []);
+    // A generated case must take precedence over the currently selected preset/sliders.
+    for (const kind of ['carry_squeeze', 'liquidity_crisis', 'liquidation_cascade']) {
+      const generated = api.buildScenarioRequest(kind, { ...base, horizonDays: 23 }, set);
+      generated.request_id = 'saved_generated_case';
+      const unchanged = structuredClone(generated);
+      const runCalls = [];
+      globalThis.fetch = async (url, options) => {
+        const body = options?.body ? JSON.parse(options.body) : null;
+        runCalls.push({ url, body });
+        let value = {};
+        if (url.includes('/discover')) value = baseline.graph;
+        else if (url.includes('/market-snapshot')) value = baseline.marketSnapshot;
+        else if (url.includes('/portfolio')) value = baseline.portfolio;
+        else if (url.includes('/simulate')) value = { simulation_id: 'generated_run', scenario_id: body.scenario.scenario_id };
+        else if (url.includes('/decide')) {
+          assert.equal(body.simulation_id, 'generated_run');
+          value = { position_id: body.position_id };
+        }
+        return new Response(JSON.stringify(value), { status: 200 });
+      };
+      const result = await api.loadAppData('api', 'usde_depeg', { ...base, horizonDays: 7, shockPct: 40 }, set, generated);
+      assert.equal(result.risk.scenario_id, kind);
+      for (const endpoint of ['/simulate', '/analyze']) {
+        const actual = runCalls.find(call => call.url.includes(endpoint)).body;
+        assert.deepEqual(actual.scenario, generated.scenario, kind + endpoint);
+        assert.deepEqual(actual.assumptions, generated.assumptions);
+        assert.equal(actual.portfolio_id, generated.portfolio_id);
+      }
+      assert.deepEqual(generated, unchanged, 'running does not mutate the saved card');
+    }
+
   } finally { globalThis.fetch = originalFetch; }
-  console.log('PASS: seven scenarios, FR/EN, distinct percentages, signed carry, decimal inputs, refused ambiguity and unsupported shocks, no automatic run, Gemini routing from all four risk views before first run, no local fallback on errors, Engine API required, Execution behavior preserved.');
+  console.log('PASS: seven scenarios, FR/EN, distinct percentages, signed carry, decimal inputs, refused ambiguity and unsupported shocks, no automatic run, Gemini routing from all four risk views before first run, no local fallback on errors, Engine API required, Execution behavior preserved, generated requests override different presets and sliders without mutation.');
 } finally { await server.close(); }
