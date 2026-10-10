@@ -8,6 +8,7 @@
  */
 import { useMemo, useState } from "react";
 import { compactId, labelize, money, percent } from "./lib/format";
+import { Term } from "./Term";
 import type { AppData, PortfolioPosition, RiskPosition } from "./lib/types";
 
 type Raw = Record<string, unknown>;
@@ -112,7 +113,7 @@ function PositionSheet({ position: p, data, nav, risk }: { position: PortfolioPo
 
       <h4>Holdings</h4>
       <table className="engine-table compact">
-        <thead><tr><th>Leg</th><th>Asset</th><th>Quantity</th><th>Price used</th><th>Price source</th><th>Value</th></tr></thead>
+        <thead><tr><th><Term>Leg</Term></th><th><Term>Asset</Term></th><th><Term>Quantity</Term></th><th><Term>Price used</Term></th><th><Term>Price source</Term></th><th><Term>Value</Term></th></tr></thead>
         <tbody>{legs.map((leg) => {
           const price = priceOf(snapshot, leg.asset);
           const value = num(leg.quantity) !== null && price?.value != null ? (num(leg.quantity) as number) * price.value : null;
@@ -129,27 +130,27 @@ function PositionSheet({ position: p, data, nav, risk }: { position: PortfolioPo
 
       <div className="engine-sheet-grid">
         <dl className="engine-facts">
-          <dt>Gross value</dt><dd>{money(gross)}</dd>
-          <dt>Debt</dt><dd>{money(debt)}</dd>
-          <dt>Net equity</dt><dd>{money(net)} · {nav ? percent(net / nav, 1) : "n/a"} of the portfolio</dd>
-          <dt>Carry (annual, today's rates)</dt><dd>{carry === null ? "n/a" : money(carry)} {yields ? <Source source={str(yields.source_type)} /> : null}</dd>
+          <dt><Term>Gross value</Term></dt><dd>{money(gross)}</dd>
+          <dt><Term>Debt</Term></dt><dd>{money(debt)}</dd>
+          <dt><Term>Net equity</Term></dt><dd>{money(net)} · {nav ? percent(net / nav, 1) : "n/a"} of the portfolio</dd>
+          <dt><Term>Carry (annual, today's rates)</Term></dt><dd>{carry === null ? "n/a" : money(carry)} {yields ? <Source source={str(yields.source_type)} /> : null}</dd>
         </dl>
 
         <dl className="engine-facts">
-          <dt>Market</dt><dd>{market ? labelize(String(market.market_kind)) : "none (no lending market)"} {market ? <Source source={market.verified ? "verified" : str(market.source_type)} /> : null}</dd>
-          {market?.liquidation_threshold ? <><dt>Liquidation threshold</dt><dd>{percent(market.liquidation_threshold as string, 1)} · bonus {percent(market.liquidation_bonus as string, 1)}</dd></> : null}
-          {market?.lltv ? <><dt>LLTV</dt><dd>{percent(market.lltv as string, 1)} · incentive {percent(market.liquidation_incentive as string, 1)}</dd></> : null}
-          {market?.oracle_type ? <><dt>Oracle</dt><dd>{labelize(String(market.oracle_type))} · follows {percent(market.oracle_pass_through as string, 0)} of a USDe depeg{market.oracle_address ? ` · ${String(market.oracle_address).slice(0, 10)}…` : ""}</dd></> : null}
-          {market?.pt_implied_apy ? <><dt>PT</dt><dd>implied APY {percent(market.pt_implied_apy as string, 2)} · {String(market.days_to_maturity)} days to maturity</dd></> : null}
-          {isLender && supply && borrowTotal ? <><dt>Lending market</dt><dd>supply {money(supply)} · borrow {money(borrowTotal)} · utilization {percent(borrowTotal / supply, 1)} · our share {percent(Number(p.quantity) / supply, 2)} · borrowers {String(market?.borrower_distribution_source_type ?? "assumed")}</dd></> : null}
+          <dt><Term>Market</Term></dt><dd>{market ? labelize(String(market.market_kind)) : "none (no lending market)"} {market ? <Source source={market.verified ? "verified" : str(market.source_type)} /> : null}</dd>
+          {market?.liquidation_threshold ? <><dt><Term>Liquidation threshold</Term></dt><dd>{percent(market.liquidation_threshold as string, 1)} · bonus {percent(market.liquidation_bonus as string, 1)}</dd></> : null}
+          {market?.lltv ? <><dt><Term>LLTV</Term></dt><dd>{percent(market.lltv as string, 1)} · incentive {percent(market.liquidation_incentive as string, 1)}</dd></> : null}
+          {market?.oracle_type ? <><dt><Term>Oracle</Term></dt><dd>{labelize(String(market.oracle_type))} · follows {percent(market.oracle_pass_through as string, 0)} of a USDe depeg{market.oracle_address ? ` · ${String(market.oracle_address).slice(0, 10)}…` : ""}</dd></> : null}
+          {market?.pt_implied_apy ? <><dt><Term>PT</Term></dt><dd>implied APY {percent(market.pt_implied_apy as string, 2)} · {String(market.days_to_maturity)} days to maturity</dd></> : null}
+          {isLender && supply && borrowTotal ? <><dt><Term>Lending market</Term></dt><dd>supply {money(supply)} · borrow {money(borrowTotal)} · utilization {percent(borrowTotal / supply, 1)} · our share {percent(Number(p.quantity) / supply, 2)} · borrowers {String(market?.borrower_distribution_source_type ?? "assumed")}</dd></> : null}
         </dl>
 
         <dl className="engine-facts">
-          <dt>Distance to liquidation now</dt>
+          <dt><Term>Distance to liquidation now</Term></dt>
           <dd>{metric ? `${labelize(metric.type)} ${Number(metric.before).toFixed(3)} (threshold ${Number(metric.threshold).toFixed(3)}) · the oracle price can fall ${percent(metric.distance_to_liquidation_before_pct, 1)}` : isLender ? "lender: losses start when borrowers' collateral stops covering their debt (see the trace)" : "no liquidation threshold"}</dd>
-          {liquidationPrice !== null ? <><dt>Liquidation price (oracle)</dt><dd>{str(p.collateral_asset)} at ${liquidationPrice.toFixed(4)}</dd></> : null}
-          {breaks.length ? <><dt>Breaks under</dt><dd>{breaks.map((b) => `${labelize(b.mechanism)}: ${b.immune ? "immune" : b.breaks_at_shock_pct !== null ? percent(b.breaks_at_shock_pct, 1) : "n/a"}`).join(" · ")}</dd></> : null}
-          <dt>Exit route</dt>
+          {liquidationPrice !== null ? <><dt><Term>Liquidation price (oracle)</Term></dt><dd>{str(p.collateral_asset)} at ${liquidationPrice.toFixed(4)}</dd></> : null}
+          {breaks.length ? <><dt><Term>Breaks under</Term></dt><dd>{breaks.map((b) => `${labelize(b.mechanism)}: ${b.immune ? "immune" : b.breaks_at_shock_pct !== null ? percent(b.breaks_at_shock_pct, 1) : "n/a"}`).join(" · ")}</dd></> : null}
+          <dt><Term>Exit route</Term></dt>
           <dd>{p.exit_venue_id}{venue ? ` · ${labelize(String(venue.quote_method))}${largest ? ` · largest quote ${money(largest.size_usd as string)} at ${Number(largest.loss_pct).toFixed(2)}% loss` : ` · depth ${money(venue.effective_depth_usd as string)}`}` : isLender ? " · withdrawal from idle market liquidity" : " · no venue data"} {venue ? <Source source={str(venue.source_type)} /> : null}</dd>
         </dl>
       </div>
@@ -189,7 +190,7 @@ export function AssumptionRegister({ data }: { data: AppData }) {
         {varied.length ? " Unverified model assumptions are also varied in the uncertainty range (step 2): " + varied.map((v) => v.assumption).join(", ") + "." : ""}
       </p>
       <table className="engine-table compact">
-        <thead><tr><th>Input</th><th>Value</th><th>Provenance</th><th>Used by</th></tr></thead>
+        <thead><tr><th><Term>Input</Term></th><th><Term>Value</Term></th><th><Term>Provenance</Term></th><th><Term>Used by</Term></th></tr></thead>
         <tbody>{rows.map((r) => (
           <tr key={`${r.source}-${r.name}-${r.value}`}>
             <td>{r.name}</td><td>{r.value}</td><td><Source source={r.source} /></td>

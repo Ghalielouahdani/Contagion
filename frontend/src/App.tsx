@@ -54,6 +54,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
+import { Term } from "./Term";
 import {
   availableScenarios,
   compareRiskLevels,
@@ -681,6 +682,27 @@ function Sidebar({
   );
 }
 
+/** "12 dependencies · 83% verified": what the position rests on, from the discovered graph. */
+function dependencySummary(graph: DependencyGraph, positionId: string) {
+  const start = `position:${positionId}`;
+  const seen = new Set([start]);
+  const queue = [start];
+  const edges: GraphEdge[] = [];
+  while (queue.length) {
+    const node = queue.shift()!;
+    for (const edge of graph.edges.filter((item) => item.source === node)) {
+      edges.push(edge);
+      if (!seen.has(edge.target)) {
+        seen.add(edge.target);
+        queue.push(edge.target);
+      }
+    }
+  }
+  if (!edges.length) return "No dependency recorded";
+  const verified = edges.filter((edge) => edge.confidence === "verified").length;
+  return `${seen.size - 1} dependencies · ${percent(verified / edges.length, 0)} verified`;
+}
+
 function PortfolioDashboard({
   data,
   selectedPosition,
@@ -742,7 +764,7 @@ function PortfolioDashboard({
               <MetricPair label="Debt" value={money(position.debt_value_usd)} />
               <MetricPair label="Net equity" value={money(position.net_equity_usd)} />
               <div className="loss-strip">
-                <span>Original position</span>
+                <span>{dependencySummary(data.graph, position.position_id)}</span>
                 <strong>Inspect dependencies →</strong>
               </div>
             </button>
@@ -773,13 +795,13 @@ function PortfolioDashboard({
         <table>
           <thead>
             <tr>
-              <th>Position</th>
-              <th>Protocol</th>
-              <th>Gross</th>
-              <th>Debt</th>
-              <th>Net equity</th>
-              <th>Exit venue</th>
-              <th>Data</th>
+              <th><Term>Position</Term></th>
+              <th><Term>Protocol</Term></th>
+              <th><Term>Gross</Term></th>
+              <th><Term>Debt</Term></th>
+              <th><Term>Net equity</Term></th>
+              <th><Term>Exit venue</Term></th>
+              <th><Term>Data</Term></th>
             </tr>
           </thead>
           <tbody>
@@ -1028,7 +1050,7 @@ function DependencyGraphView({
               onClick={() => setEnabledTypes((current) => ({ ...current, [type]: current[type] === false }))}
             >
               <span className="node-chip" data-type={type} />
-              {type}
+              <Term>{labelize(type)}</Term>
             </button>
           ))}
         </div>
@@ -1344,7 +1366,7 @@ function ScenarioLab({
         <p className="eyebrow">Execution decision · {compactId(selectedPosition)}</p>
         <h2>Cost of acting before this scenario</h2>
         <p className="microcopy">Exit options use this run's risk loss, snapshot liquidity and horizon.</p>
-        <table><thead><tr><th>Exit</th><th>Exit cost</th><th>Residual loss / gain</th><th>Break-even probability</th></tr></thead>
+        <table><thead><tr><th><Term>Exit</Term></th><th><Term>Exit cost</Term></th><th><Term>Residual loss / gain</Term></th><th><Term>Break-even probability</Term></th></tr></thead>
           <tbody>{data.decision.exit_options.map(option => <tr key={option.exit_fraction}>
             <td>{percent(option.exit_fraction, 0)}</td><td>{money(option.estimated_exit_cost_usd)}</td>
             <td>{money(option.residual_stress_loss_usd)}</td><td>{percent(option.break_even_probability)}</td>
@@ -1440,7 +1462,7 @@ function StressComparison({ mode, data, inputs }: { mode: DataMode; data: AppDat
             name={compactId(position.position_id)} stroke={["var(--np-accent-blue)", "var(--np-accent-coral)", "var(--np-accent-gold)", "var(--np-accent-periwinkle)"][index % 4]} dot />)}
         </LineChart>
       </ResponsiveContainer></div>
-      <table><thead><tr><th>Stress magnitude</th><th>Portfolio loss / gain</th><th>Liquidatable fund borrows</th></tr></thead>
+      <table><thead><tr><th><Term>Stress magnitude</Term></th><th><Term>Portfolio loss / gain</Term></th><th><Term>Liquidatable fund borrows</Term></th></tr></thead>
         <tbody>{rows.map(row => <tr key={row.magnitude}><td>{row.magnitude}%</td><td>{money(row.total)}</td><td>{row.liquidatable}</td></tr>)}</tbody></table>
       <p className="microcopy">These are conditional stress tests, not probabilities. Connected paths show exposure; their losses are counted once per position.</p>
     </> : null}
@@ -1557,12 +1579,12 @@ function DecisionEngine({
           <table>
             <thead>
               <tr>
-                <th>Exit</th>
-                <th>Cost</th>
-                <th>Residual loss</th>
-                <th>Foregone yield</th>
-                <th>Break-even</th>
-                <th>Quote</th>
+                <th><Term>Exit</Term></th>
+                <th><Term>Cost</Term></th>
+                <th><Term>Residual loss</Term></th>
+                <th><Term>Foregone yield</Term></th>
+                <th><Term>Break-even</Term></th>
+                <th><Term>Quote</Term></th>
               </tr>
             </thead>
             <tbody>
@@ -2135,7 +2157,9 @@ function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: 
 function Control({ label, value, children }: { label: string; value: string; children: React.ReactNode }) {
   return (
     <label className="control-row">
-      <span>{label}</span>
+      <span>
+        <Term>{label}</Term>
+      </span>
       <strong>{value}</strong>
       {children}
     </label>
@@ -2170,7 +2194,9 @@ function RiskGauge({ metric }: { metric: NonNullable<RiskPosition["risk_metric"]
 function Stat({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
     <div className="stat">
-      <span>{label}</span>
+      <span>
+        <Term>{label}</Term>
+      </span>
       <strong>{value}</strong>
       {detail ? <small>{detail}</small> : null}
     </div>
@@ -2180,20 +2206,28 @@ function Stat({ label, value, detail }: { label: string; value: string; detail?:
 function MetricPair({ label, value }: { label: string; value: string }) {
   return (
     <div className="metric-pair">
-      <span>{label}</span>
+      <span>
+        <Term>{label}</Term>
+      </span>
       <strong>{value}</strong>
     </div>
   );
 }
 
 function Badge({ children, tone = "neutral" }: { children: string; tone?: string }) {
-  return <span className="badge" data-tone={tone}>{children}</span>;
+  return (
+    <span className="badge" data-tone={tone}>
+      <Term>{children}</Term>
+    </span>
+  );
 }
 
 function Definition({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="definition">
-      <dt>{label}</dt>
+      <dt>
+        <Term>{label}</Term>
+      </dt>
       <dd>{value}</dd>
     </div>
   );

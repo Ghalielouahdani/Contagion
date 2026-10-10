@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
 import { compactId, labelize, money, percent } from "./lib/format";
+import { Term } from "./Term";
 import type { AppData, RiskPosition } from "./lib/types";
 import "./risk-engine.css";
 import { AssumptionRegister, PositionSheets } from "./RiskPositions";
@@ -149,11 +150,11 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
       ) : null}
 
       <section className="impact-strip">
-        <div className="stat"><span>Net equity before</span><strong>{money(navBefore)}</strong><small>Sum of positions, gross and debt netted</small></div>
-        <div className="stat"><span>Conditional loss</span><strong>{total === null ? "incomplete" : money(total)}</strong>
+        <div className="stat"><span><Term>Net equity before</Term></span><strong>{money(navBefore)}</strong><small>Sum of positions, gross and debt netted</small></div>
+        <div className="stat"><span><Term>Conditional loss</Term></span><strong>{total === null ? "incomplete" : money(total)}</strong>
           <small>{total !== null && navBefore ? `${percent(total / navBefore, 2)} of net equity` : risk.portfolio.aggregation_status}</small></div>
-        <div className="stat"><span>Net equity after</span><strong>{money(risk.portfolio.net_equity_after_usd as string | null)}</strong><small>If the scenario occurs</small></div>
-        <div className="stat"><span>Inputs resting on observed data</span><strong>{provenance.all ? percent(provenance.trusted / provenance.all, 0) : "n/a"}</strong>
+        <div className="stat"><span><Term>Net equity after</Term></span><strong>{money(risk.portfolio.net_equity_after_usd as string | null)}</strong><small>If the scenario occurs</small></div>
+        <div className="stat"><span><Term>Inputs resting on observed data</Term></span><strong>{provenance.all ? percent(provenance.trusted / provenance.all, 0) : "n/a"}</strong>
           <small>{Object.entries(provenance.counts).map(([s, n]) => `${n} ${SOURCE_COPY[s] ?? s}`).join(" · ")}</small></div>
       </section>
 
@@ -186,7 +187,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
         <p className="eyebrow">Step 4 · Which positions carry it</p>
         <h2>Breakdown by position</h2>
         <table className="engine-table">
-          <thead><tr><th>Position</th><th>Loss</th><th>Share of loss</th><th>Main mechanism</th><th>Liquidation metric</th><th>Evidence</th><th /></tr></thead>
+          <thead><tr><th><Term>Position</Term></th><th><Term>Loss</Term></th><th><Term>Share of loss</Term></th><th><Term>Main mechanism</Term></th><th><Term>Liquidation metric</Term></th><th><Term>Evidence</Term></th><th /></tr></thead>
           <tbody>
             {risk.positions.map((p) => {
               const loss = Number(p.conditional_loss_usd);
@@ -370,14 +371,14 @@ function Simulations({ data, analytics }: {
         <>
           <h3>Breaking points: how far before it breaks</h3>
           <table className="engine-table">
-            <thead><tr><th>Position</th><th>Shock type</th><th>Liquidated at</th></tr></thead>
+            <thead><tr><th><Term>Position</Term></th><th><Term>Shock type</Term></th><th><Term>Liquidated at</Term></th></tr></thead>
             <tbody>{analytics.breaking_points.liquidation.map((b, i) => (
               <tr key={i}><td>{compactId(b.position_id)}</td><td>{labelize(b.mechanism)}</td>
                 <td>{b.immune ? "immune to this shock" : b.breaks_at_shock_pct !== null ? percent(b.breaks_at_shock_pct, 1) : "n/a"}</td></tr>
             ))}</tbody>
           </table>
           <table className="engine-table">
-            <thead><tr><th>Net equity drawdown</th><th>Reached at a USDe depeg of</th></tr></thead>
+            <thead><tr><th><Term>Net equity drawdown</Term></th><th><Term>Reached at a USDe depeg of</Term></th></tr></thead>
             <tbody>{analytics.breaking_points.nav_drawdown.map((n, i) => (
               <tr key={i}><td>{percent(n.nav_drawdown_pct, 0)}</td><td>{n.usde_depeg_pct !== null ? percent(n.usde_depeg_pct, 1) : "not reached"}</td></tr>
             ))}</tbody>
@@ -422,7 +423,7 @@ function Simulations({ data, analytics }: {
             {risk.cascade.converged ? "" : " · did not converge"}
           </p>
           <table className="engine-table">
-            <thead><tr><th>Round</th><th>Debt liquidated</th><th>Collateral sold</th>{Object.keys(risk.cascade.initial_moves).map((a) => <th key={a}>{a} move</th>)}</tr></thead>
+            <thead><tr><th><Term>Round</Term></th><th><Term>Debt liquidated</Term></th><th><Term>Collateral sold</Term></th>{Object.keys(risk.cascade.initial_moves).map((a) => <th key={a}>{a} move</th>)}</tr></thead>
             <tbody>
               <tr><td>start</td><td /><td />{Object.values(risk.cascade.initial_moves).map((m, i) => <td key={i}>{percent(m, 2)}</td>)}</tr>
               {risk.cascade.rounds.map((r) => (
@@ -496,7 +497,7 @@ function Probabilities({ grid, navBefore, breakEven }: { grid: Grid | null; navB
         </select></label>
       </div>
       <table className="engine-table">
-        <thead><tr><th>{labelize(grid.x_param)}</th><th>Engine loss</th><th>Probability over the horizon (%)</th></tr></thead>
+        <thead><tr><th>{labelize(grid.x_param)}</th><th><Term>Engine loss</Term></th><th><Term>Probability over the horizon (%)</Term></th></tr></thead>
         <tbody>{points.map((p) => (
           <tr key={p.x}>
             <td>{percent(p.x, 0)}</td><td>{money(p.loss)}</td>
@@ -508,9 +509,9 @@ function Probabilities({ grid, navBefore, breakEven }: { grid: Grid | null; navB
       {mass > 1 ? <p className="engine-warning">Probabilities add up to more than 100%.</p> : null}
       {entered.length && mass <= 1 ? (
         <div className="impact-strip">
-          <div className="stat"><span>Expected loss</span><strong>{money(expected)}</strong><small>{navBefore ? percent(expected / navBefore, 2) : ""} of net equity · no shock {percent(1 - mass, 1)}</small></div>
-          <div className="stat"><span>VaR {percent(confidence, 0)}</span><strong>{money(varLoss)}</strong><small>Loss not exceeded with {percent(confidence, 0)} probability</small></div>
-          <div className="stat"><span>Expected shortfall {percent(confidence, 0)}</span><strong>{money(es)}</strong><small>Average loss in the worst {percent(tail, 0)}</small></div>
+          <div className="stat"><span><Term>Expected loss</Term></span><strong>{money(expected)}</strong><small>{navBefore ? percent(expected / navBefore, 2) : ""} of net equity · no shock {percent(1 - mass, 1)}</small></div>
+          <div className="stat"><span><Term>VaR</Term> {percent(confidence, 0)}</span><strong>{money(varLoss)}</strong><small>Loss not exceeded with {percent(confidence, 0)} probability</small></div>
+          <div className="stat"><span><Term>Expected shortfall</Term> {percent(confidence, 0)}</span><strong>{money(es)}</strong><small>Average loss in the worst {percent(tail, 0)}</small></div>
         </div>
       ) : <p className="muted">No probability entered: results stay conditional (what happens if, not how likely).</p>}
       {breakEven !== null ? (
@@ -572,7 +573,7 @@ function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) 
         <div>
           <h3>What drives the spread</h3>
           <table className="engine-table">
-            <thead><tr><th>Assumption (range)</th><th>Link with the loss</th></tr></thead>
+            <thead><tr><th><Term>Assumption (range)</Term></th><th><Term>Link with the loss</Term></th></tr></thead>
             <tbody>{uncertainty.drivers.slice(0, 6).map((d) => (
               <tr key={d.assumption}>
                 <td>{d.assumption} <small>({Number(d.low).toFixed(2)} – {Number(d.high).toFixed(2)})</small></td>

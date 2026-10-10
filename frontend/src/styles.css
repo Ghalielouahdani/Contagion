@@ -1220,3 +1220,46 @@ tbody tr[data-highlighted="true"] {
 .scenario-results {
   grid-column: 1 / -1;
 }
+
+/* Glossary terms: dotted underline, definition on hover or keyboard focus (Term.tsx). */
+.term {
+  position: relative;
+  text-decoration: underline dotted var(--np-line-strong);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
+.term:focus-visible {
+  outline: 2px solid var(--np-strong);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.term-tip {
+  position: fixed;
+  z-index: 1000;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--np-line-strong);
+  border-radius: 8px;
+  background: var(--np-page);
+  color: var(--np-text);
+  font-size: var(--np-size-0);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--np-fast) ease;
+}
+
+.term-tip[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+}
