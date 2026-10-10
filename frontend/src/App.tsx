@@ -135,6 +135,11 @@ const scenarioCopy: Record<ScenarioKind, { title: string; preset: string; summar
     preset: "D · sUSDe 0%, borrow 60%",
     summary: "No price shock: funding turns, the staking yield vanishes and borrow rates spike at the utilization kink.",
   },
+  liquidation_cascade: {
+    title: "Liquidation cascade",
+    preset: "G · -5%, half the depth",
+    summary: "Liquidators dump seized collateral into thin venues; the price drop liquidates the next borrowers, round after round.",
+  },
   node_shock: {
     title: "Dependency node failure",
     preset: "F · Ethena backing -10%",
@@ -151,6 +156,7 @@ function presetLabel(kind: ScenarioKind, set: string) {
     case "carry_squeeze": return `D · sUSDe ${p.susdeApyPct}%, borrow ${p.borrowApyPct}%`;
     case "governance_change": return `E · LT ${p.ltShiftPct} pts, then -${p.shockPct}%`;
     case "node_shock": return `F · ${labelize(p.nodeId ?? "node")} -${p.nodeLossPct}%`;
+    case "liquidation_cascade": return `G · -${p.shockPct}%, -${p.liquidityLossPct}% depth`;
   }
 }
 
@@ -162,7 +168,15 @@ function fixtureSetLabel(id: string) {
   return date ? `${label} · ${date[1]}-${date[2]}-${date[3]}` : label;
 }
 
-const scenarioOrder: ScenarioKind[] = ["usde_depeg", "liquidity_crisis", "combined_crisis", "governance_change", "carry_squeeze", "node_shock"];
+const scenarioOrder: ScenarioKind[] = [
+  "usde_depeg",
+  "liquidity_crisis",
+  "combined_crisis",
+  "governance_change",
+  "carry_squeeze",
+  "node_shock",
+  "liquidation_cascade",
+];
 
 // Controls shown per scenario (the horizon is always shown).
 const scenarioControls: Record<ScenarioKind, Array<"shock" | "liquidity" | "ltShift" | "carry" | "node">> = {
@@ -172,6 +186,7 @@ const scenarioControls: Record<ScenarioKind, Array<"shock" | "liquidity" | "ltSh
   governance_change: ["shock", "ltShift"],
   carry_squeeze: ["carry"],
   node_shock: ["node"],
+  liquidation_cascade: ["shock", "liquidity"],
 };
 
 // Starting values of the scenario-specific controls, matching the fixture presets.
@@ -793,11 +808,20 @@ function SummaryStrip({
       <Stat label="Conditional loss" value={money(risk.portfolio.total_conditional_loss_usd)} detail={risk.portfolio.aggregation_status} />
       {headline ? (
         <>
-          <Stat
-            label="USDe effective leverage"
-            value={`${Number(headline.usde_effective_leverage).toFixed(2)}×`}
-            detail={`${money(headline.usde_exposure_usd)} on one factor`}
-          />
+          {Number(headline.usde_effective_leverage) > 0 ? (
+            <Stat
+              label="USDe effective leverage"
+              value={`${Number(headline.usde_effective_leverage).toFixed(2)}×`}
+              detail={`${money(headline.usde_exposure_usd)} on one factor`}
+            />
+          ) : (
+            // Lenders lose nothing on a small move, then a lot past a threshold: a linear leverage would read 0x.
+            <Stat
+              label="USDe exposure"
+              value="threshold"
+              detail={`no loss on small moves · ${money(headline.scenario_loss_usd)} in this scenario`}
+            />
+          )}
           <Stat
             label="NAV −10% at"
             value={tenPctNav?.usde_depeg_pct ? percent(tenPctNav.usde_depeg_pct) : "n/a"}
@@ -1321,6 +1345,7 @@ function ScenarioLab({
         <p>{data.decision.reason}</p>
         <WarningList warnings={data.decision.warnings} />
       </section>
+      {data.risk.cascade ? <CascadePanel cascade={data.risk.cascade} /> : null}
       {data.risk.comparison ? (
         <section className="gauge-panel">
           <div>
@@ -1337,6 +1362,38 @@ function ScenarioLab({
         </section>
       ) : null}
     </div>
+  );
+}
+
+function CascadePanel({ cascade }: { cascade: NonNullable<AppData["risk"]["cascade"]> }) {
+  const moves = (record: Record<string, string>) =>
+    Object.entries(record)
+      .map(([asset, move]) => `${asset} ${percent(move)}`)
+      .join(" · ");
+  const rounds = cascade.rounds.filter((round) => Number(round.liquidated_debt_usd) > 0);
+  return (
+    <section className="gauge-panel">
+      <div>
+        <p className="eyebrow">Liquidation cascade</p>
+        <h2>{cascade.amplification ? `${Number(cascade.amplification).toFixed(1)}× amplification` : "No feedback"}</h2>
+        <p>
+          {moves(cascade.initial_moves)} initially, {moves(cascade.final_moves)} once forced selling has played out
+          {cascade.converged ? "" : " (not converged: capped number of rounds)"}.
+        </p>
+      </div>
+      <div className="evidence-card">
+        <Definition label="Debt liquidated" value={money(cascade.liquidated_debt_usd)} />
+        <Definition label="Bad debt (all lenders)" value={money(cascade.bad_debt_usd)} />
+        <Definition label="Stuck (unprofitable to liquidate)" value={money(cascade.stuck_debt_usd)} />
+        {rounds.map((round) => (
+          <Definition
+            key={round.round}
+            label={`Round ${round.round}`}
+            value={`${money(round.liquidated_debt_usd)} liquidated · ${money(round.collateral_sold_usd)} sold · ${moves(round.moves)}`}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 

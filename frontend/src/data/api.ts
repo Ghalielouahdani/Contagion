@@ -61,6 +61,7 @@ const fileSuffix: Record<ScenarioKind, string> = {
   governance_change: "_governance",
   carry_squeeze: "_carry",
   node_shock: "_node_shock",
+  liquidation_cascade: "_cascade",
 };
 const fileByKind = {
   scenario: (kind: ScenarioKind) => `scenario_request${fileSuffix[kind]}.json`,
@@ -90,7 +91,14 @@ export const scenarioParams: Record<ScenarioKind, Array<{ param: string; value: 
     { param: "loss_pct", value: (i) => pct(i.nodeLossPct) },
     { param: "node_id", value: (i) => i.nodeId },
   ],
+  liquidation_cascade: [
+    { param: "usde_spot_shock_pct", value: (i) => pct(-i.shockPct) },
+    { param: "exit_liquidity_reduction_pct", value: (i) => pct(i.liquidityLossPct) },
+  ],
 };
+
+// API mode: which graph and snapshot the backend computes on (see backend/api/discovery_state.py).
+const discoveryMode = import.meta.env.VITE_DISCOVERY || "stored";
 
 type SurfacePoint = { value: string; risk_result: RiskResult; decisions: Record<string, DecisionResult> };
 type RiskSurface = { scenarios: Record<string, { param: string; points: SurfacePoint[] }> };
@@ -154,7 +162,7 @@ export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs
   const [health, portfolio, graph, marketSnapshot, risk, analytics] = await Promise.all([
     requestJson<{ status: string; fixture_set?: string }>(withSet("/api/v1/health", set)),
     requestJson<Portfolio>(withSet("/api/v1/portfolio", set)),
-    requestJson<DependencyGraph>(withSet("/api/v1/discover", set), post({ schema_version: "1.0" })),
+    requestJson<DependencyGraph>(`${withSet("/api/v1/discover", set)}&discovery=${discoveryMode}`, post({ schema_version: "1.0" })),
     requestJson<MarketSnapshot>(withSet("/api/v1/market-snapshot", set)),
     requestJson<RiskResult>(withSet("/api/v1/simulate", set), post(request)),
     requestJson<RiskAnalytics>(withSet("/api/v1/analyze", set), post(request)),

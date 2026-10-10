@@ -41,6 +41,7 @@ export function createActionRegistry(data?: AppData): ActionRegistryItem[] {
     { type: "scenario", label: "Run Scenario D - carry squeeze", actions: [{ type: "run_simulation", scenario: "carry_squeeze" }] },
     { type: "scenario", label: "Run Scenario E - governance or oracle change", actions: [{ type: "run_simulation", scenario: "governance_change" }] },
     { type: "scenario", label: "Run Scenario F - dependency node failure", actions: [{ type: "run_simulation", scenario: "node_shock" }] },
+    { type: "scenario", label: "Run Scenario G - liquidation cascade", actions: [{ type: "run_simulation", scenario: "liquidation_cascade" }] },
     { type: "scenario", label: "Set shock to -8%", actions: [{ type: "set_shock", shockPct: 8 }] },
     { type: "scenario", label: "Set horizon to 7 days", actions: [{ type: "set_horizon", days: 7 }] },
     { type: "scenario", label: "Set liquidity loss to 80%", actions: [{ type: "set_liquidity_loss", percent: 80 }] },

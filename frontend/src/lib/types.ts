@@ -4,7 +4,8 @@ export type ScenarioKind =
   | "combined_crisis"
   | "governance_change"
   | "carry_squeeze"
-  | "node_shock";
+  | "node_shock"
+  | "liquidation_cascade";
 export type View = "portfolio" | "graph" | "scenario" | "decision";
 export type DataMode = "fixture" | "api";
 
@@ -159,6 +160,18 @@ export type RiskResult = {
   metadata?: Record<string, unknown>;
   warnings?: string[];
   contagion?: { graph_id: string | null; hubs: ContagionHub[]; warnings: string[] };
+  /** Scenario G: liquidation rounds until prices stop moving (moves are signed fractions per asset). */
+  cascade?: {
+    initial_moves: Record<string, string>;
+    final_moves: Record<string, string>;
+    trough_moves: Record<string, string>;
+    amplification: string | null;
+    rounds: Array<{ round: number; liquidated_debt_usd: string; collateral_sold_usd: string; moves: Record<string, string> }>;
+    liquidated_debt_usd: string;
+    bad_debt_usd: string;
+    stuck_debt_usd: string;
+    converged: boolean;
+  };
   /** Scenarios C-F: reference runs and what this scenario adds on top of them. */
   comparison?: {
     runs: Array<{ run_id: string; description: string; total_conditional_loss_usd: string }>;

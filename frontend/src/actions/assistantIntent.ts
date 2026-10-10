@@ -102,7 +102,7 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   return {
     actions: [],
     message:
-      "I can open scenarios A to F (depeg, liquidity crisis, both combined, carry squeeze, governance change, node failure), set a shock between -1% and -40%, a horizon of 1 to 30 days, a liquidity loss of 0% to 95%, or inspect 0/25/50/75/100% exits. I only answer from the results on screen.",
+      "I can open scenarios A to G (depeg, liquidity crisis, both combined, carry squeeze, governance change, node failure, liquidation cascade), set a shock between -1% and -40%, a horizon of 1 to 30 days, a liquidity loss of 0% to 95%, or inspect 0/25/50/75/100% exits. I only answer from the results on screen.",
   };
 }
 
@@ -113,10 +113,12 @@ const scenarioNames: Record<ScenarioKind, string> = {
   carry_squeeze: "Scenario D",
   governance_change: "Scenario E",
   node_shock: "Scenario F",
+  liquidation_cascade: "Scenario G",
 };
 
 function parseScenario(text: string): ScenarioKind | null {
   // Most specific first: "depeg and liquidity crisis" is C, not A.
+  if (/\bscenario\s*g\b/.test(text) || /\b(cascade|spiral|domino)\b/.test(text)) return "liquidation_cascade";
   if (/\bscenario\s*c\b/.test(text) || text.includes("combined") || (text.includes("depeg") && text.includes("liquidity"))) return "combined_crisis";
   if (/\bscenario\s*d\b/.test(text) || /\b(carry|funding|squeeze|borrow rate)\b/.test(text)) return "carry_squeeze";
   if (/\bscenario\s*e\b/.test(text) || /\b(governance|oracle switch|threshold change)\b/.test(text)) return "governance_change";
