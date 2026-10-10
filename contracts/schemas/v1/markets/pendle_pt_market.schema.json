@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/markets/pendle_pt_market.schema.json",
+  "title": "Pendle PT market parameters",
+  "description": "PT price proxy = underlying price / (1 + pt_implied_apy)^(days_to_maturity/365).",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "../common.schema.json#/$defs/market_base"
+    }
+  ],
+  "properties": {
+    "market_kind": {
+      "const": "pendle_pt_market"
+    },
+    "maturity": {
+      "$ref": "../common.schema.json#/$defs/timestamp"
+    },
+    "days_to_maturity": {
+      "$ref": "../common.schema.json#/$defs/non_negative_decimal"
+    },
+    "pt_implied_apy": {
+      "$ref": "../common.schema.json#/$defs/decimal"
+    },
+    "valuation_method": {
+      "enum": [
+        "implied_apy_discount",
+        "amm_quote"
+      ]
+    },
+    "market_address": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "market_kind",
+    "maturity",
+    "days_to_maturity",
+    "pt_implied_apy",
+    "valuation_method"
+  ],
+  "unevaluatedProperties": false
+}

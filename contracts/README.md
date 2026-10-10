@@ -1,35 +1,92 @@
 # contracts/ — schema v1 integration contract (shared by everyone)
 
-This folder is how the four modules talk to each other. Each module reads JSON files from here and writes JSON in exactly the same shape. As long as everyone respects these shapes, P1–P4 can work in parallel without waiting for each other.
+This folder is how the four modules talk to each other. Each module reads JSON in these shapes and writes JSON in these shapes. As long as everyone respects them, P1–P4 can work in parallel without waiting for each other.
 
-Read: blueprint sections 4.2 (conventions), 9.1 (parallelism contract), 11 (all fixtures), 17 (ownership).
+**This folder is the source of truth.** Blueprint section 11 shows the same fixtures for reading; if they ever differ, `contracts/` wins.
 
-## Files to create at kickoff
+Read: blueprint sections 4.2 (conventions), 9.1 (parallelism), 11 (fixtures), 17 (ownership).
 
-Copy each JSON block from blueprint section 11 into its own file:
+## Structure
 
-| File                              | Owner | Produced from                          | Consumed by |
-|-----------------------------------|-------|----------------------------------------|-------------|
-| `portfolio.json`                  | P1    | fictional portfolio (input)            | everyone    |
-| `dependency_graph.json`           | P1    | discovery adapters                     | P2, P4      |
-| `market_snapshot.json`            | P1    | discovery adapters                     | P2, P3      |
-| `scenario_request.json`           | P4    | UI controls (scenario A preset)        | P2, P3      |
-| `scenario_request_liquidity.json` | P4    | UI controls (scenario B preset)        | P2, P3      |
-| `risk_result.json`                | P2    | risk engine, scenario A                | P3, P4      |
-| `risk_result_liquidity.json`      | P2    | risk engine, scenario B                | P3, P4      |
-| `decision_result.json`            | P3    | decision engine                        | P4          |
+```
+contracts/
+├── schemas/v1/                         JSON Schema (draft 2020-12), language-agnostic
+│   ├── common.schema.json              shared types + vocabularies (protocols, relations, source types…)
+│   ├── portfolio.schema.json           ┐
+│   ├── dependency_graph.schema.json    │
+│   ├── market_snapshot.schema.json     │ one schema per contract file
+│   ├── scenario_request.schema.json    │ (they assemble the plug-ins below)
+│   ├── risk_result.schema.json         │
+│   ├── decision_result.schema.json     ┘
+│   ├── fixture_set.schema.json         manifest of a fixture set
+│   ├── positions/      token_holding · collateralized_borrow · pt_holding
+│   ├── markets/        aave_v3_reserve · morpho_blue_market · pendle_pt_market
+│   ├── scenarios/      usde_depeg · liquidity_crisis
+│   └── risk_metrics/   health_factor · ltv
+└── fixtures/
+    └── demo_ethena_01/                 one self-consistent data set
+        ├── manifest.json               ids + which file uses which schema
+        ├── portfolio.json · dependency_graph.json · market_snapshot.json
+        ├── scenario_request.json · scenario_request_liquidity.json
+        └── risk_result.json · risk_result_liquidity.json · decision_result.json
+```
 
-## What the team must do here
+## Why it is modular
 
-1. **Freeze schema v1 together during the first 60–90 minutes.** Agree on the field names, IDs, units and sign conventions. After the freeze, nobody changes a file's shape alone.
-2. **Write a schema/model for each file** (Pydantic v2 models, shared by the backend). Every module validates what it reads and what it writes.
-3. **Treat the numbers as golden test values.** The fixtures are mutually consistent: P2 must reproduce `risk_result*.json` from the portfolio and the snapshot, and P3 must reproduce `decision_result.json`.
-4. **Make changes through the owner.** Need a new field? Ask the owner of that file, bump the version if the change breaks other modules, and update the fixture and the model in the same PR.
+Each varying part is a **plug-in file**, chosen by a discriminator field:
 
-## Rules that apply to every file
+| What varies       | Discriminator field                 | Plug-in folder         | Registered in                                   |
+|-------------------|-------------------------------------|------------------------|-------------------------------------------------|
+| Position type     | `position_type`                     | `positions/`           | `portfolio.schema.json` → `$defs.position.oneOf` |
+| Protocol market   | `market_kind`                       | `markets/`             | `market_snapshot.schema.json` → `$defs.market.oneOf` |
+| Scenario          | `scenario_id`                       | `scenarios/`           | `scenario_request.schema.json` → `$defs.scenario.oneOf` + `common` `scenario_id` |
+| Risk metric       | `type`                              | `risk_metrics/`        | `risk_result.schema.json` → `$defs.risk_metric.oneOf` |
+| Vocabularies      | —                                   | `common.schema.json`   | add a value to the enum (protocol, relation, risk_channel, node_type…) |
+| Loss component    | —                                   | —                      | open: just add a key (the core four stay required) |
+| Demo data set     | `fixture_set_id`                    | `fixtures/<set>/`      | its own `manifest.json`                          |
 
-- `schema_version` is `"1.0"`; `portfolio_id`, `graph_id`, `snapshot_id` and `request_id` stay stable across files.
-- Numbers are **strings** (Decimal), never floats. Values are in USD, rates are decimal fractions (`"0.05"` = 5%), timestamps are ISO-8601 UTC.
-- Losses and costs are **positive**; shocks are **signed** (`"-0.05"` = price down 5%).
-- Every object that holds numbers has a `source_type`: `observed` / `derived` / `assumed` / `fictional` / `user_scenario`.
-- Placeholders (`TO_VERIFY_...`) stay visible until P1 replaces them with verified values. Never silently fill them.
+Shared fields live once in `common.schema.json` (`position_base`, `market_base`, `risk_metric_base`); a plug-in only declares what is specific to it. Plug-ins are strict: unknown fields are rejected, which catches typos.
+
+## How to extend (recipes)
+
+**Add a protocol** (e.g. Curve):
+1. Add `"curve"` to `protocol` in `common.schema.json`.
+2. If it has market parameters, create `markets/curve_pool.schema.json` (copy an existing one: `allOf` → `market_base`, `market_kind` const, its own fields, `unevaluatedProperties: false`).
+3. Add it to `$defs.market.oneOf` in `market_snapshot.schema.json`.
+4. P1 writes the matching adapter.
+
+**Add a position type** (e.g. `lp_position`): create `positions/lp_position.schema.json` (`allOf` → `position_base`), then add it to `$defs.position.oneOf` in `portfolio.schema.json`.
+
+**Add a scenario** (e.g. `oracle_freeze`):
+1. Create `scenarios/oracle_freeze.schema.json` with `scenario_id` const and its `parameters`.
+2. Add it to `$defs.scenario.oneOf` in `scenario_request.schema.json`, and add `"oracle_freeze"` to `scenario_id` in `common.schema.json`.
+3. Add a fixture request (and golden result) in a fixture set.
+
+**Add a risk metric**: create `risk_metrics/<type>.schema.json` (`allOf` → `risk_metric_base`), then add it to `$defs.risk_metric.oneOf` in `risk_result.schema.json`.
+
+**Add a demo data set**: create `fixtures/<new_set>/` with its own `manifest.json`. Existing sets are untouched.
+
+## Versioning rules
+
+- **Additive changes** (new plug-in, new enum value, new optional field) keep `schema_version: "1.0"`.
+- **Breaking changes** (rename, remove or retype a field, make a field required) create `schemas/v2/` and bump `schema_version`. v1 stays until every module has migrated.
+- Changes go through the owner of the contract file (portfolio/graph/snapshot → P1, scenario semantics/risk_result → P2, decision_result → P3, API envelopes → P4), in one PR that updates the schema, the fixtures and blueprint section 11.
+
+## Data conventions (enforced by the schemas)
+
+- `schema_version` is `"1.0"`; IDs are lowercase slugs; node IDs are `<type>:<name>` (e.g. `venue:susde_usdc`).
+- Numbers are **strings** (`"1800000"`, `"-0.05"`), never JSON floats. Values are in USD, rates are decimal fractions, timestamps are UTC with a `Z` suffix.
+- Losses and costs are **positive**; shocks are **signed**.
+- Every object with numbers carries `source_type`; `field_sources` overrides it per field when an object mixes origins.
+- Placeholders (`TO_VERIFY_...`) stay visible until P1 replaces them with verified values.
+
+## Golden fixtures
+
+`demo_ethena_01` has `"golden": true`: its risk and decision files are the **exact** outputs the section 7–8 formulas must produce from its portfolio and snapshot. P2 and P3 use them as test expectations. Beyond schema validity, they satisfy:
+- `loss_components` sum to `conditional_loss_usd`; net equity before − loss = net equity after;
+- positions sum to the portfolio total (+ `shared_liquidity_penalty_usd` in the liquidity scenario);
+- IDs are consistent across all files of the set.
+
+## Using the schemas in code
+
+Generate types instead of rewriting them by hand: Python Pydantic v2 models with `datamodel-code-generator`, TypeScript types with `json-schema-to-typescript`. Validate at runtime with `jsonschema` (Python) or `ajv` (TypeScript).

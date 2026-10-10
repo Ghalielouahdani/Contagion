@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/markets/morpho_blue_market.schema.json",
+  "title": "Morpho Blue market parameters",
+  "description": "Parameters of an isolated Morpho market. Liquidatable when LTV > LLTV.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "../common.schema.json#/$defs/market_base"
+    }
+  ],
+  "properties": {
+    "market_kind": {
+      "const": "morpho_blue_market"
+    },
+    "lltv": {
+      "$ref": "../common.schema.json#/$defs/decimal"
+    },
+    "liquidation_incentive": {
+      "$ref": "../common.schema.json#/$defs/decimal"
+    },
+    "oracle_pass_through": {
+      "$ref": "../common.schema.json#/$defs/decimal"
+    },
+    "oracle_type": {
+      "type": "string"
+    },
+    "oracle_address": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "market_kind",
+    "lltv",
+    "liquidation_incentive",
+    "oracle_pass_through",
+    "oracle_type"
+  ],
+  "unevaluatedProperties": false
+}

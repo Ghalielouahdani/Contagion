@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "demo_ethena_01",
+  "as_of": "2026-10-10T08:00:00Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "position_id": "ethena_susde_01",
+      "protocol": "ethena",
+      "chain_id": 1,
+      "position_type": "token_holding",
+      "market_id": null,
+      "asset_symbol": "sUSDe",
+      "quantity": "1600000",
+      "quantity_unit": "sUSDe_shares",
+      "gross_value_usd": "2000000.00",
+      "debt_value_usd": "0",
+      "net_equity_usd": "2000000.00",
+      "exit_venue_id": "venue:susde_usdc",
+      "data_origin": "fictional"
+    },
+    {
+      "position_id": "aave_01",
+      "protocol": "aave",
+      "chain_id": 1,
+      "position_type": "collateralized_borrow",
+      "market_id": "TO_VERIFY_AAVE_MARKET",
+      "collateral_asset": "USDe",
+      "collateral_quantity": "3000000",
+      "debt_asset": "USDC",
+      "debt_quantity": "1800000",
+      "gross_value_usd": "3000000.00",
+      "debt_value_usd": "1800000.00",
+      "net_equity_usd": "1200000.00",
+      "exit_venue_id": "venue:usde_usdc",
+      "data_origin": "fictional"
+    },
+    {
+      "position_id": "morpho_01",
+      "protocol": "morpho",
+      "chain_id": 1,
+      "position_type": "collateralized_borrow",
+      "market_id": "TO_VERIFY_MORPHO_MARKET_ID",
+      "collateral_asset": "sUSDe",
+      "collateral_quantity": "2400000",
+      "debt_asset": "USDC",
+      "debt_quantity": "2000000",
+      "gross_value_usd": "3000000.00",
+      "debt_value_usd": "2000000.00",
+      "net_equity_usd": "1000000.00",
+      "exit_venue_id": "venue:susde_usdc",
+      "data_origin": "fictional"
+    },
+    {
+      "position_id": "pendle_01",
+      "protocol": "pendle",
+      "chain_id": 1,
+      "position_type": "pt_holding",
+      "market_id": "TO_VERIFY_PENDLE_MARKET",
+      "asset_symbol": "PT-sUSDe",
+      "quantity": "2080000",
+      "quantity_unit": "PT_tokens",
+      "gross_value_usd": "2000055.14",
+      "debt_value_usd": "0",
+      "net_equity_usd": "2000055.14",
+      "exit_venue_id": "venue:pendle_pt_susde",
+      "data_origin": "fictional"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "10000055.14",
+    "debt_value_usd": "3800000.00",
+    "net_equity_usd": "6200055.14"
+  }
+}

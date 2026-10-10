@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/market_snapshot.schema.json",
+  "title": "Market snapshot",
+  "description": "Market facts at one point in time. Owner: P1. Add a market kind: create markets/<kind>.schema.json and add it to $defs.market.oneOf.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "snapshot_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "as_of": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "chain_id": {
+      "$ref": "common.schema.json#/$defs/chain_id"
+    },
+    "block_number": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "prices_usd": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/sourced_value"
+      }
+    },
+    "exchange_rates": {
+      "type": "object",
+      "description": "Keyed <from>_<to>, e.g. sUSDe_USDe.",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/sourced_value"
+      }
+    },
+    "markets": {
+      "type": "object",
+      "description": "Keyed by position_id.",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/position_id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/market"
+      }
+    },
+    "yields": {
+      "type": "object",
+      "description": "Keyed by position_id.",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/position_id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/yield"
+      }
+    },
+    "exit_venues": {
+      "type": "object",
+      "description": "Keyed by venue id; shared by positions.",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/venue_id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/exit_venue"
+      }
+    },
+    "warnings": {
+      "$ref": "common.schema.json#/$defs/warnings"
+    }
+  },
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "as_of",
+    "chain_id",
+    "block_number",
+    "prices_usd",
+    "exchange_rates",
+    "markets",
+    "yields",
+    "exit_venues",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "market": {
+      "oneOf": [
+        {
+          "$ref": "markets/aave_v3_reserve.schema.json"
+        },
+        {
+          "$ref": "markets/morpho_blue_market.schema.json"
+        },
+        {
+          "$ref": "markets/pendle_pt_market.schema.json"
+        }
+      ]
+    },
+    "yield": {
+      "type": "object",
+      "properties": {
+        "token_apy": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "collateral_supply_apy": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "debt_borrow_apy": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "source_type": {
+          "$ref": "common.schema.json#/$defs/source_type"
+        },
+        "field_sources": {
+          "$ref": "common.schema.json#/$defs/field_sources"
+        }
+      },
+      "required": [
+        "source_type"
+      ],
+      "additionalProperties": false
+    },
+    "exit_venue": {
+      "type": "object",
+      "properties": {
+        "asset": {
+          "type": "string"
+        },
+        "quote_method": {
+          "$ref": "common.schema.json#/$defs/quote_method"
+        },
+        "effective_depth_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "fee_rate": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "gas_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "venue_address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_type": {
+          "$ref": "common.schema.json#/$defs/source_type"
+        },
+        "field_sources": {
+          "$ref": "common.schema.json#/$defs/field_sources"
+        }
+      },
+      "required": [
+        "asset",
+        "quote_method",
+        "effective_depth_usd",
+        "fee_rate",
+        "gas_usd",
+        "source_type"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

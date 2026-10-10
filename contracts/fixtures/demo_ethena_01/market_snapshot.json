@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "snapshot_demo_01",
+  "as_of": "2026-10-10T08:00:00Z",
+  "chain_id": 1,
+  "block_number": null,
+  "prices_usd": {
+    "USDe": {
+      "value": "1.00",
+      "source_type": "assumed"
+    },
+    "USDC": {
+      "value": "1.00",
+      "source_type": "assumed"
+    },
+    "sUSDe": {
+      "value": "1.25",
+      "source_type": "derived"
+    },
+    "PT-sUSDe": {
+      "value": "0.9616",
+      "source_type": "derived"
+    }
+  },
+  "exchange_rates": {
+    "sUSDe_USDe": {
+      "value": "1.25",
+      "source_type": "assumed"
+    }
+  },
+  "markets": {
+    "aave_01": {
+      "market_kind": "aave_v3_reserve",
+      "liquidation_threshold": "0.85",
+      "liquidation_bonus": "0.05",
+      "oracle_pass_through": "1.0",
+      "oracle_type": "market_price_feed",
+      "verified": false,
+      "source_type": "assumed"
+    },
+    "morpho_01": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.915",
+      "liquidation_incentive": "0.026",
+      "oracle_pass_through": "0.0",
+      "oracle_type": "exchange_rate_usde_hardcoded",
+      "verified": false,
+      "source_type": "assumed"
+    },
+    "pendle_01": {
+      "market_kind": "pendle_pt_market",
+      "maturity": "2027-03-25T00:00:00Z",
+      "days_to_maturity": "166",
+      "pt_implied_apy": "0.09",
+      "valuation_method": "implied_apy_discount",
+      "verified": false,
+      "source_type": "assumed"
+    }
+  },
+  "yields": {
+    "ethena_susde_01": {
+      "token_apy": "0.07",
+      "source_type": "assumed"
+    },
+    "aave_01": {
+      "collateral_supply_apy": "0.05",
+      "debt_borrow_apy": "0.055",
+      "source_type": "assumed"
+    },
+    "morpho_01": {
+      "collateral_supply_apy": "0.00",
+      "debt_borrow_apy": "0.055",
+      "source_type": "assumed"
+    },
+    "pendle_01": {
+      "token_apy": "0.09",
+      "source_type": "assumed"
+    }
+  },
+  "exit_venues": {
+    "venue:susde_usdc": {
+      "asset": "sUSDe",
+      "quote_method": "proxy",
+      "effective_depth_usd": "200000000",
+      "fee_rate": "0.001",
+      "gas_usd": "40",
+      "source_type": "assumed"
+    },
+    "venue:usde_usdc": {
+      "asset": "USDe",
+      "quote_method": "proxy",
+      "effective_depth_usd": "300000000",
+      "fee_rate": "0.001",
+      "gas_usd": "40",
+      "source_type": "assumed"
+    },
+    "venue:pendle_pt_susde": {
+      "asset": "PT-sUSDe",
+      "quote_method": "proxy",
+      "effective_depth_usd": "80000000",
+      "fee_rate": "0.001",
+      "gas_usd": "40",
+      "source_type": "assumed"
+    }
+  },
+  "warnings": [
+    "All values are fixture assumptions, not verified live market parameters.",
+    "morpho_01 oracle_pass_through 0.0 is a hypothesis (exchange-rate oracle); P1 must verify the actual oracle."
+  ]
+}

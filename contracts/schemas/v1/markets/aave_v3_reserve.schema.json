@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/markets/aave_v3_reserve.schema.json",
+  "title": "Aave v3 market parameters",
+  "description": "Parameters of the Aave market used by a position. Health factor = collateral x liquidation_threshold / debt.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "../common.schema.json#/$defs/market_base"
+    }
+  ],
+  "properties": {
+    "market_kind": {
+      "const": "aave_v3_reserve"
+    },
+    "liquidation_threshold": {
+      "$ref": "../common.schema.json#/$defs/decimal"
+    },
+    "liquidation_bonus": {
+      "$ref": "../common.schema.json#/$defs/decimal"
+    },
+    "oracle_pass_through": {
+      "$ref": "../common.schema.json#/$defs/decimal"
+    },
+    "oracle_type": {
+      "type": "string"
+    },
+    "oracle_address": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "emode_category": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "market_kind",
+    "liquidation_threshold",
+    "liquidation_bonus",
+    "oracle_pass_through",
+    "oracle_type"
+  ],
+  "unevaluatedProperties": false
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/fixture_set.schema.json",
+  "title": "Fixture set manifest",
+  "description": "Describes one self-consistent set of contract files (one folder under contracts/fixtures/). Add a new demo: new folder + manifest.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "fixture_set_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "description": {
+      "type": "string"
+    },
+    "ids": {
+      "type": "object",
+      "properties": {
+        "portfolio_id": {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        "graph_id": {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        "snapshot_id": {
+          "$ref": "common.schema.json#/$defs/slug"
+        }
+      },
+      "required": [
+        "portfolio_id",
+        "graph_id",
+        "snapshot_id"
+      ],
+      "additionalProperties": false
+    },
+    "files": {
+      "type": "object",
+      "description": "logical name -> {path, schema}",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "schema": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "schema"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "golden": {
+      "type": "boolean",
+      "description": "true = risk/decision files are exact expected outputs for tests."
+    }
+  },
+  "required": [
+    "schema_version",
+    "fixture_set_id",
+    "description",
+    "ids",
+    "files",
+    "golden"
+  ],
+  "additionalProperties": false
+}

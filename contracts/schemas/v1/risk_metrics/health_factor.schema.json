@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/risk_metrics/health_factor.schema.json",
+  "title": "Health factor risk metric",
+  "description": "Aave-style. Liquidatable when HF < threshold (1.0). Distance = 1 - 1/HF for single collateral and stable debt.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "../common.schema.json#/$defs/risk_metric_base"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "health_factor"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "unevaluatedProperties": false
+}

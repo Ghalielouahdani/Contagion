@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/dependency_graph.schema.json",
+  "title": "Dependency graph",
+  "description": "Evidence-backed graph. Owner: P1. Vocabularies (node types, relations, risk channels) live in common.schema.json.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "graph_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "portfolio_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "as_of": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "warnings": {
+      "$ref": "common.schema.json#/$defs/warnings"
+    }
+  },
+  "required": [
+    "schema_version",
+    "graph_id",
+    "portfolio_id",
+    "as_of",
+    "nodes",
+    "edges",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "node": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/node_id"
+        },
+        "type": {
+          "$ref": "common.schema.json#/$defs/node_type"
+        },
+        "label": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "description": "Open bag for adapter-specific facts (address, decimals, ...)."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "$ref": "common.schema.json#/$defs/evidence_method"
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "status": {
+          "$ref": "common.schema.json#/$defs/evidence_status"
+        },
+        "block_number": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "method",
+        "reference",
+        "observed_at",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "edge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^edge:[A-Za-z0-9_.-]+$"
+        },
+        "source": {
+          "$ref": "common.schema.json#/$defs/node_id"
+        },
+        "target": {
+          "$ref": "common.schema.json#/$defs/node_id"
+        },
+        "relation": {
+          "$ref": "common.schema.json#/$defs/relation"
+        },
+        "risk_channel": {
+          "$ref": "common.schema.json#/$defs/risk_channel"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidence"
+        },
+        "confidence": {
+          "$ref": "common.schema.json#/$defs/confidence"
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "target",
+        "relation",
+        "risk_channel",
+        "evidence",
+        "confidence"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "graph_id": "graph_demo_01",
+  "portfolio_id": "demo_ethena_01",
+  "as_of": "2026-10-10T08:00:00Z",
+  "nodes": [
+    {
+      "id": "asset:USDe",
+      "type": "asset",
+      "label": "USDe"
+    },
+    {
+      "id": "asset:sUSDe",
+      "type": "asset",
+      "label": "sUSDe"
+    },
+    {
+      "id": "protocol:ethena",
+      "type": "protocol",
+      "label": "Ethena"
+    },
+    {
+      "id": "protocol:aave",
+      "type": "protocol",
+      "label": "Aave"
+    },
+    {
+      "id": "market:aave_01",
+      "type": "market",
+      "label": "Selected Aave market"
+    },
+    {
+      "id": "oracle:aave_01_usde",
+      "type": "oracle",
+      "label": "Aave USDe price oracle"
+    },
+    {
+      "id": "position:aave_01",
+      "type": "position",
+      "label": "Aave fictional position"
+    },
+    {
+      "id": "position:ethena_susde_01",
+      "type": "position",
+      "label": "sUSDe holding"
+    },
+    {
+      "id": "position:morpho_01",
+      "type": "position",
+      "label": "Morpho fictional position"
+    },
+    {
+      "id": "venue:susde_usdc",
+      "type": "venue",
+      "label": "sUSDe/USDC exit route"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:1",
+      "source": "asset:USDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:2",
+      "source": "position:aave_01",
+      "target": "market:aave_01",
+      "relation": "position_in",
+      "risk_channel": "collateral_liquidation",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:3",
+      "source": "market:aave_01",
+      "target": "oracle:aave_01_usde",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_ORACLE_ADDRESS",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:4",
+      "source": "asset:sUSDe",
+      "target": "asset:USDe",
+      "relation": "redeemable_for",
+      "risk_channel": "exchange_rate",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:5",
+      "source": "position:ethena_susde_01",
+      "target": "venue:susde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:6",
+      "source": "position:morpho_01",
+      "target": "venue:susde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    }
+  ],
+  "warnings": [
+    "Example graph is partial; live discovery must expand oracle, collateral, debt and liquidity dependencies for all positions."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/risk_metrics/ltv.schema.json",
+  "title": "LTV risk metric",
+  "description": "Morpho-style. Liquidatable when LTV > threshold (LLTV). Distance = 1 - LTV/LLTV.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "../common.schema.json#/$defs/risk_metric_base"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "ltv"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "unevaluatedProperties": false
+}

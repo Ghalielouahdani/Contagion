@@ -233,6 +233,8 @@ Repository: contracts/ (versioned JSON fixtures and schemas), backend/adapters/,
 
 # 11. JSON interfaces — schema v1 examples
 
+**Source of truth:** `contracts/schemas/v1/` (JSON Schema, modular: one plug-in file per position type, market kind, scenario and risk metric) and `contracts/fixtures/demo_ethena_01/`. See `contracts/README.md` for how to extend. The blocks below are a readable copy.
+
 The following fixtures are the team's integration contract. Numerical values and addresses are illustrative placeholders, but they are **mutually consistent**: the risk and decision fixtures are what the section 7–8 formulas produce from the portfolio and snapshot fixtures. P2 and P3 use them as golden test cases. JSON uses USD as quote currency, decimal fractions for rates, ISO-8601 UTC timestamps, explicit units, and numbers as strings. IDs must remain stable across all files. Do not interpret example data as live protocol observations.
 
 ## 11.1 contracts/portfolio.json
@@ -421,6 +423,7 @@ Node types: asset, protocol, market, position, oracle, contract, venue, chain, o
   },
   "markets": {
     "aave_01": {
+      "market_kind": "aave_v3_reserve",
       "liquidation_threshold": "0.85",
       "liquidation_bonus": "0.05",
       "oracle_pass_through": "1.0",
@@ -429,6 +432,7 @@ Node types: asset, protocol, market, position, oracle, contract, venue, chain, o
       "source_type": "assumed"
     },
     "morpho_01": {
+      "market_kind": "morpho_blue_market",
       "lltv": "0.915",
       "liquidation_incentive": "0.026",
       "oracle_pass_through": "0.0",
@@ -437,6 +441,7 @@ Node types: asset, protocol, market, position, oracle, contract, venue, chain, o
       "source_type": "assumed"
     },
     "pendle_01": {
+      "market_kind": "pendle_pt_market",
       "maturity": "2027-03-25T00:00:00Z",
       "days_to_maturity": "166",
       "pt_implied_apy": "0.09",

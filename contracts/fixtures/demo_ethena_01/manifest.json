@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "fixture_set_id": "demo_ethena_01",
+  "description": "Blueprint v1.1 demo: fictional 4-position USDe/sUSDe portfolio (Ethena, Aave, Morpho, Pendle). All market values are assumptions; numbers are mutually consistent.",
+  "ids": {
+    "portfolio_id": "demo_ethena_01",
+    "graph_id": "graph_demo_01",
+    "snapshot_id": "snapshot_demo_01"
+  },
+  "files": {
+    "portfolio": {
+      "path": "portfolio.json",
+      "schema": "../../schemas/v1/portfolio.schema.json"
+    },
+    "dependency_graph": {
+      "path": "dependency_graph.json",
+      "schema": "../../schemas/v1/dependency_graph.schema.json"
+    },
+    "market_snapshot": {
+      "path": "market_snapshot.json",
+      "schema": "../../schemas/v1/market_snapshot.schema.json"
+    },
+    "scenario_request": {
+      "path": "scenario_request.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_liquidity": {
+      "path": "scenario_request_liquidity.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_result": {
+      "path": "risk_result.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_result_liquidity": {
+      "path": "risk_result_liquidity.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "decision_result": {
+      "path": "decision_result.json",
+      "schema": "../../schemas/v1/decision_result.schema.json"
+    }
+  },
+  "golden": true
+}

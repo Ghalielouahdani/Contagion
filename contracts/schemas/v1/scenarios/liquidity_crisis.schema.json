@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/scenarios/liquidity_crisis.schema.json",
+  "title": "Scenario B - liquidity crisis",
+  "description": "Blueprint section 7.2.",
+  "type": "object",
+  "properties": {
+    "scenario_id": {
+      "const": "liquidity_crisis"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "exit_liquidity_reduction_pct": {
+          "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+          "description": "Fraction of venue depth lost, e.g. 0.80."
+        },
+        "fundamental_value_shock_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Signed fundamental value shock; 0 = pure liquidity event."
+        },
+        "quote_method": {
+          "enum": [
+            "pool_quote_or_flagged_proxy",
+            "executable_only",
+            "proxy_only"
+          ]
+        }
+      },
+      "required": [
+        "exit_liquidity_reduction_pct",
+        "fundamental_value_shock_pct",
+        "quote_method"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "scenario_id",
+    "horizon_days",
+    "parameters"
+  ],
+  "additionalProperties": false
+}

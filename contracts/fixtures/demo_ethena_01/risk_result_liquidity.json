@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_sim_002",
+  "request_id": "sim_002",
+  "portfolio_id": "demo_ethena_01",
+  "scenario_id": "liquidity_crisis",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "ethena_susde_01",
+      "gross_value_before_usd": "2000000.00",
+      "gross_value_after_usd": "2000000.00",
+      "executable_value_after_usd": "1904761.90",
+      "debt_after_usd": "0",
+      "net_equity_before_usd": "2000000.00",
+      "net_equity_after_usd": "1904761.90",
+      "conditional_loss_usd": "95238.10",
+      "loss_components": {
+        "market_repricing": "0",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "95238.10"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Proxy depth; standalone exit."
+      ]
+    },
+    {
+      "position_id": "aave_01",
+      "gross_value_before_usd": "3000000.00",
+      "gross_value_after_usd": "3000000.00",
+      "executable_value_after_usd": "2857142.86",
+      "debt_after_usd": "1800000.00",
+      "net_equity_before_usd": "1200000.00",
+      "net_equity_after_usd": "1057142.86",
+      "conditional_loss_usd": "142857.14",
+      "loss_components": {
+        "market_repricing": "0",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "142857.14"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Proxy depth; standalone exit."
+      ]
+    },
+    {
+      "position_id": "morpho_01",
+      "gross_value_before_usd": "3000000.00",
+      "gross_value_after_usd": "3000000.00",
+      "executable_value_after_usd": "2790697.67",
+      "debt_after_usd": "2000000.00",
+      "net_equity_before_usd": "1000000.00",
+      "net_equity_after_usd": "790697.67",
+      "conditional_loss_usd": "209302.33",
+      "loss_components": {
+        "market_repricing": "0",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "209302.33"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Proxy depth; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
+      ]
+    },
+    {
+      "position_id": "pendle_01",
+      "gross_value_before_usd": "2000055.14",
+      "gross_value_after_usd": "2000055.14",
+      "executable_value_after_usd": "1777821.35",
+      "debt_after_usd": "0",
+      "net_equity_before_usd": "2000055.14",
+      "net_equity_after_usd": "1777821.35",
+      "conditional_loss_usd": "222233.79",
+      "loss_components": {
+        "market_repricing": "0",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "222233.79"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Proxy depth; standalone exit."
+      ]
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "6200055.14",
+    "net_equity_after_usd": "5279408.65",
+    "total_conditional_loss_usd": "920646.49",
+    "shared_liquidity_penalty_usd": "251015.13",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_demo_01",
+    "input_graph_id": "graph_demo_01"
+  },
+  "warnings": [
+    "Portfolio total uses joint exit per shared venue; it exceeds the sum of position losses (669,631.36) by shared_liquidity_penalty_usd."
+  ]
+}

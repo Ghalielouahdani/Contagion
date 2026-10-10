@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/risk_result.schema.json",
+  "title": "Risk result",
+  "description": "Output of the risk engine, one per scenario run. Owner: P2. Add a risk metric: risk_metrics/<type>.schema.json + $defs.risk_metric.oneOf. Add a loss component: just add the key (core four are required).",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "simulation_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "request_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "portfolio_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "scenario_id": {
+      "$ref": "common.schema.json#/$defs/scenario_id"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "currency": {
+      "const": "USD"
+    },
+    "positions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/position_impact"
+      }
+    },
+    "portfolio": {
+      "type": "object",
+      "properties": {
+        "net_equity_before_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "net_equity_after_usd": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "total_conditional_loss_usd": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "shared_liquidity_penalty_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "aggregation_status": {
+          "enum": [
+            "complete",
+            "pending_all_positions",
+            "insufficient_data"
+          ]
+        }
+      },
+      "required": [
+        "net_equity_before_usd",
+        "net_equity_after_usd",
+        "total_conditional_loss_usd",
+        "shared_liquidity_penalty_usd",
+        "aggregation_status"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "model_version": {
+          "type": "string"
+        },
+        "input_snapshot_id": {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        "input_graph_id": {
+          "$ref": "common.schema.json#/$defs/slug"
+        }
+      },
+      "required": [
+        "model_version",
+        "input_snapshot_id",
+        "input_graph_id"
+      ],
+      "additionalProperties": false
+    },
+    "warnings": {
+      "$ref": "common.schema.json#/$defs/warnings"
+    }
+  },
+  "required": [
+    "schema_version",
+    "simulation_id",
+    "request_id",
+    "portfolio_id",
+    "scenario_id",
+    "horizon_days",
+    "currency",
+    "positions",
+    "portfolio",
+    "provenance",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "risk_metric": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "risk_metrics/health_factor.schema.json"
+        },
+        {
+          "$ref": "risk_metrics/ltv.schema.json"
+        }
+      ]
+    },
+    "loss_components": {
+      "type": "object",
+      "description": "Must sum exactly to conditional_loss_usd. Extra components allowed.",
+      "properties": {
+        "market_repricing": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "backing_impairment": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "liquidation_penalty": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "execution_haircut": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        }
+      },
+      "required": [
+        "market_repricing",
+        "backing_impairment",
+        "liquidation_penalty",
+        "execution_haircut"
+      ],
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/decimal"
+      }
+    },
+    "position_impact": {
+      "type": "object",
+      "properties": {
+        "position_id": {
+          "$ref": "common.schema.json#/$defs/position_id"
+        },
+        "gross_value_before_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "gross_value_after_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "executable_value_after_usd": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "debt_after_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "net_equity_before_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "net_equity_after_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "conditional_loss_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "loss_components": {
+          "$ref": "#/$defs/loss_components"
+        },
+        "risk_metric": {
+          "$ref": "#/$defs/risk_metric"
+        },
+        "source_type": {
+          "$ref": "common.schema.json#/$defs/source_type"
+        },
+        "field_sources": {
+          "$ref": "common.schema.json#/$defs/field_sources"
+        },
+        "calculation_status": {
+          "enum": [
+            "illustrative",
+            "computed",
+            "insufficient_data"
+          ]
+        },
+        "warnings": {
+          "$ref": "common.schema.json#/$defs/warnings"
+        }
+      },
+      "required": [
+        "position_id",
+        "gross_value_before_usd",
+        "gross_value_after_usd",
+        "executable_value_after_usd",
+        "debt_after_usd",
+        "net_equity_before_usd",
+        "net_equity_after_usd",
+        "conditional_loss_usd",
+        "loss_components",
+        "risk_metric",
+        "source_type",
+        "calculation_status",
+        "warnings"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/scenario_request.schema.json",
+  "title": "Scenario request",
+  "description": "Input to the risk engine. Owner: P4 (UI) / P2 (semantics). Add a scenario: create scenarios/<id>.schema.json, add it to $defs.scenario.oneOf and to common scenario_id.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "request_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "portfolio_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "graph_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "snapshot_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "scenario": {
+      "$ref": "#/$defs/scenario"
+    },
+    "assumptions": {
+      "type": "object",
+      "properties": {
+        "probability": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal",
+          "description": "User-supplied scenario probability over the horizon; null = conditional stress only."
+        },
+        "source_type": {
+          "$ref": "common.schema.json#/$defs/source_type"
+        }
+      },
+      "required": [
+        "probability",
+        "source_type"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "request_id",
+    "portfolio_id",
+    "graph_id",
+    "snapshot_id",
+    "scenario",
+    "assumptions"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "scenario": {
+      "oneOf": [
+        {
+          "$ref": "scenarios/usde_depeg.schema.json"
+        },
+        {
+          "$ref": "scenarios/liquidity_crisis.schema.json"
+        }
+      ]
+    }
+  }
+}

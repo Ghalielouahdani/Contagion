@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/decision_result.schema.json",
+  "title": "Decision result",
+  "description": "STAY/REDUCE/EXIT comparison for one position under one scenario. Owner: P3.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "decision_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "simulation_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "portfolio_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "position_id": {
+      "$ref": "common.schema.json#/$defs/position_id"
+    },
+    "scenario_id": {
+      "$ref": "common.schema.json#/$defs/scenario_id"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "mode": {
+      "enum": [
+        "conditional_stress",
+        "expected_cost"
+      ]
+    },
+    "currency": {
+      "const": "USD"
+    },
+    "exit_options": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/exit_option"
+      }
+    },
+    "recommendation": {
+      "enum": [
+        "STAY",
+        "REDUCE",
+        "EXIT",
+        "INSUFFICIENT_DATA"
+      ]
+    },
+    "recommended_exit_fraction": {
+      "$ref": "common.schema.json#/$defs/nullable_decimal"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "warnings": {
+      "$ref": "common.schema.json#/$defs/warnings"
+    }
+  },
+  "required": [
+    "schema_version",
+    "decision_id",
+    "simulation_id",
+    "portfolio_id",
+    "position_id",
+    "scenario_id",
+    "horizon_days",
+    "mode",
+    "currency",
+    "exit_options",
+    "recommendation",
+    "recommended_exit_fraction",
+    "reason",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "exit_option": {
+      "type": "object",
+      "properties": {
+        "exit_fraction": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "fees_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "gas_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "price_impact_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "estimated_exit_cost_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "foregone_yield_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "residual_stress_loss_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "break_even_probability": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "objective_usd": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "quote_status": {
+          "$ref": "common.schema.json#/$defs/quote_status"
+        }
+      },
+      "required": [
+        "exit_fraction",
+        "fees_usd",
+        "gas_usd",
+        "price_impact_usd",
+        "estimated_exit_cost_usd",
+        "foregone_yield_usd",
+        "residual_stress_loss_usd",
+        "break_even_probability",
+        "objective_usd",
+        "quote_status"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

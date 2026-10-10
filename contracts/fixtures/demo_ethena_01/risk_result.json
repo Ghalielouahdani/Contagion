@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_sim_001",
+  "request_id": "sim_001",
+  "portfolio_id": "demo_ethena_01",
+  "scenario_id": "usde_depeg",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "ethena_susde_01",
+      "gross_value_before_usd": "2000000.00",
+      "gross_value_after_usd": "1900000.00",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0",
+      "net_equity_before_usd": "2000000.00",
+      "net_equity_after_usd": "1900000.00",
+      "conditional_loss_usd": "100000.00",
+      "loss_components": {
+        "market_repricing": "100000.00",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "0"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": []
+    },
+    {
+      "position_id": "aave_01",
+      "gross_value_before_usd": "3000000.00",
+      "gross_value_after_usd": "2850000.00",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "1800000.00",
+      "net_equity_before_usd": "1200000.00",
+      "net_equity_after_usd": "1050000.00",
+      "conditional_loss_usd": "150000.00",
+      "loss_components": {
+        "market_repricing": "150000.00",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "0"
+      },
+      "risk_metric": {
+        "type": "health_factor",
+        "before": "1.4167",
+        "after": "1.3458",
+        "threshold": "1.0",
+        "liquidatable": false,
+        "distance_to_liquidation_before_pct": "0.2941",
+        "distance_to_liquidation_after_pct": "0.2570"
+      },
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Liquidation threshold and oracle response are fixture assumptions."
+      ]
+    },
+    {
+      "position_id": "morpho_01",
+      "gross_value_before_usd": "3000000.00",
+      "gross_value_after_usd": "2850000.00",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "2000000.00",
+      "net_equity_before_usd": "1000000.00",
+      "net_equity_after_usd": "850000.00",
+      "conditional_loss_usd": "150000.00",
+      "loss_components": {
+        "market_repricing": "150000.00",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "0"
+      },
+      "risk_metric": {
+        "type": "ltv",
+        "before": "0.6667",
+        "after": "0.6667",
+        "threshold": "0.915",
+        "liquidatable": false,
+        "distance_to_liquidation_before_pct": "0.2714",
+        "distance_to_liquidation_after_pct": "0.2714"
+      },
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Oracle assumed not to reflect USDe market price (pass-through 0); if it does, LTV rises to 0.7018."
+      ]
+    },
+    {
+      "position_id": "pendle_01",
+      "gross_value_before_usd": "2000055.14",
+      "gross_value_after_usd": "1876734.57",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0",
+      "net_equity_before_usd": "2000055.14",
+      "net_equity_after_usd": "1876734.57",
+      "conditional_loss_usd": "123320.57",
+      "loss_components": {
+        "market_repricing": "123320.57",
+        "backing_impairment": "0",
+        "liquidation_penalty": "0",
+        "execution_haircut": "0"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "PT valued with implied-APY discount approximation."
+      ]
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "6200055.14",
+    "net_equity_after_usd": "5676734.57",
+    "total_conditional_loss_usd": "523320.57",
+    "shared_liquidity_penalty_usd": "0",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_demo_01",
+    "input_graph_id": "graph_demo_01"
+  },
+  "warnings": [
+    "Illustrative output from fixture assumptions; never display as real-market result."
+  ]
+}

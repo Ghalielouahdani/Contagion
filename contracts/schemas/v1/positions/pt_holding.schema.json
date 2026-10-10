@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/positions/pt_holding.schema.json",
+  "title": "Pendle PT holding position",
+  "description": "Holding of a Pendle principal token; pricing parameters live in the market snapshot.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "../common.schema.json#/$defs/position_base"
+    }
+  ],
+  "properties": {
+    "position_type": {
+      "const": "pt_holding"
+    },
+    "asset_symbol": {
+      "type": "string"
+    },
+    "quantity": {
+      "$ref": "../common.schema.json#/$defs/non_negative_decimal"
+    },
+    "quantity_unit": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "position_type",
+    "asset_symbol",
+    "quantity",
+    "quantity_unit"
+  ],
+  "unevaluatedProperties": false
+}
