@@ -21,12 +21,16 @@
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
         "execution_haircut": "0.00",
-        "negative_carry": "-205479.45"
+        "negative_carry": "-205479.45",
+        "bad_debt": "0.00",
+        "undercollateralized_debt": "0.00"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "illustrative",
-      "warnings": [],
+      "warnings": [
+        "Borrowers drift: 15% of the market's debt becomes liquidatable over the horizon (collateral/debt -4.70%)."
+      ],
       "contagion": {
         "paths": [
           {
@@ -71,12 +75,17 @@
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
         "execution_haircut": "0.00",
-        "negative_carry": "-205479.45"
+        "negative_carry": "-205479.45",
+        "bad_debt": "0.00",
+        "undercollateralized_debt": "0.00"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "illustrative",
-      "warnings": [],
+      "warnings": [
+        "Borrowers drift: 15% of the market's debt becomes liquidatable over the horizon (collateral/debt -4.70%).",
+        "Linked to asset:sUSDe (susde_yield) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
+      ],
       "contagion": {
         "paths": [
           {
@@ -152,9 +161,7 @@
         ],
         "evidence_confidence": "assumed",
         "graph_gaps": [],
-        "unmodeled_exposures": [
-          "The graph links position:lend_susde_01 to asset:sUSDe (susde_yield) but valuation shows no loss from it: exposure not modeled."
-        ]
+        "unmodeled_exposures": []
       }
     }
   ],

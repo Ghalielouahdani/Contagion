@@ -147,3 +147,27 @@ def test_shock_function_matches_the_formula():
 def test_analytics_run_on_lenders(suffix):
     result = analyze(load("portfolio"), load("market_snapshot"), load(f"scenario_request{suffix}"))
     assert result["headline"]["nav_usd"] == "10000000.00"
+
+
+def test_lender_threshold_exposure_is_not_flagged_unmodeled():
+    # Backing -10% on the exchange-rate market: collateral still covers every bucket (l <= 0.90), so no loss,
+    # but the exposure is modeled: a note, not an "exposure not modeled" flag.
+    request = load("scenario_request")
+    request["scenario"] = {"scenario_id": "node_shock", "horizon_days": 7, "parameters": {
+        "node_id": "offchain:ethena_backing", "loss_pct": "0.10", "oracle_pass_through_override": None}}
+    for name, req in (("node_shock", request), ("carry", load("scenario_request_carry"))):
+        result = by_id(run(req, load("dependency_graph")))["lend_susde_01"]
+        assert result["contagion"]["unmodeled_exposures"] == [], name
+        assert Decimal(result["loss_components"]["bad_debt"]) == 0, name
+
+
+def test_carry_lender_sees_borrowers_drift():
+    # Borrow 60% for 300 days: debt x1.493, sUSDe collateral flat at 0% APY -> buckets 0.80/0.86/0.90 go to
+    # LTV 1.19/1.28/1.34 > 0.915, and collateral / LIF no longer covers their debt: the lender takes bad debt.
+    request = load("scenario_request_carry")
+    request["scenario"]["horizon_days"] = 300
+    result = by_id(run(request))["lend_susde_01"]
+    assert Decimal(result["loss_components"]["bad_debt"]) > 0
+    # A rising sUSDe rate offsets part of the drift.
+    request = with_params(request, susde_apy=0.30)
+    assert Decimal(by_id(run(request))["lend_susde_01"]["loss_components"]["bad_debt"]) < Decimal(result["loss_components"]["bad_debt"])

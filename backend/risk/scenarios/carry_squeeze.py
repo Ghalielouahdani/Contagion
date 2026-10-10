@@ -95,6 +95,8 @@ def simulate(portfolio: Portfolio, snapshot: Snapshot, days: float, rates: Rates
         )
         if position.is_borrow:
             _liquidation(impact, position, snapshot, gross0, debt0)
+        elif lending.is_lender(position):
+            _borrower_drift(impact, position, snapshot, rates, t)
         outcome.impacts.append(impact)
     return outcome
 
@@ -117,6 +119,37 @@ def _liquidation(impact: PositionImpact, position: Position, snapshot: Snapshot,
         impact.loss_components["liquidation_penalty"] = metric.close_factor * impact.debt_after * metric.liquidation_incentive
         impact.warnings.append(
             f"Liquidatable from accrued debt alone: liquidators may repay {metric.close_factor:.0%} of the debt.")
+
+
+def _borrower_drift(impact: PositionImpact, position: Position, snapshot: Snapshot, rates: Rates, t: float) -> None:
+    """Lender: its borrowers' debt accrues the borrow APY while their collateral accrues (sUSDe) or not.
+    Every oracle sees both, so the drift is one collateral/debt factor applied to the borrower buckets."""
+    market = snapshot.market(position.position_id)
+    if market is None or market.get("collateral_asset") is None:
+        impact.warnings.append("No lending market data: borrowers' drift over the horizon not computed.")
+        return
+    supply, borrow = market.get("total_supply_assets"), market.get("total_borrow_assets")
+    if rates.borrow_override is not None:
+        borrow_apy = rates.borrow_override
+    elif supply is not None and borrow is not None and float(borrow) > 0:
+        # Snapshot supply APY = borrow APY x utilization (no protocol fee).
+        borrow_apy = snapshot.yields.get(position.position_id, {}).get("token_apy", 0.0) * float(supply) / float(borrow)
+    else:
+        borrow_apy = 0.0
+    collateral_growth = max(1 + rates.susde_apy * t, 0.0) if market["collateral_asset"] == "sUSDe" else 1.0
+    drift = collateral_growth / (1 + borrow_apy * t) - 1
+    shocked = lending.shock(position, market, 0.0, 1.0, drift)
+    if shocked is None:
+        impact.warnings.append("No borrower distribution: borrowers' drift over the horizon not computed.")
+        return
+    bad, under = shocked.share * shocked.bad_debt, shocked.share * shocked.undercollateralized
+    impact.loss_components["bad_debt"] = bad
+    impact.loss_components["undercollateralized_debt"] = under
+    impact.gross_after -= bad + under
+    if shocked.liquidatable_debt > 0:
+        impact.warnings.append(
+            f"Borrowers drift: {shocked.liquidatable_debt / shocked.total_debt:.0%} of the market's debt becomes liquidatable "
+            f"over the horizon (collateral/debt {drift:+.2%}).")
 
 
 def days_to_liquidation(position: Position, snapshot: Snapshot, rates: Rates) -> int | None:
