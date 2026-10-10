@@ -45,6 +45,8 @@ try {
       await assert.rejects(api.postAssistantMessage({ ...request, view }, 'fixture'), /requires Engine API/);
     }
     assert.equal(calls.length, 4);
+    await api.postAssistantMessage({ ...request, view: 'scenario' }, 'api');
+    assert.deepEqual(calls.at(-1).body, { message: request.message }, 'auto mode does not force three cases');
     globalThis.fetch = async () => new Response(JSON.stringify({ detail: 'Gemini unavailable' }), { status: 503 });
     await assert.rejects(api.postAssistantMessage({ ...request, view: 'scenario' }, 'api'), /Gemini unavailable/);
     const execution = await api.postAssistantMessage({ ...request, message: 'USDe -10 %, liquidité -80 %, 7 jours', view: 'decision' }, 'api');

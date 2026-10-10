@@ -1819,7 +1819,7 @@ function AssistantDock({
   executeAction: (action: DashboardAction) => void;
 }) {
   const isRiskAssistant = view !== "decision";
-  const [scenarioCount, setScenarioCount] = useState(3);
+  const [scenarioCount, setScenarioCount] = useState<number | undefined>(undefined);
   const assistantStatus = useQuery({ queryKey: ["risk-assistant-status"], queryFn: loadRiskAssistantStatus, enabled: open && isRiskAssistant && mode === "api", staleTime: 30000 });
   const news = useQuery({ queryKey: ["risk-market-news"], queryFn: loadRiskNews, enabled: open && isRiskAssistant && mode === "api", staleTime: 60000 });
   const [messages, setMessages] = useState<AssistantMessage[]>([
@@ -2106,7 +2106,7 @@ function AssistantDock({
             </header>
             <div className="assistant-messages" aria-live="polite">
               {isRiskAssistant && mode !== "api" ? <div className="assistant-message" data-role="assistant"><p>Scenario generation requires Engine API mode.</p><button className="primary-button" onClick={onApiMode}>Switch to Engine API</button></div> : null}
-              {isRiskAssistant ? <label className="assistant-case-count">Scenarios to generate <select value={scenarioCount} onChange={event => setScenarioCount(Number(event.target.value))}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option></select></label> : null}
+              {isRiskAssistant ? <label className="assistant-case-count">Scenarios to generate <select value={scenarioCount ?? "auto"} onChange={event => setScenarioCount(event.target.value === "auto" ? undefined : Number(event.target.value))}><option value="auto">Auto · 1–3 relevant cases</option><option value={1}>Up to 1</option><option value={2}>Up to 2</option><option value={3}>Up to 3</option></select></label> : null}
               {isRiskAssistant && mode === "api" ? <div className="microcopy">
                 {assistantStatus.data && !assistantStatus.data.configured ? <p role="alert">Set GEMINI_API_KEY on the backend to enable scenario generation.</p> : null}
                 <p>News: {news.isError ? "unavailable" : news.data?.status ?? "loading"}. {news.data?.status === "not_configured" ? "Typed events are hypothetical." : ""}</p>
