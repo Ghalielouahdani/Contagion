@@ -1,6 +1,6 @@
 # backend/api/ — FastAPI orchestration (owner: P4)
 
-Serves the routes the frontend calls (`frontend/src/data/api.ts`). Every route takes an optional `?set=<fixture set>` (default: env `FIXTURE_SET` or `demo_ethena_01`).
+Serves the routes the frontend calls (`frontend/src/data/api.ts`). Every route takes an optional `?set=<fixture set>` (default: env `FIXTURE_SET` or `stress_portfolio_01`).
 
 ```bash
 .venv/bin/uvicorn backend.api.main:app --reload --port 8000

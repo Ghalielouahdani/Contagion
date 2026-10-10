@@ -16,14 +16,14 @@ python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"     # Python 3.12 
 .venv/bin/uvicorn backend.api.main:app --reload --port 8000
 
 # dashboard on the live API (another terminal); /api is proxied to :8000
-cd frontend && VITE_USE_FIXTURES=false VITE_DISCOVERY=replay npm run dev     # http://localhost:5173
+cd frontend && npm run dev     # http://localhost:5173
 ```
 
 | Setting | Values |
 |---|---|
-| `VITE_USE_FIXTURES` | `true` (default): offline, engine results precomputed for every slider value · `false`: live API |
+| `VITE_USE_FIXTURES` | `false` (default): risk and execution computed by the API · `true`: recorded engine results offline |
 | `VITE_DISCOVERY` (API mode) | `stored` (default): the set's saved graph · `replay`: P1 discovery re-run from its recording (offline, ~1 s; sets with a recording) · `live`: P1 discovery on Ethereum now (`ETH_RPC_URL`, slower) |
-| Data set (sidebar selector, or `VITE_FIXTURE_SET`) | `demo_ethena_01` golden demo · `verified_2026_10_10` blueprint portfolio on markets verified on-chain · `live_ethena_01` same portfolio discovered by P1 · `verified_lending_2026_10_10` lenders on real Morpho markets with the real borrower distribution · `demo_lending_01` lender demo |
+| Portfolio (`VITE_FIXTURE_SET`) | `stress_portfolio_01` (default): six synthetic positions on recorded real Ethereum markets, shared by all seven scenarios; [composition and sources](docs/stress_portfolio.md). Archived sets are explicit developer overrides. |
 
 Scenarios, each with its own controls: A USDe depeg · B liquidity crisis · C both together · D carry squeeze · E governance or oracle change · F dependency-node failure · G liquidation cascade.
 

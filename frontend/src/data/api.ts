@@ -23,7 +23,7 @@ import type {
  */
 
 const FIXTURES = "../../../contracts/fixtures";
-export const defaultFixtureSet: string = import.meta.env.VITE_FIXTURE_SET || "demo_ethena_01";
+export const defaultFixtureSet: string = import.meta.env.VITE_FIXTURE_SET || "stress_portfolio_01";
 
 const smallFixtures = import.meta.glob(["../../../contracts/fixtures/*/*.json", "!**/risk_surface.json"], {
   eager: true,
@@ -151,7 +151,11 @@ export function presetInputs(scenario: ScenarioKind, set: string): Partial<Scena
 function baseScenarioRequest(scenario: ScenarioKind, set: string) {
   const request = smallFixtures[`${FIXTURES}/${set}/${fileByKind.scenario(scenario)}`];
   if (!request) throw new Error(`Scenario ${scenario} is unavailable in ${set}`);
-  return request as ReturnType<typeof createMockScenarioRequest>;
+  return request as {
+    schema_version: string; request_id: string; portfolio_id: string; graph_id: string; snapshot_id: string;
+    scenario: { scenario_id: ScenarioKind; horizon_days: number; parameters: Record<string, unknown> };
+    assumptions: { probability: string | null; source_type: string };
+  };
 }
 
 export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs, set: string): Promise<AppData> {
@@ -159,10 +163,12 @@ export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs
   if (mode === "fixture") return loadFixtureAppData(scenario, inputs, set);
 
   const request = buildScenarioRequest(scenario, inputs, set);
-  const [health, portfolio, graph, marketSnapshot, risk, analytics] = await Promise.all([
+  // Discovery activates the graph and snapshot consumed by every downstream call.
+  // Wait for it before simulating, especially when live discovery takes seconds.
+  const graph = await requestJson<DependencyGraph>(`${withSet("/api/v1/discover", set)}&discovery=${discoveryMode}`, post({ schema_version: "1.0" }));
+  const [health, portfolio, marketSnapshot, risk, analytics] = await Promise.all([
     requestJson<{ status: string; fixture_set?: string }>(withSet("/api/v1/health", set)),
     requestJson<Portfolio>(withSet("/api/v1/portfolio", set)),
-    requestJson<DependencyGraph>(`${withSet("/api/v1/discover", set)}&discovery=${discoveryMode}`, post({ schema_version: "1.0" })),
     requestJson<MarketSnapshot>(withSet("/api/v1/market-snapshot", set)),
     requestJson<RiskResult>(withSet("/api/v1/simulate", set), post(request)),
     requestJson<RiskAnalytics>(withSet("/api/v1/analyze", set), post(request)),
@@ -190,14 +196,14 @@ export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs
 }
 
 async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs, set: string): Promise<AppData> {
-  const base = buildFixtureAppData(scenario, set);
   const surface = await loadSurface(set);
   const points = surface?.scenarios[scenario]?.points;
-  if (!points?.length) return base;
+  if (!points?.length) throw new Error(`No computed risk surface for ${scenario} in ${set}`);
 
   const [live, ...others] = scenarioParams[scenario];
   const target = Number(live.value(inputs));
   const point = points.reduce((best, p) => (Math.abs(Number(p.value) - target) < Math.abs(Number(best.value) - target) ? p : best));
+  const base = buildFixtureAppData(scenario, set, point.decisions);
   const risk = withContagion(point.risk_result, base.risk);
   // Offline, only the first parameter is precomputed; say which other inputs are held at the preset.
   const preset = baseScenarioRequest(scenario, set);
@@ -240,8 +246,8 @@ function withContagion(result: RiskResult, reference: RiskResult): RiskResult {
 /** Offline analytics only exist at the depeg presets (-5% and -30%); never show them for another scenario. */
 function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs, set: string): RiskAnalytics | null {
   if (scenario !== "usde_depeg") return null;
-  const preset = loadFixture<RiskAnalytics | null>(set, "risk_analytics.json", () => null).data;
-  const severe = loadFixture<RiskAnalytics | null>(set, "risk_analytics_severe.json", () => null).data;
+  const preset = (smallFixtures[`${FIXTURES}/${set}/risk_analytics.json`] as RiskAnalytics | undefined) ?? null;
+  const severe = (smallFixtures[`${FIXTURES}/${set}/risk_analytics_severe.json`] as RiskAnalytics | undefined) ?? null;
   return severe && inputs.shockPct >= 17.5 ? severe : preset;
 }
 
@@ -273,14 +279,14 @@ function fixtureAssistantResponse(request: AssistantRequest): AssistantResponse 
   return parseAssistantIntent(request);
 }
 
-function buildFixtureAppData(scenario: ScenarioKind, set: string): AppData {
+function buildFixtureAppData(scenario: ScenarioKind, set: string, decisions: Record<string, DecisionResult>): AppData {
   const mockedFixtures: string[] = [];
-  const portfolio = readFixture<Portfolio>(set, "portfolio.json", () => createMockPortfolio(), mockedFixtures);
-  const graph = readFixture<DependencyGraph>(set, "dependency_graph.json", () => createMockDependencyGraph(portfolio), mockedFixtures);
-  const marketSnapshot = readFixture<MarketSnapshot>(set, "market_snapshot.json", () => createMockMarketSnapshot(), mockedFixtures);
-  const risk = readFixture<RiskResult>(set, fileByKind.risk(scenario), () => createMockRiskResult(portfolio, scenario), mockedFixtures);
-  // Only the depeg has a decision fixture; other scenarios get their decisions from the surface or the API.
-  const decision = loadFixture<DecisionResult>(set, fileByKind.decision(scenario), () => createMockDecisionResult(risk, scenario)).data;
+  const portfolio = readFixture<Portfolio>(set, "portfolio.json");
+  const graph = readFixture<DependencyGraph>(set, "dependency_graph.json");
+  const marketSnapshot = readFixture<MarketSnapshot>(set, "market_snapshot.json");
+  const risk = readFixture<RiskResult>(set, fileByKind.risk(scenario));
+  const decision = decisions.aave_01 ?? Object.values(decisions)[0];
+  if (!decision) throw new Error(`No computed execution decisions for ${scenario} in ${set}`);
 
   return {
     health: { status: "ok", mode: "fixture", source: "contracts fixtures", mockedFixtures, fixtureSet: set },
@@ -289,7 +295,7 @@ function buildFixtureAppData(scenario: ScenarioKind, set: string): AppData {
     marketSnapshot,
     risk,
     decision,
-    decisions: { [decision.position_id]: decision },
+    decisions,
     analytics: null,
     riskSource: "fixture",
     ignoredInputs: [],
@@ -297,232 +303,16 @@ function buildFixtureAppData(scenario: ScenarioKind, set: string): AppData {
   };
 }
 
-function readFixture<T>(set: string, fileName: string, fallback: () => T, mockedFixtures: string[]) {
-  const fixture = loadFixture(set, fileName, fallback);
-  if (fixture.mocked) mockedFixtures.push(fileName);
-  return fixture.data;
-}
-
-function loadFixture<T>(set: string, fileName: string, fallback: () => T): { data: T; mocked: boolean } {
-  const data = smallFixtures[`${FIXTURES}/${set}/${fileName}`] as T | undefined;
-  if (data !== undefined) return { data, mocked: false };
-  return { data: fallback(), mocked: true };
+function readFixture<T>(set: string, fileName: string): T {
+  const data = smallFixtures[`${FIXTURES}/${set}/${fileName}`];
+  if (data === undefined) throw new Error(`Missing ${fileName} in ${set}; no synthetic result was substituted.`);
+  return data as T;
 }
 
 function readFixtureDefault() {
   const value = import.meta.env.VITE_USE_FIXTURES;
-  if (value == null || value === "") return true;
+  if (value == null || value === "") return false;
   return !["0", "false", "off", "api"].includes(String(value).toLowerCase());
-}
-
-function createMockPortfolio(): Portfolio {
-  return {
-    schema_version: "1.0",
-    portfolio_id: "mock_ethena_01",
-    as_of: "2026-10-10T08:00:00Z",
-    quote_currency: "USD",
-    positions: [
-      {
-        position_id: "aave_01",
-        protocol: "aave",
-        chain_id: 1,
-        position_type: "collateralized_borrow",
-        market_id: "MOCK_AAVE_MARKET",
-        collateral_asset: "USDe",
-        debt_asset: "USDC",
-        gross_value_usd: "3000000.00",
-        debt_value_usd: "1800000.00",
-        net_equity_usd: "1200000.00",
-        exit_venue_id: "venue:usde_usdc",
-        data_origin: "mock",
-      },
-      {
-        position_id: "ethena_susde_01",
-        protocol: "ethena",
-        chain_id: 1,
-        position_type: "token_holding",
-        market_id: null,
-        asset_symbol: "sUSDe",
-        gross_value_usd: "2000000.00",
-        debt_value_usd: "0",
-        net_equity_usd: "2000000.00",
-        exit_venue_id: "venue:susde_usdc",
-        data_origin: "mock",
-      },
-    ],
-    totals: {
-      gross_value_usd: "5000000.00",
-      debt_value_usd: "1800000.00",
-      net_equity_usd: "3200000.00",
-    },
-  };
-}
-
-function createMockDependencyGraph(portfolio: Portfolio): DependencyGraph {
-  const positionNodes = portfolio.positions.map((position) => ({
-    id: `position:${position.position_id}`,
-    type: "position",
-    label: `${position.protocol} mock position`,
-  }));
-  return {
-    schema_version: "1.0",
-    graph_id: "mock_graph_01",
-    portfolio_id: portfolio.portfolio_id,
-    as_of: portfolio.as_of,
-    nodes: [
-      { id: "asset:USDe", type: "asset", label: "USDe" },
-      { id: "asset:sUSDe", type: "asset", label: "sUSDe" },
-      { id: "protocol:ethena", type: "protocol", label: "Ethena" },
-      { id: "venue:susde_usdc", type: "venue", label: "Mock sUSDe/USDC venue" },
-      ...positionNodes,
-    ],
-    edges: positionNodes.map((node, index) => ({
-      id: `mock-edge:${index + 1}`,
-      source: node.id,
-      target: "asset:USDe",
-      relation: "exposed_to",
-      risk_channel: "mock_dependency",
-      confidence: "assumed",
-      evidence: {
-        method: "generated_mock",
-        reference: "contracts fixture fallback",
-        observed_at: portfolio.as_of,
-        status: "mock",
-      },
-    })),
-    warnings: ["Mock data: dependency_graph.json was generated because the fixture was missing."],
-  };
-}
-
-function createMockMarketSnapshot(): MarketSnapshot {
-  return {
-    schema_version: "1.0",
-    snapshot_id: "mock_snapshot_01",
-    as_of: "2026-10-10T08:00:00Z",
-    chain_id: 1,
-    prices_usd: {
-      USDe: { value: "1.00", source_type: "mock" },
-      USDC: { value: "1.00", source_type: "mock" },
-      sUSDe: { value: "1.25", source_type: "mock" },
-    },
-    exchange_rates: {
-      sUSDe_USDe: { value: "1.25", source_type: "mock" },
-    },
-    markets: {},
-    yields: {},
-    exit_venues: {},
-    warnings: ["Mock data: market_snapshot.json was generated because the fixture was missing."],
-  };
-}
-
-function createMockScenarioRequest(scenario: ScenarioKind) {
-  return {
-    schema_version: "1.0",
-    request_id: scenario === "usde_depeg" ? "mock_sim_001" : "mock_sim_002",
-    portfolio_id: "mock_ethena_01",
-    graph_id: "mock_graph_01",
-    snapshot_id: "mock_snapshot_01",
-    scenario: {
-      scenario_id: scenario,
-      horizon_days: 7,
-      parameters:
-        scenario === "usde_depeg"
-          ? { usde_spot_shock_pct: "-0.05", susde_market_beta: "1.0", backing_impairment_pct: "0.00" }
-          : { exit_liquidity_reduction_pct: "0.80", fundamental_value_shock_pct: "0.00", quote_method: "generated_mock" },
-    },
-    assumptions: { probability: null, source_type: "mock" },
-  };
-}
-
-function createMockRiskResult(portfolio: Portfolio, scenario: ScenarioKind): RiskResult {
-  const multiplier = scenario === "usde_depeg" ? 0.05 : 0.08;
-  const positions = portfolio.positions.map((position) => {
-    const gross = Number(position.gross_value_usd);
-    const debt = Number(position.debt_value_usd);
-    const loss = gross * multiplier;
-    const afterGross = gross - loss;
-    const afterEquity = afterGross - debt;
-    return {
-      position_id: position.position_id,
-      gross_value_before_usd: gross.toFixed(2),
-      gross_value_after_usd: afterGross.toFixed(2),
-      executable_value_after_usd: scenario === "liquidity_crisis" ? (afterGross * 0.96).toFixed(2) : null,
-      debt_after_usd: debt.toFixed(2),
-      net_equity_before_usd: Number(position.net_equity_usd).toFixed(2),
-      net_equity_after_usd: afterEquity.toFixed(2),
-      conditional_loss_usd: loss.toFixed(2),
-      loss_components: {
-        market_repricing: scenario === "usde_depeg" ? loss.toFixed(2) : "0",
-        backing_impairment: "0",
-        liquidation_penalty: "0",
-        execution_haircut: scenario === "liquidity_crisis" ? loss.toFixed(2) : "0",
-      },
-      risk_metric: null,
-      source_type: "mock",
-      calculation_status: "mock",
-      warnings: [`Mock data: ${fileByKind.risk(scenario)} was generated because the fixture was missing.`],
-    };
-  });
-  const total = positions.reduce((sum, position) => sum + Number(position.conditional_loss_usd), 0);
-  return {
-    schema_version: "1.0",
-    simulation_id: scenario === "usde_depeg" ? "mock_result_001" : "mock_result_002",
-    request_id: scenario === "usde_depeg" ? "mock_sim_001" : "mock_sim_002",
-    portfolio_id: portfolio.portfolio_id,
-    scenario_id: scenario,
-    horizon_days: 7,
-    currency: "USD",
-    positions,
-    portfolio: {
-      total_conditional_loss_usd: total.toFixed(2),
-      shared_liquidity_penalty_usd: scenario === "liquidity_crisis" ? (total * 0.12).toFixed(2) : "0",
-      aggregation_status: "mock",
-    },
-    warnings: [`Mock data: ${fileByKind.risk(scenario)} was generated because the fixture was missing.`],
-  };
-}
-
-function createMockDecisionResult(risk: RiskResult, scenario: ScenarioKind): DecisionResult {
-  const selectedRisk = risk.positions.find((position) => position.position_id === "aave_01") ?? risk.positions[0];
-  const stressLoss = Number(selectedRisk?.conditional_loss_usd ?? risk.portfolio.total_conditional_loss_usd);
-  const exitOptions = ["0.00", "0.25", "0.50", "0.75", "1.00"].map((fraction) => {
-    const amount = Number(fraction);
-    const priceImpact = stressLoss * amount * amount * 0.18;
-    const fees = stressLoss * amount * 0.01;
-    const gas = amount === 0 ? 0 : 40;
-    return {
-      exit_fraction: fraction,
-      fees_usd: fees.toFixed(2),
-      gas_usd: gas.toFixed(2),
-      price_impact_usd: priceImpact.toFixed(2),
-      estimated_exit_cost_usd: (fees + gas + priceImpact).toFixed(2),
-      foregone_yield_usd: (stressLoss * amount * 0.0065).toFixed(2),
-      residual_stress_loss_usd: (stressLoss * (1 - amount)).toFixed(2),
-      break_even_probability: amount === 0 ? null : Math.min(0.95, (fees + gas + priceImpact) / Math.max(stressLoss * amount, 1)).toFixed(4),
-      objective_usd: null,
-      quote_status: "mock",
-    };
-  });
-
-  return {
-    schema_version: "1.0",
-    decision_id: scenario === "usde_depeg" ? "mock_decision_001" : "mock_decision_002",
-    simulation_id: risk.simulation_id,
-    portfolio_id: risk.portfolio_id,
-    position_id: selectedRisk?.position_id ?? "aave_01",
-    scenario_id: scenario,
-    horizon_days: risk.horizon_days,
-    mode: "conditional_stress",
-    currency: risk.currency,
-    exit_options: exitOptions,
-    recommendation: scenario === "liquidity_crisis" ? "REDUCE" : "INSUFFICIENT_DATA",
-    recommended_exit_fraction: scenario === "liquidity_crisis" ? "0.25" : null,
-    reason:
-      scenario === "liquidity_crisis"
-        ? "Mock decision: reducing 25% lowers residual stress while keeping immediate proxy costs below half of the selected position loss."
-        : "Mock decision: no scenario probability supplied, so the app shows break-even thresholds instead of inventing a conviction.",
-    warnings: [`Mock data: ${fileByKind.decision(scenario)} was generated because the fixture was missing.`],
-  };
 }
 
 /** Deterministic stress sweep: hold the submitted assumptions fixed and vary one factor. */

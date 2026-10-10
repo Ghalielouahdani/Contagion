@@ -51,7 +51,10 @@ try {
     }
     console.log(`${set.id}: ${scenarios.length} presets and stress comparisons checked`);
   }
-  assert.deepEqual(api.availableScenarios('live_ethena_01'), ['usde_depeg', 'liquidity_crisis']);
+  assert.deepEqual(api.availableScenarios('live_ethena_01'), ['usde_depeg', 'liquidity_crisis', 'liquidation_cascade']);
+  assert.equal(api.defaultFixtureSet, 'stress_portfolio_01');
+  assert.equal(api.defaultDataMode, 'api');
+  assert.equal(api.availableScenarios('stress_portfolio_01').length, 7);
   await assert.rejects(() => api.loadAppData('fixture', 'carry_squeeze', {}, 'live_ethena_01'));
 } finally {
   await server.close();

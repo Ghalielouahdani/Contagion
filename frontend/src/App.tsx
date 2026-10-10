@@ -165,6 +165,7 @@ function presetLabel(kind: ScenarioKind, set: string) {
 
 // "verified_lending_2026_10_10" -> "Verified · lending · 2026-10-10"
 function fixtureSetLabel(id: string) {
+  if (id === "stress_portfolio_01") return "Stress portfolio · Ethereum";
   const date = id.match(/(\d{4})_(\d{2})_(\d{2})$/);
   const words = id.replace(/_?\d{4}_\d{2}_\d{2}$/, "").replace(/_\d+$/, "").split("_");
   const label = words.map((word, i) => (i === 0 ? word[0].toUpperCase() + word.slice(1) : word)).join(" · ");
@@ -436,7 +437,7 @@ function App() {
             <p className="eyebrow">DeFi Contagion Explorer</p>
             <h1>{viewMeta[view].label}</h1>
             <p className="lead">{scenarioCopy[scenario].summary}</p>
-            <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.</p>
+            <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.{fixtureSet === "stress_portfolio_01" ? " Synthetic allocations on real markets · recorded market observations." : ""}</p>
             {hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {scenarioCopy[submitted.scenario].title}.</p> : null}
           </div>
           <div className="topbar-actions">
@@ -640,7 +641,7 @@ function Sidebar({
       <div className="sidebar-controls">
         <button className="mode-toggle" onClick={() => setMode(mode === "fixture" ? "api" : "fixture")} aria-pressed={mode === "fixture"}>
           <Database size={14} />
-          {mode === "fixture" ? "Fixtures ON" : "Live API"}
+          {mode === "fixture" ? "Recorded results" : "Engine API"}
         </button>
         <select
           className="mode-toggle set-select"
@@ -649,7 +650,7 @@ function Sidebar({
           aria-label="Data set"
           title={fixtureSets.find((set) => set.id === fixtureSet)?.description}
         >
-          {fixtureSets.map((set) => (
+          {fixtureSets.filter((set) => set.id === fixtureSet).map((set) => (
             <option key={set.id} value={set.id}>
               {fixtureSetLabel(set.id)}
             </option>

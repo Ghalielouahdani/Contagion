@@ -5,7 +5,7 @@ Serves the routes the frontend already calls (frontend/src/data/api.ts):
 - risk: the live engine, so every slider value is computed, not scaled from a fixture;
 - decision: P3 execution engine, consuming the matching risk result.
 
-Every route takes an optional ?set=<fixture set> (default: env FIXTURE_SET or demo_ethena_01),
+Every route takes an optional ?set=<fixture set> (default: env FIXTURE_SET or stress_portfolio_01),
 e.g. ?set=verified_2026_10_10 for the markets verified on-chain.
 
 Run: .venv/bin/uvicorn backend.api.main:app --reload --port 8000
@@ -32,7 +32,7 @@ from backend.risk.analytics.sensitivity import grid
 from backend.risk.model import Portfolio, ScenarioRequest, Snapshot
 
 CONTRACTS = Path(__file__).resolve().parents[2] / "contracts"
-DEFAULT_SET = os.getenv("FIXTURE_SET", "demo_ethena_01")
+DEFAULT_SET = os.getenv("FIXTURE_SET", "stress_portfolio_01")
 
 app = FastAPI(title="DeFi Contagion API", version="1.0")
 app.add_middleware(

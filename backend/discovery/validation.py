@@ -49,7 +49,8 @@ def consistency_errors(portfolio: dict, graph: dict, snapshot: dict) -> list[str
             errors.append(f"position {pid} missing from the graph")
         elif f"position:{pid}" not in exits:
             errors.append(f"position {pid} has no exits_via edge")
-        if p["exit_venue_id"] not in snapshot["exit_venues"]:
+        # Supplies exit through market withdrawals, not collateral DEX venues.
+        if p["position_type"] != "lending_supply" and p["exit_venue_id"] not in snapshot["exit_venues"]:
             errors.append(f"venue {p['exit_venue_id']} of {pid} missing from the snapshot")
     for pid in snapshot["markets"]:
         if pid not in positions:

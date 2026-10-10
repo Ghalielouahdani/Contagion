@@ -29,14 +29,14 @@ Read: blueprint sections 5 (user journey), 11 (data shown), 16 P4.
 
 ## Data source
 
-Two modes, same screens. Choose a scenario, adjust its parameters, then click **Run scenario** to submit it against the selected portfolio. The demo portfolio is the default for all six scenarios. Editing controls keeps the last run visible with a pending-changes notice; graph paths, decisions and assistant context describe that last submitted run.
+Two modes, same screens. Choose a scenario, adjust its parameters, then click **Run scenario** to submit it against the selected portfolio. The unified stress portfolio is the default for all seven scenarios. See [portfolio composition](../docs/stress_portfolio.md). Editing controls keeps the last run visible with a pending-changes notice; graph paths, decisions and assistant context describe that last submitted run.
 
 | Mode | How | Risk numbers |
 |---|---|---|
-| Fixture (default, offline) | `VITE_USE_FIXTURES=true` or unset | Engine results precomputed for every slider value (`risk_surface.json`, loaded on demand), at each scenario preset's horizon |
-| API | `VITE_USE_FIXTURES=false`, backend running | Live engine on the exact slider values, plus live analytics and per-position decisions |
+| Recorded results (offline) | `VITE_USE_FIXTURES=true` | Engine results precomputed for every slider value (`risk_surface.json`, loaded on demand), at each scenario preset's horizon |
+| API (default) | `VITE_USE_FIXTURES=false` or unset, backend running | Live engine on the exact slider values, plus live analytics and per-position decisions |
 
-`VITE_FIXTURE_SET` chooses the data set: `demo_ethena_01` (golden demo, default) or `verified_2026_10_10` (real markets verified on-chain, see `docs/verified_markets.md`).
+`stress_portfolio_01` is the single default portfolio: synthetic allocations on recorded real markets. `VITE_FIXTURE_SET` can explicitly select an archived development set for regression checks.
 
 Run the API mode:
 
@@ -44,6 +44,28 @@ Run the API mode:
 .venv/bin/uvicorn backend.api.main:app --reload --port 8000   # repo root
 cd frontend && VITE_USE_FIXTURES=false npm run dev              # /api is proxied to :8000
 ```
+
+API mode defaults to `VITE_DISCOVERY=stored`: computations run now, but market inputs
+come from the selected set's saved files. To refresh market inputs through Ethereum
+RPC and protocol APIs before each run, start the frontend with:
+
+```bash
+VITE_USE_FIXTURES=false VITE_DISCOVERY=live VITE_FIXTURE_SET=live_ethena_01 npm run dev
+```
+
+The frontend waits for discovery before requesting the snapshot, simulation and
+analytics, then requests execution decisions using the returned simulation ID.
+`ETH_RPC_URL` can be set on the backend process to override its public RPC.
+Discovery failures are displayed as errors; API requests do not fall back to demo
+results. The unified portfolio includes lender supplies, which the generic live
+discovery adapter does not yet support; use stored observations for that portfolio. `VITE_DISCOVERY=replay` runs discovery against a recorded cassette instead.
+
+Live discovery still uses the selected portfolio file for position quantities.
+It does not import a wallet's balances. Inspect snapshot and decision warnings:
+missing executable quotes may use declared liquidity proxies, and missing lender
+withdrawal fees or gas may be represented as zero with a warning. Stress shocks
+and scenario probabilities remain user assumptions. Execution produces decisions,
+not signed transactions or fork-based transaction simulations.
 
 Run keeps the Scenario Lab open with results, loss components and the Contagion Graph below: scenario factors and portfolio paths are highlighted, position nodes show their computed losses, and the overview lists equity and liquidation status. Switch between all portfolio paths and the selected position. The inspector reads propagation from the factor to the position; graph edges retain their dependency direction. Shared-venue costs and the combined crisis liquidation-selling increment are displayed separately. Filter propagation channels to isolate USDe price, backing, exchange rate, yields or exit liquidity. The stress comparison runs five or six deterministic shock levels on the same portfolio and plots portfolio and position losses. API mode holds submitted assumptions fixed; offline mode uses the preset surface. No probability distribution is implied. Multiple paths never duplicate a position loss. This is an explanation of the engine result, not an iterative liquidation cascade.
 
