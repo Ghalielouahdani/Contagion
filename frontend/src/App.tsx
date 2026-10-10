@@ -1,10 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
+  Brush,
   CartesianGrid,
   Cell,
   Line,
@@ -29,26 +28,32 @@ import {
   ArrowUpDown,
   BadgeCheck,
   BarChart3,
-  Check,
   ChevronDown,
   Command,
   Database,
+  Mic,
+  MicOff,
   GitBranch,
   Moon,
   Play,
   RefreshCw,
   Search,
+  Send,
   SlidersHorizontal,
+  Sparkles,
   Sun,
+  Volume2,
   WalletCards,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { loadAppData, marketSnapshot } from "./data/api";
+import { loadAppData, marketSnapshot, postAssistantMessage } from "./data/api";
 import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
 import type {
   AppData,
+  AssistantMessage,
+  DashboardAction,
   DataMode,
   DependencyGraph,
   GraphEdge,
@@ -62,6 +67,27 @@ import type {
 
 type Theme = "light" | "dark";
 type SortKey = "protocol" | "gross_value_usd" | "debt_value_usd" | "net_equity_usd";
+type AssistantState = "idle" | "listening" | "thinking" | "speaking";
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  }
+}
 
 const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string }> = {
   portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore" },
@@ -124,9 +150,12 @@ function App() {
   const [theme, setTheme] = useState<Theme>("light");
   const [selectedPosition, setSelectedPosition] = useState("aave_01");
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
+  const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
+  const [inspectedExitFraction, setInspectedExitFraction] = useState<string | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [hasRun, setHasRun] = useState(true);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const appQuery = useQuery({
     queryKey: ["app-data", mode, scenario],
@@ -157,6 +186,33 @@ function App() {
   function runScenario() {
     setHasRun(true);
     setView("decision");
+  }
+
+  function executeAction(action: DashboardAction) {
+    if (action.type === "navigate_view") setView(action.view);
+    if (action.type === "select_position") {
+      setSelectedPosition(action.positionId);
+      if (action.view) setView(action.view);
+    }
+    if (action.type === "select_scenario") {
+      setScenario(action.scenario);
+      if (action.run) runScenario();
+    }
+    if (action.type === "run_scenario") {
+      if (action.scenario) setScenario(action.scenario);
+      setHasRun(true);
+      setView("decision");
+    }
+    if (action.type === "open_graph_for_position") {
+      setSelectedPosition(action.positionId);
+      setView("graph");
+    }
+    if (action.type === "inspect_exit_fraction") {
+      setInspectedExitFraction(action.fraction);
+      setView("decision");
+    }
+    if (action.type === "toggle_data_mode") setMode((current) => (current === "fixture" ? "api" : "fixture"));
+    if (action.type === "toggle_theme") setTheme((current) => (current === "light" ? "dark" : "light"));
   }
 
   function reset() {
@@ -221,6 +277,8 @@ function App() {
                     selectedPosition={selectedPosition}
                     setSelectedPosition={setSelectedPosition}
                     setView={setView}
+                    hoveredPosition={hoveredPosition}
+                    setHoveredPosition={setHoveredPosition}
                   />
                 ) : null}
                 {view === "graph" ? (
@@ -232,6 +290,8 @@ function App() {
                       setSelectedPosition={setSelectedPosition}
                       selectedEdge={selectedEdge}
                       setSelectedEdge={setSelectedEdge}
+                      hoveredPosition={hoveredPosition}
+                      setHoveredPosition={setHoveredPosition}
                     />
                   </ReactFlowProvider>
                 ) : null}
@@ -242,6 +302,8 @@ function App() {
                     setScenario={setScenario}
                     selectedPosition={selectedPosition}
                     setSelectedPosition={setSelectedPosition}
+                    hoveredPosition={hoveredPosition}
+                    setHoveredPosition={setHoveredPosition}
                     runScenario={runScenario}
                   />
                 ) : null}
@@ -254,6 +316,10 @@ function App() {
                     selectedPortfolio={selectedPortfolio}
                     selectedPosition={selectedPosition}
                     setSelectedPosition={setSelectedPosition}
+                    hoveredPosition={hoveredPosition}
+                    setHoveredPosition={setHoveredPosition}
+                    inspectedExitFraction={inspectedExitFraction}
+                    setInspectedExitFraction={setInspectedExitFraction}
                     setView={setView}
                   />
                 ) : null}
@@ -271,7 +337,21 @@ function App() {
         data={data}
         setView={setView}
         setSelectedPosition={setSelectedPosition}
+        executeAction={executeAction}
       />
+      {data ? (
+        <AssistantDock
+          open={assistantOpen}
+          setOpen={setAssistantOpen}
+          stateData={data}
+          mode={mode}
+          view={view}
+          scenario={scenario}
+          selectedPosition={selectedPosition}
+          inspectedExitFraction={inspectedExitFraction}
+          executeAction={executeAction}
+        />
+      ) : null}
     </main>
   );
 }
@@ -358,11 +438,15 @@ function PortfolioDashboard({
   selectedPosition,
   setSelectedPosition,
   setView,
+  hoveredPosition,
+  setHoveredPosition,
 }: {
   data: AppData;
   selectedPosition: string;
   setSelectedPosition: (id: string) => void;
   setView: (view: View) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
 }) {
   const [filter, setFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("net_equity_usd");
@@ -387,6 +471,9 @@ function PortfolioDashboard({
               key={position.position_id}
               className="position-card"
               data-selected={selectedPosition === position.position_id}
+              data-highlighted={hoveredPosition === position.position_id}
+              onMouseEnter={() => setHoveredPosition(position.position_id)}
+              onMouseLeave={() => setHoveredPosition(null)}
               onClick={() => {
                 setSelectedPosition(position.position_id);
                 setView("decision");
@@ -445,7 +532,14 @@ function PortfolioDashboard({
           </thead>
           <tbody>
             {filtered.map((position) => (
-              <tr key={position.position_id} data-selected={position.position_id === selectedPosition} onClick={() => setSelectedPosition(position.position_id)}>
+              <tr
+                key={position.position_id}
+                data-selected={position.position_id === selectedPosition}
+                data-highlighted={hoveredPosition === position.position_id}
+                onMouseEnter={() => setHoveredPosition(position.position_id)}
+                onMouseLeave={() => setHoveredPosition(null)}
+                onClick={() => setSelectedPosition(position.position_id)}
+              >
                 <td>{compactId(position.position_id)}</td>
                 <td>{position.protocol}</td>
                 <td>{money(position.gross_value_usd)}</td>
@@ -483,6 +577,8 @@ function DependencyGraphView({
   setSelectedPosition,
   selectedEdge,
   setSelectedEdge,
+  hoveredPosition,
+  setHoveredPosition,
 }: {
   graph: DependencyGraph;
   scenario: ScenarioKind;
@@ -490,6 +586,8 @@ function DependencyGraphView({
   setSelectedPosition: (id: string) => void;
   selectedEdge: GraphEdge | null;
   setSelectedEdge: (edge: GraphEdge | null) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
 }) {
   const [search, setSearch] = useState("");
   const [enabledTypes, setEnabledTypes] = useState<Record<string, boolean>>({
@@ -523,6 +621,7 @@ function DependencyGraphView({
               className="flow-node"
               data-type={node.type}
               data-selected={node.id === `position:${selectedPosition}`}
+              data-highlighted={node.id === `position:${hoveredPosition}`}
               onClick={() => {
                 if (node.id.startsWith("position:")) setSelectedPosition(node.id.replace("position:", ""));
               }}
@@ -551,7 +650,7 @@ function DependencyGraphView({
   }, [criticalEdges, graph.edges, visibleNodeIds]);
 
   const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
-  const flowKey = `${scenario}-${selectedPosition}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
+  const flowKey = `${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
 
   return (
     <div className="graph-layout">
@@ -564,6 +663,10 @@ function DependencyGraphView({
           onNodeClick={(_, node) => {
             if (node.id.startsWith("position:")) setSelectedPosition(node.id.replace("position:", ""));
           }}
+          onNodeMouseEnter={(_, node) => {
+            if (node.id.startsWith("position:")) setHoveredPosition(node.id.replace("position:", ""));
+          }}
+          onNodeMouseLeave={() => setHoveredPosition(null)}
           fitView
           minZoom={0.35}
           maxZoom={1.35}
@@ -625,6 +728,8 @@ function ScenarioLab({
   setScenario,
   selectedPosition,
   setSelectedPosition,
+  hoveredPosition,
+  setHoveredPosition,
   runScenario,
 }: {
   data: AppData;
@@ -632,16 +737,20 @@ function ScenarioLab({
   setScenario: (scenario: ScenarioKind) => void;
   selectedPosition: string;
   setSelectedPosition: (id: string) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
   runScenario: () => void;
 }) {
   const [shock, setShock] = useState(5);
   const [horizon, setHorizon] = useState(7);
   const [liquidity, setLiquidity] = useState(80);
   const selectedRisk = data.risk.positions.find((position) => position.position_id === selectedPosition) ?? data.risk.positions[0];
+  const previewScale = scenario === "usde_depeg" ? shock / 5 : liquidity / 80;
   const valuationData = data.risk.positions.map((position) => ({
+    id: position.position_id,
     name: compactId(position.position_id),
     before: Number(position.net_equity_before_usd),
-    after: Number(position.net_equity_after_usd),
+    after: Number(position.net_equity_before_usd) - Number(position.conditional_loss_usd) * previewScale,
   }));
 
   return (
@@ -677,6 +786,7 @@ function ScenarioLab({
           <div>
             <p className="eyebrow">Animated before / after</p>
             <h2>Net equity under stress</h2>
+            <p className="microcopy">Fixture-scaled preview for slider interaction; canonical golden results stay in contracts/.</p>
           </div>
           <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} aria-label="Select position">
             {data.portfolio.positions.map((position) => (
@@ -688,13 +798,32 @@ function ScenarioLab({
         </div>
         <div className="chart-frame">
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={valuationData}>
+            <BarChart
+              data={valuationData}
+              onMouseMove={(state) => {
+                const active = (state as { activePayload?: Array<{ payload?: { id?: string } }> }).activePayload?.[0]?.payload;
+                if (active?.id) setHoveredPosition(active.id);
+              }}
+              onMouseLeave={() => setHoveredPosition(null)}
+              onClick={(state) => {
+                const active = (state as { activePayload?: Array<{ payload?: { id?: string } }> })?.activePayload?.[0]?.payload;
+                if (active?.id) setSelectedPosition(active.id);
+              }}
+            >
               <CartesianGrid stroke="var(--np-line)" vertical={false} />
               <XAxis dataKey="name" tickLine={false} axisLine={false} />
               <YAxis tickFormatter={(value) => money(value).replace(".00", "")} tickLine={false} axisLine={false} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="before" fill="var(--np-soft)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="after" fill="var(--np-strong)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="before" fill="var(--np-soft)" radius={[4, 4, 0, 0]}>
+                {valuationData.map((entry) => (
+                  <Cell key={`before-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
+                ))}
+              </Bar>
+              <Bar dataKey="after" fill="var(--np-strong)" radius={[4, 4, 0, 0]}>
+                {valuationData.map((entry) => (
+                  <Cell key={`after-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -720,6 +849,10 @@ function DecisionEngine({
   selectedPortfolio,
   selectedPosition,
   setSelectedPosition,
+  hoveredPosition,
+  setHoveredPosition,
+  inspectedExitFraction,
+  setInspectedExitFraction,
   setView,
 }: {
   data: AppData;
@@ -729,6 +862,10 @@ function DecisionEngine({
   selectedPortfolio?: PortfolioPosition;
   selectedPosition: string;
   setSelectedPosition: (id: string) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
+  inspectedExitFraction: string | null;
+  setInspectedExitFraction: (fraction: string | null) => void;
   setView: (view: View) => void;
 }) {
   if (!hasRun || !selectedRisk || !selectedPortfolio) {
@@ -736,6 +873,7 @@ function DecisionEngine({
   }
 
   const costData = data.decision.exit_options.map((option) => ({
+    fraction: option.exit_fraction,
     exit: percent(option.exit_fraction, 0),
     cost: Number(option.estimated_exit_cost_usd),
     residual: Number(option.residual_stress_loss_usd),
@@ -774,13 +912,34 @@ function DecisionEngine({
           </div>
           <div className="chart-frame">
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={costData}>
+              <LineChart
+                data={costData}
+                onClick={(state) => {
+                  const active = (state as { activePayload?: Array<{ payload?: { fraction?: string } }> })?.activePayload?.[0]?.payload;
+                  if (active?.fraction) setInspectedExitFraction(active.fraction);
+                }}
+              >
                 <CartesianGrid stroke="var(--np-line)" vertical={false} />
                 <XAxis dataKey="exit" tickLine={false} axisLine={false} />
                 <YAxis tickFormatter={(value) => money(value)} tickLine={false} axisLine={false} />
                 <Tooltip content={<ChartTooltip />} />
-                <Line type="monotone" dataKey="cost" stroke="var(--np-accent-coral)" strokeWidth={2} dot />
-                <Line type="monotone" dataKey="residual" stroke="var(--np-strong)" strokeWidth={2} dot />
+                <Line
+                  type="monotone"
+                  dataKey="cost"
+                  stroke="var(--np-accent-coral)"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="residual"
+                  stroke="var(--np-strong)"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Brush dataKey="exit" height={18} stroke="var(--np-strong)" travellerWidth={8} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -800,7 +959,13 @@ function DecisionEngine({
             </thead>
             <tbody>
               {data.decision.exit_options.map((option) => (
-                <tr key={option.exit_fraction}>
+                <tr
+                  key={option.exit_fraction}
+                  data-selected={inspectedExitFraction === option.exit_fraction}
+                  onMouseEnter={() => setInspectedExitFraction(option.exit_fraction)}
+                  onMouseLeave={() => setInspectedExitFraction(null)}
+                  onClick={() => setInspectedExitFraction(option.exit_fraction)}
+                >
                   <td>{percent(option.exit_fraction, 0)}</td>
                   <td>{money(option.estimated_exit_cost_usd)}</td>
                   <td>{money(option.residual_stress_loss_usd)}</td>
@@ -830,6 +995,20 @@ function DecisionEngine({
           Inspect causal path
         </button>
         <div className="divider" />
+        {inspectedExitFraction ? (
+          <div className="inspect-callout">
+            <p className="eyebrow">Inspected exit</p>
+            <h2>{percent(inspectedExitFraction, 0)}</h2>
+            <p>
+              {(() => {
+                const option = data.decision.exit_options.find((item) => item.exit_fraction === inspectedExitFraction);
+                return option
+                  ? `${money(option.estimated_exit_cost_usd)} immediate cost, ${money(option.residual_stress_loss_usd)} residual stress loss.`
+                  : "No fixture row for this exit fraction.";
+              })()}
+            </p>
+          </div>
+        ) : null}
         <p className="eyebrow">Loss breakdown</p>
         {Object.entries(selectedRisk.loss_components).map(([key, value]) => (
           <MetricPair key={key} label={labelize(key)} value={money(value)} />
@@ -848,6 +1027,7 @@ function CommandPalette({
   data,
   setView,
   setSelectedPosition,
+  executeAction,
 }: {
   open: boolean;
   query: string;
@@ -856,15 +1036,18 @@ function CommandPalette({
   data?: AppData;
   setView: (view: View) => void;
   setSelectedPosition: (id: string) => void;
+  executeAction: (action: DashboardAction) => void;
 }) {
   const commands = [
     ...Object.entries(viewMeta).map(([id, meta]) => ({ type: "page", label: meta.label, action: () => setView(id as View) })),
+    { type: "scenario", label: "Run Scenario A - USDe depeg", action: () => executeAction({ type: "run_scenario", scenario: "usde_depeg" }) },
+    { type: "scenario", label: "Run Scenario B - liquidity crisis", action: () => executeAction({ type: "run_scenario", scenario: "liquidity_crisis" }) },
+    { type: "decision", label: "Inspect 50% exit", action: () => executeAction({ type: "inspect_exit_fraction", fraction: "0.50" }) },
     ...(data?.portfolio.positions.map((position) => ({
       type: "position",
       label: `${position.protocol} - ${compactId(position.position_id)}`,
       action: () => {
-        setSelectedPosition(position.position_id);
-        setView("decision");
+        executeAction({ type: "select_position", positionId: position.position_id, view: "decision" });
       },
     })) ?? []),
   ].filter((command) => command.label.toLowerCase().includes(query.toLowerCase()));
@@ -906,6 +1089,300 @@ function CommandPalette({
         </motion.div>
       ) : null}
     </AnimatePresence>
+  );
+}
+
+function AssistantDock({
+  open,
+  setOpen,
+  stateData,
+  mode,
+  view,
+  scenario,
+  selectedPosition,
+  inspectedExitFraction,
+  executeAction,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  stateData: AppData;
+  mode: DataMode;
+  view: View;
+  scenario: ScenarioKind;
+  selectedPosition: string;
+  inspectedExitFraction: string | null;
+  executeAction: (action: DashboardAction) => void;
+}) {
+  const [messages, setMessages] = useState<AssistantMessage[]>([
+    {
+      id: "assistant-welcome",
+      role: "assistant",
+      content: "Ask about the selected position, dependency evidence, scenario loss, or an exit fraction. I only use the visible fixture data.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [assistantState, setAssistantState] = useState<AssistantState>("idle");
+  const [listening, setListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [amplitude, setAmplitude] = useState(0.12);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const first = panelRef.current?.querySelector<HTMLElement>("input, button");
+    first?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusables = Array.from(panelRef.current.querySelectorAll<HTMLElement>("button, input, textarea, [tabindex]:not([tabindex='-1'])")).filter(
+        (element) => !element.hasAttribute("disabled"),
+      );
+      const firstFocusable = focusables[0];
+      const lastFocusable = focusables[focusables.length - 1];
+      if (!firstFocusable || !lastFocusable) return;
+      if (event.shiftKey && document.activeElement === firstFocusable) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, setOpen]);
+
+  useEffect(() => {
+    return () => stopListening();
+  }, []);
+
+  async function submitMessage(raw: string) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    setInput("");
+    const userMessage: AssistantMessage = { id: crypto.randomUUID(), role: "user", content: trimmed };
+    setMessages((current) => [...current, userMessage]);
+    setAssistantState("thinking");
+    try {
+      const response = await postAssistantMessage(
+        {
+          message: trimmed,
+          view,
+          scenario,
+          selectedPosition,
+          inspectedExitFraction,
+          data: stateData,
+        },
+        mode,
+      );
+      const assistantMessage: AssistantMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.message,
+        action: response.action,
+      };
+      setMessages((current) => [...current, assistantMessage]);
+      if (response.action) executeAction(response.action);
+      speak(response.message);
+    } catch {
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "The assistant endpoint is unavailable. Fixture chat still works in fixture mode; API mode needs POST /api/v1/assistant.",
+        },
+      ]);
+      setAssistantState("idle");
+    }
+  }
+
+  function speak(text: string) {
+    if (!("speechSynthesis" in window)) {
+      setAssistantState("idle");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.onstart = () => setAssistantState("speaking");
+    utterance.onend = () => setAssistantState("idle");
+    utterance.onerror = () => setAssistantState("idle");
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function startListening() {
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setVoiceSupported(false);
+      return;
+    }
+    setVoiceSupported(true);
+    setListening(true);
+    setAssistantState("listening");
+    try {
+      const stream = await navigator.mediaDevices?.getUserMedia({ audio: true });
+      if (stream) {
+        const context = new AudioContext();
+        const source = context.createMediaStreamSource(stream);
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 128;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+        const values = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          analyser.getByteFrequencyData(values);
+          const avg = values.reduce((sum, value) => sum + value, 0) / values.length / 255;
+          setAmplitude(Math.max(0.08, Math.min(1, avg * 1.8)));
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      }
+    } catch {
+      setAmplitude(0.28);
+    }
+
+    const recognition = new Recognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join(" ");
+      setInput(transcript);
+      const last = event.results[event.results.length - 1];
+      if (last?.isFinal) submitMessage(transcript);
+    };
+    recognition.onend = () => {
+      setListening(false);
+      setAssistantState("idle");
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    recognition.onerror = () => {
+      setListening(false);
+      setAssistantState("idle");
+      setVoiceSupported(false);
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setListening(false);
+    setAssistantState("idle");
+    setAmplitude(0.12);
+  }
+
+  return (
+    <>
+      <button className="assistant-orb-button" onClick={() => setOpen(!open)} aria-label={open ? "Close assistant" : "Open assistant"}>
+        <AssistantOrb state={assistantState} amplitude={amplitude} />
+      </button>
+      <AnimatePresence>
+        {open ? (
+          <motion.aside
+            className="assistant-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="DeFi Contagion assistant"
+            ref={panelRef}
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <header className="assistant-header">
+              <div>
+                <p className="eyebrow">Assistant</p>
+                <h2>Ask from visible data</h2>
+              </div>
+              <button className="icon-button" onClick={() => setOpen(false)} aria-label="Close assistant">
+                <X size={15} />
+              </button>
+            </header>
+            <div className="assistant-messages" aria-live="polite">
+              {messages.map((message) => (
+                <div className="assistant-message" data-role={message.role} key={message.id}>
+                  <p>{message.content}</p>
+                  {message.caption && message.role === "assistant" ? <small>{message.caption}</small> : null}
+                </div>
+              ))}
+              {!voiceSupported ? <p className="speech-fallback">Voice is not available in this browser; typing still works.</p> : null}
+            </div>
+            <form
+              className="assistant-input"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitMessage(input);
+              }}
+            >
+              <button type="button" className="icon-button" onClick={listening ? stopListening : startListening} aria-label={listening ? "Stop listening" : "Start voice input"}>
+                {listening ? <MicOff size={15} /> : <Mic size={15} />}
+              </button>
+              <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask about Aave, exit cost, or the graph" />
+              <button type="submit" className="icon-button" aria-label="Send message">
+                <Send size={15} />
+              </button>
+              <button type="button" className="icon-button" onClick={() => speak(messages[messages.length - 1]?.content ?? "")} aria-label="Read last reply aloud">
+                <Volume2 size={15} />
+              </button>
+            </form>
+          </motion.aside>
+        ) : null}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: number }) {
+  const scale = 1 + amplitude * 0.12;
+  const shimmer = state === "thinking" ? 1 : state === "speaking" ? 0.74 : state === "listening" ? 0.52 : 0.22;
+  return (
+    <svg className="assistant-orb" viewBox="0 0 120 120" aria-hidden="true" style={{ ["--orb-scale" as string]: scale, ["--orb-shimmer" as string]: shimmer }}>
+      <defs>
+        <filter id="orb-soften">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" />
+        </filter>
+        <linearGradient id="orb-ink" x1="20%" x2="85%" y1="10%" y2="90%">
+          <stop offset="0%" stopColor="var(--np-accent-periwinkle)" />
+          <stop offset="36%" stopColor="var(--np-accent-lilac)" />
+          <stop offset="70%" stopColor="var(--np-accent-coral)" />
+          <stop offset="100%" stopColor="var(--np-accent-gold)" />
+        </linearGradient>
+      </defs>
+      <motion.path
+        filter="url(#orb-soften)"
+        fill="url(#orb-ink)"
+        animate={{
+          d: [
+            "M60 8C82 7 109 26 110 56C111 86 88 112 58 112C28 112 9 88 10 59C11 30 38 9 60 8Z",
+            "M58 9C88 7 109 32 106 62C103 92 82 110 55 111C28 112 8 84 13 55C18 27 35 11 58 9Z",
+            "M60 8C82 7 109 26 110 56C111 86 88 112 58 112C28 112 9 88 10 59C11 30 38 9 60 8Z",
+          ],
+          scale,
+        }}
+        transition={{ duration: state === "listening" ? 0.7 : 5.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle cx="72" cy="36" r="13" fill="rgba(255,255,255,0.52)" animate={{ opacity: [0.28, 0.62, 0.28], x: [0, -8, 0] }} transition={{ duration: 3.6, repeat: Infinity }} />
+      <motion.path
+        d="M35 67C48 76 72 75 88 61"
+        fill="none"
+        stroke="rgba(255,255,255,0.72)"
+        strokeLinecap="round"
+        strokeWidth="3"
+        animate={{ pathLength: [0.25, 1, 0.25], opacity: [0.2, shimmer, 0.2] }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <Sparkles className="orb-icon" size={18} />
+    </svg>
   );
 }
 

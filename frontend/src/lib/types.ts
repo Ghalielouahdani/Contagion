@@ -51,3 +51,35 @@ export type AppData = {
   risk: RiskResult;
   decision: DecisionResult;
 };
+
+export type DashboardAction =
+  | { type: "navigate_view"; view: View }
+  | { type: "select_position"; positionId: string; view?: View }
+  | { type: "select_scenario"; scenario: ScenarioKind; run?: boolean }
+  | { type: "run_scenario"; scenario?: ScenarioKind }
+  | { type: "open_graph_for_position"; positionId: string }
+  | { type: "inspect_exit_fraction"; fraction: string }
+  | { type: "toggle_data_mode" }
+  | { type: "toggle_theme" };
+
+export type AssistantMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  caption?: string;
+  action?: DashboardAction;
+};
+
+export type AssistantRequest = {
+  message: string;
+  view: View;
+  scenario: ScenarioKind;
+  selectedPosition: string;
+  inspectedExitFraction?: string | null;
+  data: AppData;
+};
+
+export type AssistantResponse = {
+  message: string;
+  action?: DashboardAction;
+};
