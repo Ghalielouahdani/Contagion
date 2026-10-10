@@ -32,6 +32,15 @@ DEPEG_FACTORS = {
                          lambda g, p: f"market:{p.position_id}" if p.position_type == "pt_holding" else None),
 }
 NEUTRAL = {"usde_spot_shock_pct": 0.0, "backing_impairment_pct": 0.0, "susde_rate_cut_pct": 0.0, "pt_implied_apy_shock": 0.0}
+DEPEG_LIKE = ("usde_depeg", "combined_crisis", "governance_change")  # scenarios that apply the scenario A shocks
+EXIT_LIQUIDITY = ("liquidity_crisis", "combined_crisis")
+
+# Carry squeeze factors: parameter, (neutral, probe) values, root node.
+CARRY_FACTORS = {
+    "susde_yield": ("susde_apy", (0.0, -PROBE), lambda g, p: "asset:sUSDe"),
+    "borrow_rate": ("borrow_apy_override", (0.0, PROBE),
+                    lambda g, p: f"asset:{p.debt_asset}" if p.is_borrow else None),
+}
 
 
 def _position_node(position_id: str) -> str:
@@ -61,6 +70,38 @@ def _depeg_exposures(portfolio: Portfolio, snapshot: Snapshot, request: Scenario
     return exposures
 
 
+def _carry_exposures(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> dict[str, dict[str, bool]]:
+    """factor -> position_id -> does the carry change when only this rate moves?"""
+    run = scenarios.get("carry_squeeze")
+    base = {"susde_apy": 0.0, "borrow_apy_override": 0.0, "collateral_supply_apy_override": 0.0, "pt_implied_apy_shock": 0.0}
+    exposures = {}
+    for factor, (param, (neutral, probe), _) in CARRY_FACTORS.items():
+        losses = []
+        for value in (neutral, probe):
+            outcome = run(portfolio, snapshot, replace(request, parameters={**base, param: value}))
+            losses.append({i.position_id: sum(i.loss_components.values()) for i in outcome.impacts})
+        exposures[factor] = {pid: abs(losses[1][pid] - losses[0][pid]) > EXPOSED_USD for pid in losses[0]}
+    return exposures
+
+
+def _factor_checks(outcome: ScenarioOutcome, portfolio: Portfolio, snapshot: Snapshot,
+                   request: ScenarioRequest) -> list[tuple[str, object, dict[str, bool]]]:
+    """(factor, root(graph, position) -> node | None, position_id -> exposed in valuation) for the scenario."""
+    sid = request.scenario_id
+    if sid in DEPEG_LIKE:
+        exposures = _depeg_exposures(portfolio, snapshot, request)
+        return [(f, DEPEG_FACTORS[f][2], exposures[f]) for f, (param, _, _) in DEPEG_FACTORS.items()
+                if (request.param(param, 0.0) or 0.0) != 0]
+    if sid == "carry_squeeze":
+        exposures = _carry_exposures(portfolio, snapshot, request)
+        return [(f, CARRY_FACTORS[f][2], exposures[f]) for f in CARRY_FACTORS]
+    if sid == "node_shock":
+        node = request.parameters["node_id"]
+        exposed = {i.position_id: abs(sum(i.loss_components.values())) > EXPOSED_USD for i in outcome.impacts}
+        return [("node_shock", lambda g, p: node, exposed)]
+    return []
+
+
 def annotate(outcome: ScenarioOutcome, graph: Graph | None, portfolio: Portfolio, snapshot: Snapshot,
              request: ScenarioRequest) -> None:
     if graph is None:
@@ -70,11 +111,9 @@ def annotate(outcome: ScenarioOutcome, graph: Graph | None, portfolio: Portfolio
 
     warnings: list[str] = []
     impacts = {i.position_id: i for i in outcome.impacts}
-    if request.scenario_id == "usde_depeg":
-        active = [f for f, (param, _, _) in DEPEG_FACTORS.items() if (request.param(param, 0.0) or 0.0) != 0]
-        exposures = _depeg_exposures(portfolio, snapshot, request)
-    else:
-        active, exposures = [], {}
+    checks = _factor_checks(outcome, portfolio, snapshot, request)
+    if request.scenario_id == "node_shock" and not graph.has(request.parameters["node_id"]):
+        warnings.append(f"{request.parameters['node_id']} is not in the dependency graph: every loss is a graph gap.")
 
     for position in portfolio.positions:
         node = _position_node(position.position_id)
@@ -86,12 +125,12 @@ def annotate(outcome: ScenarioOutcome, graph: Graph | None, portfolio: Portfolio
             continue
 
         best_per_factor = []
-        for factor in active:
-            root = DEPEG_FACTORS[factor][2](graph, position)
+        for factor, root_of, exposures in checks:
+            root = root_of(graph, position)
             if root is None:
                 continue
             paths = graph.paths(node, root)
-            exposed = exposures[factor][position.position_id]
+            exposed = exposures[position.position_id]
             if exposed and not paths:
                 block["graph_gaps"].append(
                     f"Valuation shows {factor} losses but the graph has no path from {node} to {root}: dependency missing from the graph.")
@@ -102,7 +141,7 @@ def annotate(outcome: ScenarioOutcome, graph: Graph | None, portfolio: Portfolio
                 block["paths"].extend(_path_row(graph, factor, root, p) for p in paths)
                 best_per_factor.append(max((path_confidence(p) for p in paths), key=CONFIDENCE_RANK.__getitem__))
 
-        if request.scenario_id == "liquidity_crisis":
+        if request.scenario_id in EXIT_LIQUIDITY:
             venues = graph.exits_of(node)
             if position.exit_venue_id not in venues:
                 block["graph_gaps"].append(

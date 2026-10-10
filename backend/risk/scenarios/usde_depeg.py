@@ -97,15 +97,7 @@ def _apply_liquidation_metric(impact: PositionImpact, position: Position, snapsh
         return collateral_after, read_metric(market, position.collateral_quantity * price0, collateral_after, debt0, impact.debt_after)
 
     oracle_collateral, metric = reading(pass_through)
-    impact.risk_metric = {
-        "type": metric.type,
-        "before": metric.before,
-        "after": metric.after,
-        "threshold": metric.threshold,
-        "liquidatable": metric.liquidatable,
-        "distance_to_liquidation_before_pct": metric.distance_before,
-        "distance_to_liquidation_after_pct": metric.distance_after,
-    }
+    impact.risk_metric = metric.as_contract()
     impact.internals = {"market": market, "oracle_collateral_after": oracle_collateral, "metric": metric}
 
     if metric.liquidatable:

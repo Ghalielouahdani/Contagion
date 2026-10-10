@@ -52,6 +52,18 @@ class MetricReading:
     liquidation_incentive: float
     close_factor: float  # share of debt liquidators may repay at the post-shock metric
 
+    def as_contract(self) -> dict:
+        """risk_metric block of risk_result (unrounded; report.py rounds)."""
+        return {
+            "type": self.type,
+            "before": self.before,
+            "after": self.after,
+            "threshold": self.threshold,
+            "liquidatable": self.liquidatable,
+            "distance_to_liquidation_before_pct": self.distance_before,
+            "distance_to_liquidation_after_pct": self.distance_after,
+        }
+
 
 @dataclass(frozen=True)
 class MetricRule:

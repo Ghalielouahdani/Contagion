@@ -122,6 +122,21 @@ Le module `backend/risk/analytics` traduit chaque scénario en **dollars** pour 
 - Les coûts de sortie reposent sur une profondeur *proxy* ; avec de vraies cotations (P1/P3) les économies changeront.
 - Les économies du dé-risquage ciblé sont modestes sur ces fixtures (positions aux coûts proches) ; elles grandissent quand les liquidités des venues diffèrent fortement.
 
+## Scénarios supplémentaires (fait)
+
+A et B tournent séparément ; une vraie crise ne le fait pas. Quatre scénarios s'ajoutent au registre, chacun avec son schéma, sa fixture, son résultat golden et un bloc `comparison` : une ou plusieurs exécutions de référence sur le même portefeuille, et `excess_loss_usd` = ce que le scénario ajoute par-dessus.
+
+| Scénario              | Mécanisme                                                                                                   | Chiffre clé (fixtures)                                                                 |
+|-----------------------|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| C `combined_crisis`   | Depeg A, puis sortie en profondeur de crise **derrière les ventes des liquidateurs** sur le même venue      | −30 % / −80 % : perte 3,51 M$, dont **34,5 k$ de contagion** par la liquidation Aave (sortie 56,4 k$ au lieu de 21,8 k$) ; A + B additionnés surestiment de 473 k$ |
+| D `carry_squeeze`     | Funding négatif (APY sUSDe 0) + emprunt USDC à 60 % sur `horizon_days`, sans aucun mouvement de prix        | 30 jours : perte 161 k$ (2,6 % de NAV), **199 k$** de carry perdu vs les taux actuels ; Morpho liquidable en **227 jours**, Aave en **288** |
+| E `governance_change` | Baisse du seuil de liquidation et/ou bascule d'oracle, puis le depeg                                         | −27 % survivable aujourd'hui ; après LT −5 pts + oracle Morpho au prix de marché : Aave et Morpho liquidés, **97 k$** de pénalités dues au vote seul |
+| F `node_shock`        | Choc sur un nœud du graphe : backing/custodian → perte de backing ; sUSDe → baisse du taux ; stablecoin → depeg côté dette ; protocole/marché/PT → défaillance (plafonnée à la net equity) | Backing −10 % : 1,0 M$ de perte, LTV Morpho inchangée (oracle immunisé) ; USDC −10 % : **gain** de 380 k$ (dette) |
+
+Chaque perte reste recoupée avec le graphe (`contagion.annotate`) : nouveaux facteurs `susde_yield`, `borrow_rate`, `node_shock`. Tornado et heatmap par défaut existent pour les quatre.
+
+Limites : C fait un seul tour (l'impact de prix des liquidations ne remonte pas dans les oracles : c'est la cascade, étape 4) ; D en intérêts simples ; F protocole = part supposée de la valeur, pas un exploit modélisé ; le depeg USDC ne modélise pas l'USDC du backing Ethena. **P1 doit vérifier** la composition du backing, les parts des custodians et les kinks des modèles de taux Aave/Morpho.
+
 ## Niveau 3 : la finition qui fait pro
 
 ### 6. Traçabilité de chaque chiffre
@@ -168,6 +183,7 @@ backend/risk/
 3. [x] Grilles de sensibilité + tornado
 4. [ ] Cascade de liquidations
 5. [ ] Presets historiques + traçabilité complète
+6. [x] Scénarios C–F : crise combinée, carry squeeze, gouvernance, choc de nœud
 
 ## Questions ouvertes
 

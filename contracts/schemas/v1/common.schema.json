@@ -69,7 +69,11 @@
     "scenario_id": {
       "enum": [
         "usde_depeg",
-        "liquidity_crisis"
+        "liquidity_crisis",
+        "combined_crisis",
+        "carry_squeeze",
+        "governance_change",
+        "node_shock"
       ]
     },
     "source_type": {

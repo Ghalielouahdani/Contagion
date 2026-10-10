@@ -59,6 +59,18 @@
         },
         {
           "$ref": "scenarios/liquidity_crisis.schema.json"
+        },
+        {
+          "$ref": "scenarios/combined_crisis.schema.json"
+        },
+        {
+          "$ref": "scenarios/carry_squeeze.schema.json"
+        },
+        {
+          "$ref": "scenarios/governance_change.schema.json"
+        },
+        {
+          "$ref": "scenarios/node_shock.schema.json"
         }
       ]
     }

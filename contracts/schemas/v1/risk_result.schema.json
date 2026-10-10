@@ -118,6 +118,48 @@
         "warnings"
       ],
       "additionalProperties": false
+    },
+    "comparison": {
+      "type": "object",
+      "description": "Optional. Reference runs on the same portfolio and what this scenario adds on top: excess_loss_usd = total_conditional_loss_usd - sum of the runs (null when the total is incomplete).",
+      "properties": {
+        "runs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "run_id": {
+                "$ref": "common.schema.json#/$defs/slug"
+              },
+              "description": {
+                "type": "string"
+              },
+              "total_conditional_loss_usd": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              }
+            },
+            "required": [
+              "run_id",
+              "description",
+              "total_conditional_loss_usd"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "excess_loss_usd": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "excess_meaning": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "runs",
+        "excess_loss_usd",
+        "excess_meaning"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -255,7 +297,10 @@
             "usde_backing",
             "susde_exchange_rate",
             "pt_implied_yield",
-            "exit_liquidity"
+            "exit_liquidity",
+            "susde_yield",
+            "borrow_rate",
+            "node_shock"
           ]
         },
         "root": {

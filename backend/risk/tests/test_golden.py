@@ -39,16 +39,20 @@ def _is_number(s: str) -> bool:
         return False
 
 
+NEW_SCENARIOS = ["combined", "carry", "governance", "node_shock"]
+
+
 @pytest.mark.parametrize("request_name, golden_name", [
     ("scenario_request", "risk_result"),
     ("scenario_request_liquidity", "risk_result_liquidity"),
-])
+] + [(f"scenario_request_{n}", f"risk_result_{n}") for n in NEW_SCENARIOS])
 def test_reproduces_golden_fixture(request_name, golden_name):
     result = simulate(load("portfolio"), load("market_snapshot"), load(request_name), load("dependency_graph"))
     assert_same(result, load(golden_name))
 
 
-@pytest.mark.parametrize("request_name", ["scenario_request", "scenario_request_liquidity"])
+@pytest.mark.parametrize("request_name", ["scenario_request", "scenario_request_liquidity"]
+                         + [f"scenario_request_{n}" for n in NEW_SCENARIOS])
 def test_output_validates_against_schema(request_name):
     registry = Registry()
     for path in SCHEMAS.rglob("*.schema.json"):

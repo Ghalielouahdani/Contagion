@@ -27,7 +27,7 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, **ov
 def neutral_depeg(request: ScenarioRequest) -> ScenarioRequest:
     """A no-shock depeg request on the same portfolio/snapshot, used to probe single risk factors."""
     keep = {}
-    if request.scenario_id == "usde_depeg":
+    if request.scenario_id in ("usde_depeg", "combined_crisis", "node_shock"):
         # Keep the user's structural assumptions (sUSDe beta, oracle override), drop the shocks.
         keep = {k: request.parameters[k] for k in ("susde_market_beta", "oracle_pass_through_override") if k in request.parameters}
     return replace(request, scenario_id="usde_depeg", parameters={**NEUTRAL_DEPEG, **keep})

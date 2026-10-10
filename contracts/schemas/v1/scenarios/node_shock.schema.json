@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/scenarios/node_shock.schema.json",
+  "title": "Scenario F - dependency-graph node shock",
+  "description": "Shock one graph node. Ethena/backing/custodian nodes: USDe backing loss; asset:sUSDe: rate cut; stablecoin: debt-side depeg; protocol/market/PT: protocol failure (borrowers lose at most net equity).",
+  "type": "object",
+  "properties": {
+    "scenario_id": {
+      "const": "node_shock"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "$ref": "../common.schema.json#/$defs/node_id",
+          "description": "Node of the dependency graph, e.g. offchain:ethena_backing, protocol:pendle, asset:USDC."
+        },
+        "loss_pct": {
+          "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+          "description": "Fraction of value lost at the node, e.g. 0.10."
+        },
+        "oracle_pass_through_override": {
+          "$ref": "../common.schema.json#/$defs/nullable_decimal",
+          "description": "null = use each market's oracle_pass_through from the snapshot."
+        }
+      },
+      "required": [
+        "node_id",
+        "loss_pct",
+        "oracle_pass_through_override"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "scenario_id",
+    "horizon_days",
+    "parameters"
+  ],
+  "additionalProperties": false
+}

@@ -17,7 +17,8 @@ RATIO = Decimal("0.0001")
 
 
 def money(x: float) -> Decimal:
-    return Decimal(repr(float(x))).quantize(CENT, ROUND_HALF_UP)
+    value = Decimal(repr(float(x))).quantize(CENT, ROUND_HALF_UP)
+    return value if value else abs(value)  # never publish "-0.00" (float noise around zero)
 
 
 def ratio(x: float) -> Decimal:
@@ -94,6 +95,17 @@ def build_risk_result(request: ScenarioRequest, snapshot: Snapshot, outcome: Sce
         },
         "warnings": warnings,
     }
+    if outcome.comparison is not None:
+        runs = [(run, money(run["total_loss"])) for run in outcome.comparison["runs"]]
+        result["comparison"] = {
+            "runs": [
+                {"run_id": run["run_id"], "description": run["description"], "total_conditional_loss_usd": str(loss)}
+                for run, loss in runs
+            ],
+            # Published total minus the reference runs, from rounded figures so it reconciles to the cent.
+            "excess_loss_usd": str(total - sum((loss for _, loss in runs), Decimal(0))) if complete else None,
+            "excess_meaning": outcome.comparison["excess_meaning"],
+        }
     if outcome.contagion is not None:
         result["contagion"] = {
             **outcome.contagion,

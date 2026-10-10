@@ -22,7 +22,7 @@ contracts/
 │   ├── fixture_set.schema.json         manifest of a fixture set
 │   ├── positions/      token_holding · collateralized_borrow · pt_holding
 │   ├── markets/        aave_v3_reserve · morpho_blue_market · pendle_pt_market
-│   ├── scenarios/      usde_depeg · liquidity_crisis
+│   ├── scenarios/      usde_depeg · liquidity_crisis · combined_crisis · carry_squeeze · governance_change · node_shock
 │   └── risk_metrics/   health_factor · ltv
 └── fixtures/
     └── demo_ethena_01/                 one self-consistent data set
@@ -30,6 +30,7 @@ contracts/
         ├── portfolio.json · dependency_graph.json · market_snapshot.json
         ├── scenario_request.json · scenario_request_liquidity.json
         ├── scenario_request_severe.json    demo preset: −30% depeg, 6h oracle lag
+        ├── scenario_request_{combined,carry,governance,node_shock}.json + risk_result_<same>.json   scenarios C–F
         ├── risk_result.json · risk_result_liquidity.json · decision_result.json
         └── risk_analytics.json · risk_analytics_severe.json   money value for the fund (P2)
     verified_2026_10_10/                fictional holdings on real markets verified on-chain (see docs/verified_markets.md)

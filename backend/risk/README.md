@@ -65,6 +65,8 @@ value = analyze(portfolio, market_snapshot, scenario_request)  # risk_analytics 
 
 Code map: `model.py` (contract views) · `pricing.py` (market state, PT, oracle) · `metrics.py` (HF/LTV registry per market_kind) · `liquidity.py` (haircuts, joint exits) · `scenarios/` (one file per scenario + registry) · `report.py` (rounding that reconciles to the cent) · `engine.py` (entry point) · `graph.py` + `contagion.py` (contagion paths from the dependency graph, graph/valuation cross-check, hubs) · `analytics/` (exposure, breaking points, de-risking, liquidation protection, sensitivity tornado + grids, `analyze`). For a custom heatmap: `sensitivity.grid(portfolio, snapshot, request, x_param, xs, y_param, ys)` on model objects.
 
+Scenarios: `usde_depeg` (A), `liquidity_crisis` (B), `combined_crisis` (C: A then exits queued behind liquidators' selling), `carry_squeeze` (D: rates over the horizon, days to liquidation), `governance_change` (E: threshold cut / oracle switch, then A), `node_shock` (F: shock any graph node). C–F return a `comparison` block (reference runs + `excess_loss_usd`). See `docs/risk_engine_plan.md`.
+
 Add a scenario: new file in `scenarios/` decorated with `@scenario("<id>")`, plus its import in `scenarios/__init__.py` and its schema in `contracts/`. Add a lending protocol: one compute function + one `register(...)` line in `metrics.py`.
 
 ## Roadmap

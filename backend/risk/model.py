@@ -163,3 +163,6 @@ class ScenarioOutcome:
     shared_liquidity_penalty: float = 0.0
     warnings: list[str] = field(default_factory=list)
     contagion: dict | None = None  # graph id, hubs, warnings (set by contagion.annotate)
+    # Reference runs on the same portfolio and what this scenario adds on top of them
+    # ({"runs": [{"run_id", "description", "total_loss"}], "excess_meaning"}); excess = total - sum(runs).
+    comparison: dict | None = None
