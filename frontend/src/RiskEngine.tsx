@@ -15,6 +15,7 @@ import { ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
 import { compactId, labelize, money, percent } from "./lib/format";
 import type { AppData, RiskPosition } from "./lib/types";
 import "./risk-engine.css";
+import { AssumptionRegister, PositionSheets } from "./RiskPositions";
 
 type TraceInput = { name: string; value: string | boolean | null; unit: string; source: string };
 type TraceStep = {
@@ -165,6 +166,8 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
         </div>
       </section>
 
+      <PositionSheets data={data} />
+
       <section className="visual-panel">
         <p className="eyebrow">Step 4 · Which positions carry it</p>
         <h2>Breakdown by position</h2>
@@ -218,6 +221,8 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
           ) : null}
         </ol>
       </section>
+
+      <AssumptionRegister data={data} />
 
       <Simulations data={data} analytics={analytics} />
 
