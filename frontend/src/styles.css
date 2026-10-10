@@ -872,8 +872,8 @@ p,
   min-height: 268px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 22px;
+  gap: 12px;
+  padding: 20px;
   text-align: left;
   border: 0;
   border-radius: 0;
@@ -885,13 +885,13 @@ p,
 
 .position-detail-card {
   position: relative;
-  min-height: 326px;
+  min-height: 306px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 0.82fr);
   align-content: start;
   grid-row: span 2;
-  gap: 14px;
-  padding: 28px;
+  gap: 12px;
+  padding: 24px;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--np-accent-soft) 58%, transparent), transparent 64%),
     var(--np-surface);
@@ -920,31 +920,31 @@ p,
 .position-detail-copy {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 9px;
 }
 
 .position-detail-card h2 {
-  max-width: 12ch;
+  max-width: 14ch;
   margin: 0;
   color: var(--np-strong);
   font-family: var(--np-font-display);
-  font-size: clamp(26px, 2.4vw, 38px);
+  font-size: clamp(20px, 1.65vw, 27px);
   font-weight: 500;
-  line-height: 0.98;
+  line-height: 1.02;
   text-transform: capitalize;
 }
 
 .position-detail-card p {
   max-width: 34ch;
   color: var(--np-muted);
-  font-size: var(--np-size-1);
+  font-size: var(--np-size-0);
 }
 
 .position-detail-metrics {
   display: grid;
   align-content: start;
-  gap: 10px;
-  padding-top: 34px;
+  gap: 7px;
+  padding-top: 18px;
 }
 
 .detail-loss-strip {
@@ -952,22 +952,22 @@ p,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 14px;
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid var(--np-line-strong);
 }
 
 .detail-loss-strip span {
   color: var(--np-muted);
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .detail-loss-strip strong {
   color: var(--np-strong);
-  font-size: var(--np-size-2);
+  font-size: var(--np-size-1);
   font-weight: var(--np-weight-strong);
   font-variant-numeric: tabular-nums;
 }
@@ -982,8 +982,8 @@ p,
 }
 
 .position-card--compact {
-  min-height: 268px;
-  height: 293px;
+  min-height: 232px;
+  height: 246px;
 }
 
 .position-card:hover,
@@ -1017,7 +1017,7 @@ p,
 .card-topline {
   gap: 8px;
   color: var(--np-muted);
-  font-size: var(--np-size-0);
+  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1025,9 +1025,9 @@ p,
 .position-card h2 {
   margin-bottom: 2px;
   font-family: var(--np-font-display);
-  font-size: clamp(26px, 2.4vw, 38px);
+  font-size: clamp(18px, 1.35vw, 23px);
   font-weight: 500;
-  line-height: 0.98;
+  line-height: 1.02;
   white-space: nowrap;
   text-transform: capitalize;
 }
@@ -1035,6 +1035,7 @@ p,
 .position-card p {
   margin-bottom: auto;
   color: var(--np-muted);
+  font-size: var(--np-size-0);
 }
 
 .metric-pair,
@@ -1042,7 +1043,7 @@ p,
 .definition,
 .metric-row {
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   color: var(--np-text);
 }
 
@@ -1054,6 +1055,7 @@ p,
   color: var(--np-strong);
   font-weight: var(--np-weight-strong);
   font-variant-numeric: tabular-nums;
+  font-size: var(--np-size-0);
   text-align: right;
 }
 
@@ -1061,13 +1063,13 @@ p,
 .loss-strip span,
 .definition dt {
   color: var(--np-muted);
-  font-size: var(--np-size-0);
+  font-size: 10.5px;
   text-transform: capitalize;
 }
 
 .loss-strip {
-  margin-top: 12px;
-  padding-top: 14px;
+  margin-top: 8px;
+  padding-top: 10px;
   border-top: 1px solid var(--np-line-strong);
 }
 
