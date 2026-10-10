@@ -1193,3 +1193,26 @@ tbody tr[data-highlighted="true"] {
   max-width: 100%;
   cursor: pointer;
 }
+
+.contagion-positions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.flow-node[data-exposed="true"] {
+  border-color: var(--np-accent-coral);
+}
+.flow-node[data-shock-root="true"] {
+  box-shadow: 0 0 0 3px var(--np-soft);
+  border-width: 2px;
+}
+.flow-node small {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--np-text);
+}
+.edge-critical.animated .react-flow__edge-path {
+  animation-direction: reverse;
+}

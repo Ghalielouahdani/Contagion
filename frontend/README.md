@@ -45,6 +45,8 @@ Run the API mode:
 cd frontend && VITE_USE_FIXTURES=false npm run dev              # /api is proxied to :8000
 ```
 
+Run opens the Contagion Graph: scenario factors and portfolio paths are highlighted, position nodes show their computed losses, and the overview lists equity and liquidation status. Switch between all portfolio paths and the selected position. The inspector reads propagation from the factor to the position; graph edges retain their dependency direction. Shared-venue costs and the combined crisis liquidation-selling increment are displayed separately. Multiple paths never duplicate a position loss. This is an explanation of the engine result, not an iterative liquidation cascade.
+
 The graph lays itself out by node type, and highlights the selected position's contagion paths computed by the risk engine. The inspector lists those paths, any graph gaps, and the contagion hubs.
 
 ## Definition of done

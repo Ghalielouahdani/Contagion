@@ -103,7 +103,7 @@ declare global {
 
 const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string }> = {
   portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore" },
-  graph: { label: "Dependency Graph", icon: GitBranch, section: "Explore" },
+  graph: { label: "Contagion Graph", icon: GitBranch, section: "Explore" },
   scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run" },
   decision: { label: "Decision Engine", icon: BarChart3, section: "Run" },
 };
@@ -321,7 +321,8 @@ function App() {
     setSubmitted((current) => ({ scenario: next.scenario, inputs: { ...next.inputs }, run: current.run + 1 }));
     setInspectedExitFraction(null);
     setHasRun(true);
-    setView("decision");
+    setSelectedEdge(null);
+    setView("graph");
   }
 
   function executeAction(action: DashboardAction) {
@@ -835,9 +836,16 @@ function DependencyGraphView({
     venue: true,
   });
   const flow = useReactFlow();
-  // Highlight the selected position's contagion paths, as computed by the risk engine for this scenario.
+  const [pathScope, setPathScope] = useState<"all" | "selected">("all");
+  // Paths come from the engine; position amounts are never allocated to individual edges.
   const selectedContagion = risk.positions.find((position) => position.position_id === selectedPosition)?.contagion;
-  const criticalEdges = useMemo(() => new Set(selectedContagion?.paths.flatMap((path) => path.edges) ?? []), [selectedContagion]);
+  const displayedPaths = useMemo(() => (pathScope === "all" ? risk.positions :
+    risk.positions.filter((position) => position.position_id === selectedPosition))
+    .flatMap((position) => position.contagion?.paths ?? []), [pathScope, risk.positions, selectedPosition]);
+  const criticalEdges = useMemo(() => new Set(displayedPaths.flatMap((path) => path.edges)), [displayedPaths]);
+  const criticalNodes = useMemo(() => new Set(displayedPaths.flatMap((path) => path.nodes)), [displayedPaths]);
+  const roots = useMemo(() => new Set(displayedPaths.map((path) => path.root)), [displayedPaths]);
+  const positionRisks = useMemo(() => new Map(risk.positions.map((position) => [`position:${position.position_id}`, position])), [risk.positions]);
   const layout = useMemo(() => layoutGraph(graph.nodes), [graph.nodes]);
   const nodeLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
   const visibleNodeIds = useMemo(() => {
@@ -860,6 +868,8 @@ function DependencyGraphView({
             <div
               className="flow-node"
               data-type={node.type}
+              data-exposed={criticalNodes.has(node.id)}
+              data-shock-root={roots.has(node.id)}
               data-selected={node.id === `position:${selectedPosition}`}
               data-highlighted={node.id === `position:${hoveredPosition}`}
               onClick={() => {
@@ -868,12 +878,19 @@ function DependencyGraphView({
             >
               <span>{node.type}</span>
               <strong>{node.label}</strong>
+              {roots.has(node.id) ? <small>Scenario factor</small> : null}
+              {positionRisks.has(node.id) ? <small>
+                {Number(positionRisks.get(node.id)!.conditional_loss_usd) > 0 ? "Loss" :
+                  Number(positionRisks.get(node.id)!.conditional_loss_usd) < 0 ? "Gain" : "No modeled loss"}
+                {Number(positionRisks.get(node.id)!.conditional_loss_usd) !== 0 ? ` ${money(Math.abs(Number(positionRisks.get(node.id)!.conditional_loss_usd)))}` : ""}
+                {positionRisks.get(node.id)!.risk_metric?.liquidatable ? " · liquidatable" : ""}
+              </small> : null}
             </div>
           ),
         },
         draggable: true,
       }));
-  }, [graph.nodes, layout, selectedPosition, setSelectedPosition, visibleNodeIds]);
+  }, [graph.nodes, layout, selectedPosition, hoveredPosition, setSelectedPosition, visibleNodeIds, criticalNodes, roots, positionRisks]);
 
   const flowEdges = useMemo<Edge[]>(() => {
     return graph.edges
@@ -886,14 +903,52 @@ function DependencyGraphView({
         animated: criticalEdges.has(edge.id),
         className: `edge-${edge.confidence} ${criticalEdges.has(edge.id) ? "edge-critical" : ""}`,
         data: edge,
+        style: { opacity: criticalEdges.size && !criticalEdges.has(edge.id) ? 0.2 : 1 },
       }));
   }, [criticalEdges, graph.edges, visibleNodeIds]);
 
   const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
-  const flowKey = `${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
+  const flowKey = `${risk.simulation_id}-${risk.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
 
   return (
-    <div className="graph-layout">
+    <div className="page-stack">
+      <section className="visual-panel contagion-summary">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Scenario → dependencies → portfolio impact</p>
+            <h2>{scenarioCopy[scenario].title}</h2>
+            <p className="microcopy">Highlighted paths show how scenario factors reach positions. Graph edges point toward dependencies; read the propagation from the factor back to the position.</p>
+          </div>
+          <div className="toolbar-row">
+            <button className="filter-chip" data-active={pathScope === "all"} onClick={() => setPathScope("all")}>Whole portfolio</button>
+            <button className="filter-chip" data-active={pathScope === "selected"} onClick={() => setPathScope("selected")}>Selected position</button>
+          </div>
+        </div>
+        <div className="filter-chips">
+          {[...roots].map((root) => <Badge key={root} tone="risk">{nodeLabel(root)}</Badge>)}
+        </div>
+        <div className="contagion-positions">
+          {risk.positions.map((position) => (
+            <button key={position.position_id} className="position-card" data-selected={position.position_id === selectedPosition}
+              onClick={() => { setSelectedPosition(position.position_id); setSelectedEdge(null); }}>
+              <strong>{compactId(position.position_id)}</strong>
+              <MetricPair label="Scenario loss / gain" value={money(position.conditional_loss_usd)} />
+              <MetricPair label="Equity after" value={money(position.net_equity_after_usd)} />
+              <Badge tone={position.risk_metric?.liquidatable ? "risk" : "info"}>
+                {position.risk_metric ? (position.risk_metric.liquidatable ? "Liquidatable" : "Below liquidation threshold") :
+                  Number(position.conditional_loss_usd) === 0 ? "No modeled loss at this shock" : "Scenario impact"}
+              </Badge>
+            </button>
+          ))}
+        </div>
+        <Definition label="Portfolio conditional loss" value={money(risk.portfolio.total_conditional_loss_usd)} />
+        {Number(risk.portfolio.shared_liquidity_penalty_usd) > 0 ? <Definition label="Additional cost of shared exit venues" value={money(risk.portfolio.shared_liquidity_penalty_usd)} /> : null}
+        {scenario === "combined_crisis" && risk.comparison ? <>
+          <Definition label="Extra exit cost from liquidation selling" value={money(risk.comparison.excess_loss_usd)} />
+          <p className="microcopy">Depeg → liquidations → selling into shared venues → more expensive fund exits. One round is modeled.</p>
+        </> : null}
+      </section>
+      <div className="graph-layout">
       <section className="graph-stage">
         <ReactFlow
           key={flowKey}
@@ -958,7 +1013,8 @@ function DependencyGraphView({
         )}
 
         <div className="divider" />
-        <p className="eyebrow">Contagion paths · {compactId(selectedPosition)}</p>
+        <p className="eyebrow">Shock propagation · {compactId(selectedPosition)}</p>
+        <p className="microcopy">Paths explain exposure. The position loss is counted once even when several paths reach it.</p>
         {selectedContagion?.paths.length ? (
           <div className="evidence-card">
             {selectedContagion.paths.map((path) => (
@@ -967,7 +1023,7 @@ function DependencyGraphView({
                 label={labelize(path.factor)}
                 value={
                   <>
-                    {path.nodes.map(nodeLabel).join(" → ")} <Badge tone={confidenceTone[path.confidence]}>{path.confidence}</Badge>
+                    {[...path.nodes].reverse().map(nodeLabel).join(" → ")} <Badge tone={confidenceTone[path.confidence]}>{path.confidence}</Badge>
                   </>
                 }
               />
@@ -976,6 +1032,7 @@ function DependencyGraphView({
         ) : (
           <p className="muted">No contagion path for this position in the current result.</p>
         )}
+        <WarningList warnings={risk.positions.find((position) => position.position_id === selectedPosition)?.warnings ?? []} />
         <WarningList warnings={[...(selectedContagion?.graph_gaps ?? []), ...(selectedContagion?.unmodeled_exposures ?? [])]} />
 
         {risk.contagion?.hubs.length ? (
@@ -995,6 +1052,7 @@ function DependencyGraphView({
         ) : null}
         <WarningList warnings={graph.warnings ?? []} />
       </aside>
+      </div>
     </div>
   );
 }
