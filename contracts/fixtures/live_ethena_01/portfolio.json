@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "live_ethena_01",
+  "as_of": "2026-10-10T12:44:23Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "chain_id": 1,
+      "gross_value_usd": "2002952.69",
+      "debt_value_usd": "0.00",
+      "net_equity_usd": "2002952.69",
+      "data_origin": "fictional",
+      "position_id": "ethena_susde_01",
+      "protocol": "ethena",
+      "position_type": "token_holding",
+      "market_id": null,
+      "asset_symbol": "sUSDe",
+      "quantity": "1600000",
+      "quantity_unit": "sUSDe_shares",
+      "exit_venue_id": "venue:susde_usdc"
+    },
+    {
+      "chain_id": 1,
+      "gross_value_usd": "2998790.46",
+      "debt_value_usd": "1799757.18",
+      "net_equity_usd": "1199033.28",
+      "data_origin": "fictional",
+      "position_id": "aave_01",
+      "protocol": "aave",
+      "position_type": "collateralized_borrow",
+      "market_id": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=11",
+      "collateral_asset": "USDe",
+      "collateral_quantity": "3000000",
+      "debt_asset": "USDC",
+      "debt_quantity": "1800000",
+      "exit_venue_id": "venue:usde_usdc"
+    },
+    {
+      "chain_id": 1,
+      "gross_value_usd": "3004429.03",
+      "debt_value_usd": "1999730.20",
+      "net_equity_usd": "1004698.83",
+      "data_origin": "fictional",
+      "position_id": "morpho_01",
+      "protocol": "morpho",
+      "position_type": "collateralized_borrow",
+      "market_id": "0x85c7f4374f3a403b36d54cc284983b2b02bbd8581ee0f3c36494447b87d9fcab",
+      "collateral_asset": "sUSDe",
+      "collateral_quantity": "2400000",
+      "debt_asset": "USDC",
+      "debt_quantity": "2000000",
+      "exit_venue_id": "venue:susde_usdc"
+    },
+    {
+      "chain_id": 1,
+      "gross_value_usd": "2066258.85",
+      "debt_value_usd": "0.00",
+      "net_equity_usd": "2066258.85",
+      "data_origin": "fictional",
+      "position_id": "pendle_01",
+      "protocol": "pendle",
+      "position_type": "pt_holding",
+      "market_id": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+      "asset_symbol": "PT-sUSDE-26NOV2026",
+      "quantity": "2080000",
+      "quantity_unit": "PT_tokens",
+      "exit_venue_id": "venue:pendle_pt_susde"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "10072431.03",
+    "debt_value_usd": "3799487.38",
+    "net_equity_usd": "6272943.65"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "pendle_pt_morpho_collateral",
+  "as_of": "2026-10-10T08:00:00Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "chain_id": 1,
+      "gross_value_usd": "0",
+      "debt_value_usd": "0",
+      "net_equity_usd": "0",
+      "data_origin": "fictional",
+      "position_id": "pt_collateral_01",
+      "protocol": "morpho",
+      "position_type": "collateralized_borrow",
+      "market_id": "0x5613b170ded221c588b6e9637b910f49e5508680ceede207f44aa72e5c46cb05",
+      "collateral_asset": "PT-sUSDE-26NOV2026",
+      "collateral_quantity": "1000000",
+      "debt_asset": "USDC",
+      "debt_quantity": "800000",
+      "exit_venue_id": "venue:pendle_pt_susde"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "0",
+    "debt_value_usd": "0",
+    "net_equity_usd": "0"
+  }
+}

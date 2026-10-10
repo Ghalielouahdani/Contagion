@@ -1,155 +1,22 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.defi-contagion.local/v1/common.schema.json",
-  "title": "Common building blocks (schema v1)",
   "description": "Shared types and vocabularies. To extend a vocabulary (new protocol, relation, risk channel...), add one value here; every contract that references it picks it up.",
+  "title": "Common building blocks (schema v1)",
+  "$id": "https://schemas.defi-contagion.local/v1/common.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "schema_version": {
-      "const": "1.0"
-    },
-    "decimal": {
-      "description": "Number serialised as a string to avoid float drift. Signed.",
-      "type": "string",
-      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
-    },
-    "non_negative_decimal": {
-      "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
-    },
-    "nullable_decimal": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/decimal"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "timestamp": {
-      "description": "ISO-8601 UTC, always with Z suffix.",
-      "type": "string",
-      "format": "date-time",
-      "pattern": "Z$"
-    },
     "chain_id": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "slug": {
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9_]*$"
-    },
-    "warnings": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "position_id": {
-      "$ref": "#/$defs/slug"
-    },
-    "node_id": {
-      "description": "<node_type prefix>:<name>, e.g. asset:USDe, venue:susde_usdc.",
-      "type": "string",
-      "pattern": "^(asset|protocol|market|position|oracle|contract|venue|chain|offchain):[A-Za-z0-9_.-]+$"
+      "minimum": 1,
+      "type": "integer"
     },
     "venue_id": {
-      "type": "string",
-      "pattern": "^venue:[a-z0-9_]+$"
-    },
-    "protocol": {
-      "enum": [
-        "ethena",
-        "aave",
-        "morpho",
-        "pendle"
-      ]
-    },
-    "scenario_id": {
-      "enum": [
-        "usde_depeg",
-        "liquidity_crisis",
-        "combined_crisis",
-        "carry_squeeze",
-        "governance_change",
-        "node_shock"
-      ]
-    },
-    "source_type": {
-      "enum": [
-        "observed",
-        "derived",
-        "assumed",
-        "fictional",
-        "user_scenario",
-        "mock"
-      ]
-    },
-    "data_origin": {
-      "enum": [
-        "fictional",
-        "observed"
-      ]
+      "pattern": "^venue:[a-z0-9_]+$",
+      "type": "string"
     },
     "quote_method": {
       "enum": [
         "executable_quote",
         "pool_reserves",
         "proxy"
-      ]
-    },
-    "quote_status": {
-      "enum": [
-        "executable",
-        "pool_reserves",
-        "proxy",
-        "unavailable"
-      ]
-    },
-    "node_type": {
-      "enum": [
-        "asset",
-        "protocol",
-        "market",
-        "position",
-        "oracle",
-        "contract",
-        "venue",
-        "chain",
-        "offchain_entity"
-      ]
-    },
-    "relation": {
-      "enum": [
-        "holds",
-        "issued_by",
-        "position_in",
-        "prices_collateral_with",
-        "redeemable_for",
-        "exits_via",
-        "collateral_asset",
-        "debt_asset",
-        "underlying_of",
-        "part_of_protocol",
-        "deployed_on",
-        "backed_by",
-        "reads_price_of"
-      ]
-    },
-    "risk_channel": {
-      "enum": [
-        "mark_to_market",
-        "issuer_backing",
-        "collateral_liquidation",
-        "oracle_repricing",
-        "exchange_rate",
-        "exit_liquidity",
-        "debt_cost",
-        "maturity_redemption",
-        "smart_contract",
-        "custody",
-        "borrower_default"
       ]
     },
     "confidence": {
@@ -169,75 +36,9 @@
         "fixture"
       ]
     },
-    "evidence_status": {
-      "enum": [
-        "verified",
-        "to_verify",
-        "assumed",
-        "documented"
-      ]
-    },
-    "sourced_value": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "$ref": "#/$defs/decimal"
-        },
-        "source_type": {
-          "$ref": "#/$defs/source_type"
-        }
-      },
-      "required": [
-        "value",
-        "source_type"
-      ],
-      "additionalProperties": false
-    },
-    "field_sources": {
-      "description": "Per-field override of source_type when an object mixes origins.",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/$defs/source_type"
-      }
-    },
     "position_base": {
       "description": "Fields every position type has. Position-type files add their own fields.",
       "type": "object",
-      "properties": {
-        "position_id": {
-          "$ref": "#/$defs/position_id"
-        },
-        "protocol": {
-          "$ref": "#/$defs/protocol"
-        },
-        "chain_id": {
-          "$ref": "#/$defs/chain_id"
-        },
-        "position_type": {
-          "type": "string"
-        },
-        "market_id": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "gross_value_usd": {
-          "$ref": "#/$defs/non_negative_decimal"
-        },
-        "debt_value_usd": {
-          "$ref": "#/$defs/non_negative_decimal"
-        },
-        "net_equity_usd": {
-          "$ref": "#/$defs/decimal"
-        },
-        "exit_venue_id": {
-          "$ref": "#/$defs/venue_id"
-        },
-        "data_origin": {
-          "$ref": "#/$defs/data_origin"
-        }
-      },
       "required": [
         "position_id",
         "protocol",
@@ -249,59 +50,45 @@
         "net_equity_usd",
         "exit_venue_id",
         "data_origin"
-      ]
-    },
-    "market_base": {
-      "description": "Fields every market-parameter object has. Market-kind files add protocol-specific parameters.",
-      "type": "object",
+      ],
       "properties": {
-        "market_kind": {
+        "chain_id": {
+          "$ref": "#/$defs/chain_id"
+        },
+        "exit_venue_id": {
+          "$ref": "#/$defs/venue_id"
+        },
+        "position_type": {
           "type": "string"
         },
-        "verified": {
-          "type": "boolean"
+        "market_id": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "source_type": {
-          "$ref": "#/$defs/source_type"
+        "position_id": {
+          "$ref": "#/$defs/position_id"
         },
-        "field_sources": {
-          "$ref": "#/$defs/field_sources"
+        "debt_value_usd": {
+          "$ref": "#/$defs/non_negative_decimal"
         },
-        "warnings": {
-          "$ref": "#/$defs/warnings"
+        "net_equity_usd": {
+          "$ref": "#/$defs/decimal"
+        },
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "gross_value_usd": {
+          "$ref": "#/$defs/non_negative_decimal"
+        },
+        "data_origin": {
+          "$ref": "#/$defs/data_origin"
         }
-      },
-      "required": [
-        "market_kind",
-        "verified",
-        "source_type"
-      ]
+      }
     },
     "risk_metric_base": {
       "type": "object",
-      "properties": {
-        "type": {
-          "type": "string"
-        },
-        "before": {
-          "$ref": "#/$defs/decimal"
-        },
-        "after": {
-          "$ref": "#/$defs/decimal"
-        },
-        "threshold": {
-          "$ref": "#/$defs/decimal"
-        },
-        "liquidatable": {
-          "type": "boolean"
-        },
-        "distance_to_liquidation_before_pct": {
-          "$ref": "#/$defs/decimal"
-        },
-        "distance_to_liquidation_after_pct": {
-          "$ref": "#/$defs/decimal"
-        }
-      },
       "required": [
         "type",
         "before",
@@ -310,6 +97,231 @@
         "liquidatable",
         "distance_to_liquidation_before_pct",
         "distance_to_liquidation_after_pct"
+      ],
+      "properties": {
+        "after": {
+          "$ref": "#/$defs/decimal"
+        },
+        "threshold": {
+          "$ref": "#/$defs/decimal"
+        },
+        "distance_to_liquidation_after_pct": {
+          "$ref": "#/$defs/decimal"
+        },
+        "liquidatable": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        },
+        "distance_to_liquidation_before_pct": {
+          "$ref": "#/$defs/decimal"
+        },
+        "before": {
+          "$ref": "#/$defs/decimal"
+        }
+      }
+    },
+    "scenario_id": {
+      "enum": [
+        "usde_depeg",
+        "liquidity_crisis",
+        "combined_crisis",
+        "carry_squeeze",
+        "governance_change",
+        "node_shock"
+      ]
+    },
+    "data_origin": {
+      "enum": [
+        "fictional",
+        "observed"
+      ]
+    },
+    "node_type": {
+      "enum": [
+        "asset",
+        "protocol",
+        "market",
+        "position",
+        "oracle",
+        "contract",
+        "venue",
+        "chain",
+        "offchain_entity"
+      ]
+    },
+    "market_base": {
+      "description": "Fields every market-parameter object has. Market-kind files add protocol-specific parameters.",
+      "type": "object",
+      "required": [
+        "market_kind",
+        "verified",
+        "source_type"
+      ],
+      "properties": {
+        "details": {
+          "type": "object",
+          "description": "Open bag of discovered protocol facts (addresses, raw parameters, second-source values) kept for traceability. Formulas must not depend on it."
+        },
+        "field_sources": {
+          "$ref": "#/$defs/field_sources"
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "market_kind": {
+          "type": "string"
+        },
+        "warnings": {
+          "$ref": "#/$defs/warnings"
+        },
+        "source_type": {
+          "$ref": "#/$defs/source_type"
+        }
+      }
+    },
+    "non_negative_decimal": {
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+      "type": "string"
+    },
+    "node_id": {
+      "description": "<node_type prefix>:<name>, e.g. asset:USDe, venue:susde_usdc.",
+      "pattern": "^(asset|protocol|market|position|oracle|contract|venue|chain|offchain):[A-Za-z0-9_.-]+$",
+      "type": "string"
+    },
+    "sourced_value": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "value",
+        "source_type"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/$defs/decimal"
+        },
+        "source_type": {
+          "$ref": "#/$defs/source_type"
+        }
+      }
+    },
+    "slug": {
+      "pattern": "^[a-z0-9][a-z0-9_]*$",
+      "type": "string"
+    },
+    "evidence_status": {
+      "enum": [
+        "verified",
+        "to_verify",
+        "assumed",
+        "documented"
+      ]
+    },
+    "quote_status": {
+      "enum": [
+        "executable",
+        "pool_reserves",
+        "proxy",
+        "unavailable"
+      ]
+    },
+    "risk_channel": {
+      "enum": [
+        "mark_to_market",
+        "issuer_backing",
+        "collateral_liquidation",
+        "oracle_repricing",
+        "exchange_rate",
+        "exit_liquidity",
+        "debt_cost",
+        "maturity_redemption",
+        "smart_contract",
+        "custody",
+        "borrower_default",
+        "settlement",
+        "yield_source"
+      ]
+    },
+    "relation": {
+      "enum": [
+        "holds",
+        "issued_by",
+        "position_in",
+        "prices_collateral_with",
+        "redeemable_for",
+        "exits_via",
+        "collateral_asset",
+        "debt_asset",
+        "underlying_of",
+        "part_of_protocol",
+        "deployed_on",
+        "backed_by",
+        "reads_price_of",
+        "prices_debt_with",
+        "uses_feed",
+        "wraps",
+        "yield_generated_by",
+        "pools_asset",
+        "routes_through"
+      ]
+    },
+    "position_id": {
+      "$ref": "#/$defs/slug"
+    },
+    "timestamp": {
+      "pattern": "Z$",
+      "description": "ISO-8601 UTC, always with Z suffix.",
+      "format": "date-time",
+      "type": "string"
+    },
+    "field_sources": {
+      "description": "Per-field override of source_type when an object mixes origins.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/source_type"
+      }
+    },
+    "nullable_decimal": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/decimal"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "protocol": {
+      "enum": [
+        "ethena",
+        "aave",
+        "morpho",
+        "pendle"
+      ]
+    },
+    "schema_version": {
+      "const": "1.0"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decimal": {
+      "description": "Number serialised as a string to avoid float drift. Signed.",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+      "type": "string"
+    },
+    "source_type": {
+      "enum": [
+        "observed",
+        "derived",
+        "assumed",
+        "fictional",
+        "user_scenario",
+        "mock"
       ]
     }
   }

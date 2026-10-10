@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "morpho_susde_pyusd",
+  "as_of": "2026-10-10T08:00:00Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "chain_id": 1,
+      "gross_value_usd": "0",
+      "debt_value_usd": "0",
+      "net_equity_usd": "0",
+      "data_origin": "fictional",
+      "position_id": "morpho_pyusd_01",
+      "protocol": "morpho",
+      "position_type": "collateralized_borrow",
+      "market_id": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+      "collateral_asset": "sUSDe",
+      "collateral_quantity": "2400000",
+      "debt_asset": "PYUSD",
+      "debt_quantity": "2000000",
+      "exit_venue_id": "venue:susde_pyusd"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "0",
+    "debt_value_usd": "0",
+    "net_equity_usd": "0"
+  }
+}

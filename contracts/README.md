@@ -33,9 +33,14 @@ contracts/
         ├── scenario_request_{combined,carry,governance,node_shock}.json + risk_result_<same>.json   scenarios C–F
         ├── risk_result.json · risk_result_liquidity.json · decision_result.json
         └── risk_analytics.json · risk_analytics_severe.json   money value for the fund (P2)
+    live_ethena_01/                    P1 discovery snapshot, graph and risk outputs
     demo_lending_01/                    lender positions: two Morpho markets differing only by their oracle (golden)
     verified_2026_10_10/                fictional holdings on real markets verified on-chain (see docs/verified_markets.md)
 ```
+
+P1's live discovery adds optional fields (additive, still `1.0`): graph `chain_id`, `block_number`,
+`coverage` (five dependency layers per position), `unresolved`, `discovery`; evidence `call` and `note`;
+snapshot `exit_venues.*.quotes` and `markets.*.details`. See `backend/discovery/README.md`.
 
 ## Why it is modular
 

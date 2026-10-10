@@ -201,7 +201,7 @@ async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs
     ...base,
     health: { ...base.health, source: "contracts fixtures · precomputed engine surface" },
     risk,
-    decision: point.decisions.aave_01 ?? base.decision,
+    decision: point.decisions.aave_01 ?? Object.values(point.decisions)[0] ?? base.decision,
     decisions: point.decisions,
     analytics,
     riskSource: "surface",

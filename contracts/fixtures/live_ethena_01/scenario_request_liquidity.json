@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "request_id": "sim_live_002",
+  "portfolio_id": "live_ethena_01",
+  "graph_id": "graph_live_ethena_01",
+  "snapshot_id": "snapshot_live_ethena_01",
+  "scenario": {
+    "scenario_id": "liquidity_crisis",
+    "horizon_days": 7,
+    "parameters": {
+      "exit_liquidity_reduction_pct": "0.80",
+      "fundamental_value_shock_pct": "0.00",
+      "quote_method": "pool_quote_or_flagged_proxy"
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

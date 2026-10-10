@@ -141,6 +141,18 @@ const scenarioCopy: Record<ScenarioKind, { title: string; preset: string; summar
   },
 };
 
+function presetLabel(kind: ScenarioKind, set: string) {
+  const p = presetInputs(kind, set);
+  switch (kind) {
+    case "usde_depeg": return `A · -${p.shockPct}% spot shock`;
+    case "liquidity_crisis": return `B · -${p.liquidityLossPct}% exit depth`;
+    case "combined_crisis": return `C · -${p.shockPct}% and -${p.liquidityLossPct}% depth`;
+    case "carry_squeeze": return `D · sUSDe ${p.susdeApyPct}%, borrow ${p.borrowApyPct}%`;
+    case "governance_change": return `E · LT ${p.ltShiftPct} pts, then -${p.shockPct}%`;
+    case "node_shock": return `F · ${labelize(p.nodeId ?? "node")} -${p.nodeLossPct}%`;
+  }
+}
+
 // "verified_lending_2026_10_10" -> "Verified · lending · 2026-10-10"
 function fixtureSetLabel(id: string) {
   const date = id.match(/(\d{4})_(\d{2})_(\d{2})$/);
@@ -228,8 +240,8 @@ function App() {
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
   const [inspectedExitFraction, setInspectedExitFraction] = useState<string | null>(null);
-  const [shockPct, setShockPct] = useState(5);
-  const [horizonDays, setHorizonDays] = useState(7);
+  const [shockPct, setShockPct] = useState(() => presetInputs("usde_depeg", defaultFixtureSet).shockPct ?? 5);
+  const [horizonDays, setHorizonDays] = useState(() => presetInputs("usde_depeg", defaultFixtureSet).horizonDays ?? 7);
   const [liquidityLossPct, setLiquidityLossPct] = useState(80);
   const [extraInputs, setExtraInputs] = useState<ExtraInputs>(defaultExtraInputs);
   const setExtraInput = <K extends keyof ExtraInputs>(key: K, value: ExtraInputs[K]) =>
@@ -272,7 +284,8 @@ function App() {
         liquidityLossPct: deferredLiquidity,
         ...deferredExtra,
       }, fixtureSet),
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData) =>
+      previousData?.health.fixtureSet === fixtureSet && previousData.risk.scenario_id === scenario ? previousData : undefined,
   });
 
   useEffect(() => {
@@ -357,12 +370,13 @@ function App() {
   }
 
   function reset() {
-    setScenario("usde_depeg");
+    selectScenario("usde_depeg");
     setMode("fixture");
     setSelectedPosition("aave_01");
     setSelectedEdge(null);
-    setShockPct(5);
-    setHorizonDays(7);
+    const preset = presetInputs("usde_depeg", fixtureSet);
+    setShockPct(preset.shockPct ?? 5);
+    setHorizonDays(preset.horizonDays ?? 7);
     setLiquidityLossPct(80);
     setExtraInputs(defaultExtraInputs);
     setInspectedExitFraction(null);
@@ -1032,7 +1046,7 @@ function ScenarioLab({
       <section className="preset-grid">
         {scenarioOrder.filter((kind) => availableScenarios(data.health.fixtureSet).includes(kind)).map((kind) => (
           <button key={kind} className="preset-card" data-selected={scenario === kind} onClick={() => setScenario(kind)}>
-            <span>{scenarioCopy[kind].preset}</span>
+            <span>{presetLabel(kind, data.health.fixtureSet)}</span>
             <strong>{scenarioCopy[kind].title}</strong>
             <p>{scenarioCopy[kind].summary}</p>
           </button>

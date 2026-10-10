@@ -1,3 +1,4 @@
+import { availableScenarios } from "../data/api";
 import { compactId } from "../lib/format";
 import type { AppData, DashboardAction } from "../lib/types";
 
@@ -29,7 +30,7 @@ export type ActionRegistryItem = {
 };
 
 export function createActionRegistry(data?: AppData): ActionRegistryItem[] {
-  return [
+  const items: ActionRegistryItem[] = [
     { type: "page", label: "Portfolio Dashboard", actions: [{ type: "navigate_view", view: "portfolio" }] },
     { type: "page", label: "Dependency Graph", actions: [{ type: "navigate_view", view: "graph" }] },
     { type: "page", label: "Scenario Lab", actions: [{ type: "navigate_view", view: "scenario" }] },
@@ -50,6 +51,10 @@ export function createActionRegistry(data?: AppData): ActionRegistryItem[] {
       actions: [{ type: "select_position", positionId: position.position_id, view: "decision" }] satisfies DashboardAction[],
     })) ?? []),
   ];
+  const available = availableScenarios(data?.health.fixtureSet ?? "demo_ethena_01");
+  return items.filter((item) => item.actions.every((action) =>
+    action.type !== "run_simulation" || !action.scenario || available.includes(action.scenario),
+  ));
 }
 
 export function validateRange(label: string, value: number, min: number, max: number, unit: string) {

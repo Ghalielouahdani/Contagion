@@ -1,0 +1,322 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_sim_live_002",
+  "request_id": "sim_live_002",
+  "portfolio_id": "live_ethena_01",
+  "scenario_id": "liquidity_crisis",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "ethena_susde_01",
+      "gross_value_before_usd": "2002952.69",
+      "gross_value_after_usd": "2002952.69",
+      "executable_value_after_usd": "1545531.64",
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "2002952.69",
+      "net_equity_after_usd": "1545531.64",
+      "conditional_loss_usd": "457421.05",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "457421.05"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Standalone exit. Shares venue:susde_usdc with morpho_01."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:ethena_susde_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:exits_via.4aaf19de51"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    },
+    {
+      "position_id": "aave_01",
+      "gross_value_before_usd": "2998790.46",
+      "gross_value_after_usd": "2998790.46",
+      "executable_value_after_usd": "2992389.93",
+      "debt_after_usd": "1799757.18",
+      "net_equity_before_usd": "1199033.28",
+      "net_equity_after_usd": "1192632.75",
+      "conditional_loss_usd": "6400.53",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "6400.53"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Standalone exit."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:usde_usdc",
+            "nodes": [
+              "position:aave_01",
+              "venue:usde_usdc"
+            ],
+            "edges": [
+              "edge:exits_via.a291103881"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    },
+    {
+      "position_id": "morpho_01",
+      "gross_value_before_usd": "3004429.03",
+      "gross_value_after_usd": "3004429.03",
+      "executable_value_after_usd": "2080708.28",
+      "debt_after_usd": "1999730.20",
+      "net_equity_before_usd": "1004698.83",
+      "net_equity_after_usd": "80978.08",
+      "conditional_loss_usd": "923720.75",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "923720.75"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Standalone exit. Shares venue:susde_usdc with ethena_susde_01."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:morpho_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:exits_via.ad80c03f99"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    },
+    {
+      "position_id": "pendle_01",
+      "gross_value_before_usd": "2066258.90",
+      "gross_value_after_usd": "2066258.90",
+      "executable_value_after_usd": "2050423.13",
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "2066258.90",
+      "net_equity_after_usd": "2050423.13",
+      "conditional_loss_usd": "15835.77",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "15835.77"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Standalone exit."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:pendle_pt_susde",
+            "nodes": [
+              "position:pendle_01",
+              "venue:pendle_pt_susde"
+            ],
+            "edges": [
+              "edge:exits_via.292a089ce9"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "6272943.70",
+    "net_equity_after_usd": "4121281.94",
+    "total_conditional_loss_usd": "2151661.76",
+    "shared_liquidity_penalty_usd": "748283.66",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_live_ethena_01",
+    "input_graph_id": "graph_live_ethena_01"
+  },
+  "warnings": [
+    "Portfolio total uses a joint exit per shared venue; it exceeds the sum of position losses by shared_liquidity_penalty_usd."
+  ],
+  "contagion": {
+    "graph_id": "graph_live_ethena_01",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "chain:ethereum",
+        "label": "Ethereum mainnet",
+        "node_type": "chain",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "contract:ethena_minting.e3490297",
+        "label": "Ethena minting contract",
+        "node_type": "contract",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "asset:sUSDe",
+        "label": "sUSDe",
+        "node_type": "asset",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "7073640.57",
+        "net_equity_usd": "5073910.37"
+      },
+      {
+        "node": "venue:susde_usdc",
+        "label": "sUSDe -> USDC exit route",
+        "node_type": "venue",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "5007381.72",
+        "net_equity_usd": "3007651.52"
+      },
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "6003219.49",
+        "net_equity_usd": "2203732.11"
+      },
+      {
+        "node": "offchain:circle",
+        "label": "Circle (USDC issuer and reserves)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "6003219.49",
+        "net_equity_usd": "2203732.11"
+      }
+    ],
+    "warnings": []
+  }
+}

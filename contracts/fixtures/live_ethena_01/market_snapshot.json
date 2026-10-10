@@ -1,0 +1,253 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "snapshot_live_ethena_01",
+  "as_of": "2026-10-10T12:44:23Z",
+  "chain_id": 1,
+  "block_number": 26162114,
+  "prices_usd": {
+    "USDe": {
+      "value": "0.99959682",
+      "source_type": "observed"
+    },
+    "USDC": {
+      "value": "0.9998651",
+      "source_type": "observed"
+    },
+    "USDT": {
+      "value": "0.99905453",
+      "source_type": "observed"
+    },
+    "PYUSD": {
+      "value": "1.000067",
+      "source_type": "observed"
+    },
+    "ETH": {
+      "value": "2494.63670555",
+      "source_type": "observed"
+    },
+    "sUSDe": {
+      "value": "1.25184543",
+      "source_type": "derived"
+    },
+    "PT-sUSDE-26NOV2026": {
+      "value": "0.99339368",
+      "source_type": "derived"
+    }
+  },
+  "exchange_rates": {
+    "sUSDe_USDe": {
+      "value": "1.25235035258",
+      "source_type": "observed"
+    }
+  },
+  "markets": {
+    "aave_01": {
+      "market_kind": "aave_v3_reserve",
+      "liquidation_threshold": "0.93",
+      "liquidation_bonus": "0.02",
+      "oracle_pass_through": "0",
+      "oracle_type": "proxy_asset_feed",
+      "oracle_address": "0xc26d4a1c46d884cff6de9800b6ae7a8cf48b4ff8",
+      "emode_category": 11,
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "oracle_pass_through": "derived",
+        "liquidation_bonus": "derived"
+      },
+      "details": {
+        "pool": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "market_name": "Aave Ethereum Market",
+        "ltv": "0.9",
+        "emode_label": "USDe Stablecoin",
+        "oracle_explanation": "no USDe market feed on the active path; inputs: feed:USDT/USD",
+        "debt_oracle_address": "0x3f73f03aa83b2a48ed27e964ed0fdb590332095b",
+        "debt_oracle_type": "proxy_asset_feed"
+      }
+    },
+    "morpho_01": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.915",
+      "liquidation_incentive": "0.026167",
+      "oracle_pass_through": "0",
+      "oracle_type": "exchange_rate_usde_hardcoded",
+      "oracle_address": "0x873cd44b860dedfe139f93e12a4acca0926ffb87",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "liquidation_incentive": "derived",
+        "oracle_pass_through": "derived"
+      },
+      "details": {
+        "market_id": "0x85c7f4374f3a403b36d54cc284983b2b02bbd8581ee0f3c36494447b87d9fcab",
+        "loan_token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "collateral_token": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "irm": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+        "oracle_explanation": "no USDe market feed on the active path; inputs: rate:sUSDe",
+        "oracle_backup_pass_through": null,
+        "api_borrow_apy": 0.0006233813748174002,
+        "api_supply_usd": 9543.87701568991,
+        "api_borrow_usd": 3901.684152006879
+      }
+    },
+    "pendle_01": {
+      "market_kind": "pendle_pt_market",
+      "maturity": "2026-11-26T00:00:00Z",
+      "days_to_maturity": "46.4692",
+      "pt_implied_apy": "0.05011",
+      "valuation_method": "implied_apy_discount",
+      "market_address": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "days_to_maturity": "derived",
+        "pt_implied_apy": "derived"
+      },
+      "details": {
+        "pt": "0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+        "sy": "0xbf98480425a29197e5d99d003017f63a1e595d02",
+        "yt": "0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+        "last_ln_implied_rate": "48895105664702748",
+        "amm": {
+          "total_pt": "971271206194635974947488",
+          "total_sy": "2282035210152903016090102",
+          "total_lp": "1377019425663315762135361",
+          "scalar_root": "57597037272339354958",
+          "ln_fee_rate_root": "978762451846258",
+          "reserve_fee_percent": 80,
+          "last_ln_implied_rate": "48895105664702748"
+        },
+        "api_implied_apy": 0.050110360597239945,
+        "liquidity_usd": 3820769.2872084053,
+        "note": "pt_implied_apy = exp(lastLnImpliedRate) - 1 read on-chain at the pinned block"
+      }
+    }
+  },
+  "yields": {
+    "aave_01": {
+      "collateral_supply_apy": "0.002367",
+      "debt_borrow_apy": "0.051066",
+      "source_type": "derived"
+    },
+    "morpho_01": {
+      "collateral_supply_apy": "0",
+      "debt_borrow_apy": "0.000623",
+      "source_type": "observed",
+      "field_sources": {
+        "collateral_supply_apy": "derived",
+        "debt_borrow_apy": "derived"
+      }
+    },
+    "pendle_01": {
+      "token_apy": "0.05011",
+      "source_type": "derived"
+    },
+    "ethena_susde_01": {
+      "token_apy": "0.049495",
+      "source_type": "observed"
+    }
+  },
+  "exit_venues": {
+    "venue:pendle_pt_susde": {
+      "asset": "PT-sUSDE-26NOV2026",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "1337700987.41",
+      "fee_rate": "0",
+      "gas_usd": "2.56",
+      "venue_address": null,
+      "source_type": "derived",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived",
+        "gas_usd": "derived"
+      },
+      "quotes": [
+        {
+          "size_tokens": "2080000",
+          "size_usd": "2066258.85",
+          "proceeds_usd": "2063072.16",
+          "loss_pct": "0.1542",
+          "positions": [
+            "pendle_01"
+          ]
+        }
+      ]
+    },
+    "venue:susde_usdc": {
+      "asset": "sUSDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "33837825.79",
+      "fee_rate": "0",
+      "gas_usd": "7.31",
+      "venue_address": null,
+      "source_type": "derived",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived",
+        "gas_usd": "observed"
+      },
+      "quotes": [
+        {
+          "size_tokens": "1600000",
+          "size_usd": "2002952.69",
+          "proceeds_usd": "2001124.59",
+          "loss_pct": "0.0913",
+          "positions": [
+            "ethena_susde_01"
+          ]
+        },
+        {
+          "size_tokens": "2400000",
+          "size_usd": "3004429.03",
+          "proceeds_usd": "2999713.08",
+          "loss_pct": "0.157",
+          "positions": [
+            "morpho_01"
+          ]
+        },
+        {
+          "size_tokens": "4000000",
+          "size_usd": "5007381.72",
+          "proceeds_usd": "4361899.99",
+          "loss_pct": "12.8906",
+          "positions": [
+            "ethena_susde_01",
+            "morpho_01"
+          ]
+        }
+      ]
+    },
+    "venue:usde_usdc": {
+      "asset": "USDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "7010004065.85",
+      "fee_rate": "0",
+      "gas_usd": "2.82",
+      "venue_address": null,
+      "source_type": "derived",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived",
+        "gas_usd": "observed"
+      },
+      "quotes": [
+        {
+          "size_tokens": "3000000",
+          "size_usd": "2998790.46",
+          "proceeds_usd": "2997508.16",
+          "loss_pct": "0.0428",
+          "positions": [
+            "aave_01"
+          ]
+        }
+      ]
+    }
+  },
+  "warnings": [
+    "Positions are fictional (data_origin); markets, tokens, oracles and venues are real, read on chain 1 at block 26162114.",
+    "Protocol API data (Pendle, Morpho, KyberSwap) is read at observed_at, not at the pinned block.",
+    "morpho_01: fictional debt 2000000 USDC exceeds the market's total borrow (3902.65); the position could not exist at this size",
+    "venue:susde_usdc: depth is calibrated on the joint size; for ethena_susde_01 alone the proxy gives 5.59% loss vs 0.09% quoted (see quotes)",
+    "venue:susde_usdc: depth is calibrated on the joint size; for morpho_01 alone the proxy gives 8.15% loss vs 0.16% quoted (see quotes)"
+  ]
+}

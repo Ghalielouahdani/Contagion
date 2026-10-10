@@ -89,3 +89,30 @@ def test_every_scenario_runs_end_to_end(set_name, suffix):
     for route, body in (("simulate", request), ("analyze", request), ("decide", {"request": request, "position_id": "morpho_01"})):
         response = client.post(f"/api/v1/{route}?set={set_name}", json=body)
         assert response.status_code == 200, (route, response.json())
+
+
+def test_all_dashboard_presets_feed_matching_portfolio_graph_and_decisions():
+    root = Path(__file__).resolve().parents[3] / 'contracts' / 'fixtures'
+    for folder in sorted(root.iterdir()):
+        if not (folder / 'manifest.json').is_file():
+            continue
+        query = f'?set={folder.name}'
+        portfolio = client.get('/api/v1/portfolio' + query).json()
+        graph = client.post('/api/v1/discover' + query, json={'schema_version': '1.0'}).json()
+        assert graph['portfolio_id'] == portfolio['portfolio_id']
+        for path in folder.glob('scenario_request*.json'):
+            request = json.loads(path.read_text())
+            response = client.post('/api/v1/simulate' + query, json=request)
+            assert response.status_code == 200, (folder.name, path.name, response.text)
+            risk = response.json()
+            assert risk['portfolio_id'] == portfolio['portfolio_id']
+            assert risk['provenance']['input_graph_id'] == graph['graph_id']
+            analytics = client.post('/api/v1/analyze' + query, json=request)
+            assert analytics.status_code == 200, (folder.name, path.name, analytics.text)
+            for position in portfolio['positions']:
+                response = client.post('/api/v1/decide' + query, json={'request': request, 'position_id': position['position_id']})
+                assert response.status_code == 200, (folder.name, path.name, response.text)
+                decision = response.json()
+                assert decision['position_id'] == position['position_id']
+                assert decision['portfolio_id'] == portfolio['portfolio_id']
+                assert decision['scenario_id'] == risk['scenario_id']
