@@ -1,0 +1,181 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_sim_lending_liquidity_01",
+  "request_id": "sim_lending_liquidity_01",
+  "portfolio_id": "demo_lending_01",
+  "scenario_id": "liquidity_crisis",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_usde_01",
+      "gross_value_before_usd": "5000000.00",
+      "gross_value_after_usd": "5000000.00",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000000.00",
+      "net_equity_after_usd": "5000000.00",
+      "conditional_loss_usd": "0.00",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Lender exit: only 4,000,000 of 5,000,000 USDC can be withdrawn now; 1,000,000 stays locked until borrowers repay or new supply arrives (a delay, not a loss)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:morpho_usde_usdc_supply",
+            "nodes": [
+              "position:lend_usde_01",
+              "venue:morpho_usde_usdc_supply"
+            ],
+            "edges": [
+              "edge:11"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:11"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    },
+    {
+      "position_id": "lend_susde_01",
+      "gross_value_before_usd": "5000000.00",
+      "gross_value_after_usd": "5000000.00",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000000.00",
+      "net_equity_after_usd": "5000000.00",
+      "conditional_loss_usd": "0.00",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Lender exit: only 4,000,000 of 5,000,000 USDC can be withdrawn now; 1,000,000 stays locked until borrowers repay or new supply arrives (a delay, not a loss)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:morpho_susde_usdc_supply",
+            "nodes": [
+              "position:lend_susde_01",
+              "venue:morpho_susde_usdc_supply"
+            ],
+            "edges": [
+              "edge:18"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:18"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "10000000.00",
+    "net_equity_after_usd": "10000000.00",
+    "total_conditional_loss_usd": "0.00",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_lending_01",
+    "input_graph_id": "graph_lending_01"
+  },
+  "warnings": [
+    "Computed from unverified market parameters; illustrative, never a real-market result."
+  ],
+  "contagion": {
+    "graph_id": "graph_lending_01",
+    "hubs": [
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "protocol:morpho",
+        "label": "Morpho",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      }
+    ],
+    "warnings": []
+  }
+}

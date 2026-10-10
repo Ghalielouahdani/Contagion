@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from backend.risk import lending
 from backend.risk.liquidity import crisis_depth, haircut
 from backend.risk.model import Portfolio, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.scenarios import liquidity_crisis, scenario, usde_depeg
@@ -79,6 +80,11 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
     standalone = 0.0
     for position in portfolio.positions:
         impact = impacts[position.position_id]
+        if lending.is_lender(position):
+            note, missing = lending.exit_note(position, snapshot, reduction)
+            impact.warnings.append(note)
+            impact.insufficient_data = impact.insufficient_data or missing
+            continue
         venue = snapshot.venues.get(position.exit_venue_id)
         if venue is None:
             impact.insufficient_data = True

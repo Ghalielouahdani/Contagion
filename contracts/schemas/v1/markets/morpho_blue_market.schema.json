@@ -30,6 +30,47 @@
         "string",
         "null"
       ]
+    },
+    "collateral_asset": {
+      "type": "string",
+      "description": "Collateral symbol. Needed for lending_supply positions."
+    },
+    "loan_asset": {
+      "type": "string",
+      "description": "Loan asset symbol, e.g. USDC."
+    },
+    "total_supply_assets": {
+      "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+      "description": "Market supply in loan-asset units. Needed for lending_supply positions."
+    },
+    "total_borrow_assets": {
+      "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+      "description": "Market borrow in loan-asset units. Needed for lending_supply positions."
+    },
+    "borrower_ltv_buckets": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Borrower debt by current oracle LTV; debt_share values sum to 1. Market aggregates cannot tell how many borrowers a shock liquidates.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ltv": {
+            "$ref": "../common.schema.json#/$defs/non_negative_decimal"
+          },
+          "debt_share": {
+            "$ref": "../common.schema.json#/$defs/non_negative_decimal"
+          }
+        },
+        "required": [
+          "ltv",
+          "debt_share"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "borrower_distribution_source_type": {
+      "$ref": "../common.schema.json#/$defs/source_type",
+      "description": "observed = indexed borrower positions; otherwise an assumption."
     }
   },
   "required": [

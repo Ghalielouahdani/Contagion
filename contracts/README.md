@@ -20,7 +20,7 @@ contracts/
 │   ├── decision_result.schema.json     │
 │   ├── risk_analytics.schema.json      ┘
 │   ├── fixture_set.schema.json         manifest of a fixture set
-│   ├── positions/      token_holding · collateralized_borrow · pt_holding
+│   ├── positions/      token_holding · collateralized_borrow · pt_holding · lending_supply
 │   ├── markets/        aave_v3_reserve · morpho_blue_market · pendle_pt_market
 │   ├── scenarios/      usde_depeg · liquidity_crisis · combined_crisis · carry_squeeze · governance_change · node_shock
 │   └── risk_metrics/   health_factor · ltv
@@ -33,6 +33,7 @@ contracts/
         ├── scenario_request_{combined,carry,governance,node_shock}.json + risk_result_<same>.json   scenarios C–F
         ├── risk_result.json · risk_result_liquidity.json · decision_result.json
         └── risk_analytics.json · risk_analytics_severe.json   money value for the fund (P2)
+    demo_lending_01/                    lender positions: two Morpho markets differing only by their oracle (golden)
     verified_2026_10_10/                fictional holdings on real markets verified on-chain (see docs/verified_markets.md)
 ```
 

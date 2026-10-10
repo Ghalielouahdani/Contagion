@@ -65,6 +65,9 @@
         },
         {
           "$ref": "positions/pt_holding.schema.json"
+        },
+        {
+          "$ref": "positions/lending_supply.schema.json"
         }
       ]
     }

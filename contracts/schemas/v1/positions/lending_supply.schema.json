@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/positions/lending_supply.schema.json",
+  "title": "Lending supply position",
+  "description": "Supply of the loan asset (e.g. USDC) to an isolated lending market. The lender does not hold the collateral: it loses only what borrowers' collateral no longer covers (bad debt, undercollateralized debt). Its market parameters, including totals and the borrower LTV distribution, are keyed by position_id in the market snapshot.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "../common.schema.json#/$defs/position_base"
+    }
+  ],
+  "properties": {
+    "position_type": {
+      "const": "lending_supply"
+    },
+    "asset_symbol": {
+      "type": "string",
+      "description": "Supplied loan asset, e.g. USDC."
+    },
+    "quantity": {
+      "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+      "description": "Supplied amount in loan-asset units (accrued interest included)."
+    },
+    "quantity_unit": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "position_type",
+    "asset_symbol",
+    "quantity",
+    "quantity_unit"
+  ],
+  "unevaluatedProperties": false
+}

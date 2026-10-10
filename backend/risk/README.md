@@ -67,6 +67,8 @@ Code map: `model.py` (contract views) · `pricing.py` (market state, PT, oracle)
 
 Scenarios: `usde_depeg` (A), `liquidity_crisis` (B), `combined_crisis` (C: A then exits queued behind liquidators' selling), `carry_squeeze` (D: rates over the horizon, days to liquidation), `governance_change` (E: threshold cut / oracle switch, then A), `node_shock` (F: shock any graph node). C–F return a `comparison` block (reference runs + `excess_loss_usd`). See `docs/risk_engine_plan.md`.
 
+Position types: `token_holding`, `collateralized_borrow`, `pt_holding`, `lending_supply` (USDC supplied to a lending market: loss = share of bad debt and of debt underwater at market prices, from the market's borrower LTV distribution; see `lending.py`).
+
 Add a scenario: new file in `scenarios/` decorated with `@scenario("<id>")`, plus its import in `scenarios/__init__.py` and its schema in `contracts/`. Add a lending protocol: one compute function + one `register(...)` line in `metrics.py`.
 
 ## Roadmap

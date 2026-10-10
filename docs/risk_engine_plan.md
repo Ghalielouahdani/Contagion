@@ -137,6 +137,21 @@ Chaque perte reste recoupée avec le graphe (`contagion.annotate`) : nouveaux fa
 
 Limites : C fait un seul tour (l'impact de prix des liquidations ne remonte pas dans les oracles : c'est la cascade, étape 4) ; D en intérêts simples ; F protocole = part supposée de la valeur, pas un exploit modélisé ; le depeg USDC ne modélise pas l'USDC du backing Ethena. **P1 doit vérifier** la composition du backing, les parts des custodians et les kinks des modèles de taux Aave/Morpho.
 
+## Positions prêteur (fait)
+
+La plupart des positions réelles d'un fonds DeFi prêtent de l'USDC (vaults Morpho, Kamino) plutôt qu'elles n'empruntent. Nouveau type de position `lending_supply` (`backend/risk/lending.py`) : **le prêteur ne détient pas la collatérale, il ne perd que ce que la collatérale des emprunteurs ne couvre plus**.
+
+- Le snapshot du marché porte l'offre, l'emprunt et une **distribution des emprunteurs par LTV oracle** (`borrower_ltv_buckets`) : les agrégats du marché ne disent pas combien d'emprunteurs un choc liquide. Étiquetée `assumed` tant que P1 n'indexe pas les positions.
+- Deux composantes de perte : `bad_debt` (liquidation déclenchée par l'oracle, les liquidateurs remboursent au plus collatérale / LIF, le reste est socialisé aux prêteurs) et `undercollateralized_debt` (emprunteur sous l'eau au prix de marché mais invisible à l'oracle : perte réelle, pas encore réalisée par le protocole).
+- Sortie : retrait sur la liquidité inutilisée du marché (offre − emprunt). Ce qui reste bloqué est un **délai, pas une perte**.
+- Carry : le prêteur reçoit taux d'emprunt × utilisation. Dans un « carry squeeze », il gagne.
+
+Jeu `demo_lending_01` : 5 M$ d'USDC dans deux marchés Morpho identiques sauf l'oracle. À −20 % :
+- oracle prix de marché : 60 % de la dette liquidable, **187,7 k$ de mauvaise dette réalisée** ;
+- oracle taux de change : aucune liquidation, mais **127,6 k$ de perte cachée**. L'oracle qui « protège » l'emprunteur transfère la perte au prêteur. Phrase de pitch : *« l'immunité de l'emprunteur, c'est le prêteur qui la paie. »*
+
+Limites : distribution des emprunteurs supposée ; les liquidateurs sont supposés agir au prix de l'oracle ; `carry_squeeze` ne modélise pas l'érosion de la collatérale des emprunteurs ; collatéral PT non pris en charge côté prêteur (signalé `insufficient_data`). **P1 : indexer les positions emprunteurs par marché** (débloque aussi la cascade).
+
 ## Niveau 3 : la finition qui fait pro
 
 ### 6. Traçabilité de chaque chiffre
@@ -184,6 +199,7 @@ backend/risk/
 4. [ ] Cascade de liquidations
 5. [ ] Presets historiques + traçabilité complète
 6. [x] Scénarios C–F : crise combinée, carry squeeze, gouvernance, choc de nœud
+7. [x] Positions prêteur (`lending_supply`) : mauvaise dette, perte cachée par l'oracle, sortie bloquée
 
 ## Questions ouvertes
 

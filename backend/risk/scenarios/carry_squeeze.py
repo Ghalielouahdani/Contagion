@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from backend.risk import lending
 from backend.risk.metrics import read_metric
 from backend.risk.model import Portfolio, Position, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, position_values
@@ -145,6 +146,8 @@ def current_susde_apy(portfolio: Portfolio, snapshot: Snapshot) -> float | None:
 
 
 def _accrue(position: Position, snapshot: Snapshot, rates: Rates, t: float) -> Position:
+    if lending.is_lender(position):
+        return replace(position, quantity=position.quantity * (1 + lender_apy(position, snapshot, rates) * t))
     if not position.is_borrow:
         return position
     y = snapshot.yields.get(position.position_id, {})
@@ -152,6 +155,15 @@ def _accrue(position: Position, snapshot: Snapshot, rates: Rates, t: float) -> P
     borrow = y.get("debt_borrow_apy", 0.0) if rates.borrow_override is None else rates.borrow_override
     return replace(position, collateral_quantity=position.collateral_quantity * (1 + supply * t),
                    debt_quantity=position.debt_quantity * (1 + borrow * t))
+
+
+def lender_apy(position: Position, snapshot: Snapshot, rates: Rates) -> float:
+    """Supply APY: borrow APY x utilization when the borrow rate is overridden, else the snapshot's supply APY."""
+    market = snapshot.market(position.position_id) or {}
+    supply, borrow = market.get("total_supply_assets"), market.get("total_borrow_assets")
+    if rates.borrow_override is not None and supply is not None and borrow is not None and float(supply) > 0:
+        return rates.borrow_override * float(borrow) / float(supply)
+    return snapshot.yields.get(position.position_id, {}).get("token_apy", 0.0)
 
 
 def _aged(snapshot: Snapshot, days: float) -> Snapshot:

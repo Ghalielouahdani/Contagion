@@ -20,6 +20,7 @@ from backend.risk.model import Portfolio, ScenarioOutcome, ScenarioRequest, Snap
 
 EXPOSED_USD = 0.01
 PROBE = 0.01  # size of the single-factor probe used to test valuation exposure
+TAIL_PROBE = 50  # lenders: tail probe = 50 x PROBE (a 50% move), since their loss starts only past a threshold
 
 # Scenario A factors: scenario parameter, probe value, root node (graph, position -> node id, or None
 # when the factor cannot apply to that kind of position).
@@ -39,7 +40,8 @@ EXIT_LIQUIDITY = ("liquidity_crisis", "combined_crisis")
 CARRY_FACTORS = {
     "susde_yield": ("susde_apy", (0.0, -PROBE), lambda g, p: "asset:sUSDe"),
     "borrow_rate": ("borrow_apy_override", (0.0, PROBE),
-                    lambda g, p: f"asset:{p.debt_asset}" if p.is_borrow else None),
+                    lambda g, p: f"asset:{p.debt_asset}" if p.is_borrow
+                    else f"asset:{p.asset_symbol}" if p.position_type == "lending_supply" else None),
 }
 
 
@@ -60,13 +62,21 @@ def _path_row(graph: Graph, factor: str, root: str, path) -> dict:
 
 
 def _depeg_exposures(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> dict[str, dict[str, bool]]:
-    """factor -> position_id -> does valuation lose money when only this factor moves?"""
+    """factor -> position_id -> does valuation lose money when only this factor moves?
+
+    A lender only loses once borrowers are underwater, so a small probe shows nothing: lenders are
+    also probed with a tail shock (TAIL_PROBE x the probe) before being declared unexposed."""
     run = scenarios.get("usde_depeg")
     exposures = {}
     for factor, (param, probe, _) in DEPEG_FACTORS.items():
-        probe_request = replace(request, parameters={**request.parameters, **NEUTRAL, param: probe})
-        outcome = run(portfolio, snapshot, probe_request)
-        exposures[factor] = {i.position_id: abs(sum(i.loss_components.values())) > EXPOSED_USD for i in outcome.impacts}
+        exposed = {}
+        for size in (probe, probe * TAIL_PROBE):
+            probe_request = replace(request, parameters={**request.parameters, **NEUTRAL, param: size})
+            for i in run(portfolio, snapshot, probe_request).impacts:
+                lender = i.internals.get("lender") is not None
+                if size == probe or lender:
+                    exposed[i.position_id] = exposed.get(i.position_id, False) or abs(sum(i.loss_components.values())) > EXPOSED_USD
+        exposures[factor] = exposed
     return exposures
 
 

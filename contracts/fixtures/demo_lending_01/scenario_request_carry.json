@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "request_id": "sim_lending_carry_01",
+  "portfolio_id": "demo_lending_01",
+  "graph_id": "graph_lending_01",
+  "snapshot_id": "snapshot_lending_01",
+  "scenario": {
+    "scenario_id": "carry_squeeze",
+    "horizon_days": 30,
+    "parameters": {
+      "susde_apy": "0.00",
+      "borrow_apy_override": "0.60",
+      "collateral_supply_apy_override": null,
+      "pt_implied_apy_shock": "0.00"
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

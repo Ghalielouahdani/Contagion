@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "snapshot_lending_01",
+  "as_of": "2026-10-10T08:00:00Z",
+  "chain_id": 1,
+  "block_number": null,
+  "prices_usd": {
+    "USDe": {
+      "value": "1.00",
+      "source_type": "assumed"
+    },
+    "USDC": {
+      "value": "1.00",
+      "source_type": "assumed"
+    },
+    "sUSDe": {
+      "value": "1.25",
+      "source_type": "derived"
+    }
+  },
+  "exchange_rates": {
+    "sUSDe_USDe": {
+      "value": "1.25",
+      "source_type": "assumed"
+    }
+  },
+  "markets": {
+    "lend_usde_01": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.915",
+      "liquidation_incentive": "0.026",
+      "oracle_pass_through": "1.0",
+      "oracle_type": "market_price_feed",
+      "collateral_asset": "USDe",
+      "loan_asset": "USDC",
+      "total_supply_assets": "120000000",
+      "total_borrow_assets": "100000000",
+      "borrower_ltv_buckets": [
+        {
+          "ltv": "0.50",
+          "debt_share": "0.15"
+        },
+        {
+          "ltv": "0.70",
+          "debt_share": "0.25"
+        },
+        {
+          "ltv": "0.80",
+          "debt_share": "0.25"
+        },
+        {
+          "ltv": "0.86",
+          "debt_share": "0.20"
+        },
+        {
+          "ltv": "0.90",
+          "debt_share": "0.15"
+        }
+      ],
+      "borrower_distribution_source_type": "assumed",
+      "verified": false,
+      "source_type": "assumed"
+    },
+    "lend_susde_01": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.915",
+      "liquidation_incentive": "0.026",
+      "oracle_pass_through": "0.0",
+      "oracle_type": "exchange_rate_usde_hardcoded",
+      "collateral_asset": "sUSDe",
+      "loan_asset": "USDC",
+      "total_supply_assets": "120000000",
+      "total_borrow_assets": "100000000",
+      "borrower_ltv_buckets": [
+        {
+          "ltv": "0.50",
+          "debt_share": "0.15"
+        },
+        {
+          "ltv": "0.70",
+          "debt_share": "0.25"
+        },
+        {
+          "ltv": "0.80",
+          "debt_share": "0.25"
+        },
+        {
+          "ltv": "0.86",
+          "debt_share": "0.20"
+        },
+        {
+          "ltv": "0.90",
+          "debt_share": "0.15"
+        }
+      ],
+      "borrower_distribution_source_type": "assumed",
+      "verified": false,
+      "source_type": "assumed"
+    }
+  },
+  "yields": {
+    "lend_usde_01": {
+      "token_apy": "0.05",
+      "source_type": "assumed"
+    },
+    "lend_susde_01": {
+      "token_apy": "0.05",
+      "source_type": "assumed"
+    }
+  },
+  "exit_venues": {},
+  "warnings": [
+    "All values are fixture assumptions; the two markets differ only by their oracle.",
+    "Borrower LTV buckets are assumed; P1 must index borrower positions (Morpho positions per market) to replace them."
+  ]
+}

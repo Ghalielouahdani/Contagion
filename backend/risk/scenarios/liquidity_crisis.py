@@ -7,6 +7,7 @@ a joint exit per shared venue and reports the difference as shared_liquidity_pen
 
 from __future__ import annotations
 
+from backend.risk import lending
 from backend.risk.liquidity import crisis_depth, group_by_venue, haircut, joint_haircuts
 from backend.risk.model import Portfolio, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, position_values
@@ -42,6 +43,12 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
                 "execution_haircut": 0.0,
             },
         )
+        if lending.is_lender(position):
+            note, missing = lending.exit_note(position, snapshot, reduction)
+            impact.warnings.append(note)
+            impact.insufficient_data = missing
+            outcome.impacts.append(impact)
+            continue
         venue = snapshot.venues.get(position.exit_venue_id)
         if venue is None:
             impact.insufficient_data = True

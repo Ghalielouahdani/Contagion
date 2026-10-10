@@ -1,0 +1,335 @@
+{
+  "schema_version": "1.0",
+  "graph_id": "graph_lending_01",
+  "portfolio_id": "demo_lending_01",
+  "as_of": "2026-10-10T08:00:00Z",
+  "nodes": [
+    {
+      "id": "asset:USDe",
+      "type": "asset",
+      "label": "USDe"
+    },
+    {
+      "id": "asset:sUSDe",
+      "type": "asset",
+      "label": "sUSDe"
+    },
+    {
+      "id": "asset:USDC",
+      "type": "asset",
+      "label": "USDC"
+    },
+    {
+      "id": "protocol:ethena",
+      "type": "protocol",
+      "label": "Ethena"
+    },
+    {
+      "id": "protocol:morpho",
+      "type": "protocol",
+      "label": "Morpho"
+    },
+    {
+      "id": "offchain:ethena_backing",
+      "type": "offchain_entity",
+      "label": "Ethena backing (custody, hedges, reserve fund)"
+    },
+    {
+      "id": "market:lend_usde_01",
+      "type": "market",
+      "label": "Morpho USDe/USDC market (market-price oracle)"
+    },
+    {
+      "id": "market:lend_susde_01",
+      "type": "market",
+      "label": "Morpho sUSDe/USDC market (exchange-rate oracle)"
+    },
+    {
+      "id": "oracle:lend_usde_01_usde",
+      "type": "oracle",
+      "label": "USDe market price feed"
+    },
+    {
+      "id": "oracle:lend_susde_01_susde",
+      "type": "oracle",
+      "label": "sUSDe exchange-rate oracle (USDe = 1 USD)"
+    },
+    {
+      "id": "position:lend_usde_01",
+      "type": "position",
+      "label": "USDC supplied to the USDe market"
+    },
+    {
+      "id": "position:lend_susde_01",
+      "type": "position",
+      "label": "USDC supplied to the sUSDe market"
+    },
+    {
+      "id": "venue:morpho_usde_usdc_supply",
+      "type": "venue",
+      "label": "Withdrawal from USDe market idle liquidity"
+    },
+    {
+      "id": "venue:morpho_susde_usdc_supply",
+      "type": "venue",
+      "label": "Withdrawal from sUSDe market idle liquidity"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:1",
+      "source": "asset:USDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "documented"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:2",
+      "source": "asset:USDe",
+      "target": "offchain:ethena_backing",
+      "relation": "backed_by",
+      "risk_channel": "custody",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "documented"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:3",
+      "source": "asset:sUSDe",
+      "target": "asset:USDe",
+      "relation": "redeemable_for",
+      "risk_channel": "exchange_rate",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "documented"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:4",
+      "source": "asset:sUSDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "documented"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:5",
+      "source": "position:lend_usde_01",
+      "target": "market:lend_usde_01",
+      "relation": "position_in",
+      "risk_channel": "borrower_default",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:6",
+      "source": "market:lend_usde_01",
+      "target": "asset:USDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:7",
+      "source": "market:lend_usde_01",
+      "target": "asset:USDC",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:8",
+      "source": "market:lend_usde_01",
+      "target": "oracle:lend_usde_01_usde",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:9",
+      "source": "oracle:lend_usde_01_usde",
+      "target": "asset:USDe",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:10",
+      "source": "market:lend_usde_01",
+      "target": "protocol:morpho",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.morpho.org/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "documented"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:11",
+      "source": "position:lend_usde_01",
+      "target": "venue:morpho_usde_usdc_supply",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:12",
+      "source": "position:lend_susde_01",
+      "target": "market:lend_susde_01",
+      "relation": "position_in",
+      "risk_channel": "borrower_default",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:13",
+      "source": "market:lend_susde_01",
+      "target": "asset:sUSDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:14",
+      "source": "market:lend_susde_01",
+      "target": "asset:USDC",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:15",
+      "source": "market:lend_susde_01",
+      "target": "oracle:lend_susde_01_susde",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:16",
+      "source": "oracle:lend_susde_01_susde",
+      "target": "asset:sUSDe",
+      "relation": "reads_price_of",
+      "risk_channel": "exchange_rate",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:17",
+      "source": "market:lend_susde_01",
+      "target": "protocol:morpho",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.morpho.org/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "documented"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:18",
+      "source": "position:lend_susde_01",
+      "target": "venue:morpho_susde_usdc_supply",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "fixture",
+        "reference": "contracts/fixtures/demo_lending_01",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    }
+  ],
+  "warnings": [
+    "Fixture graph for lender positions; market ids and oracles must be verified by P1."
+  ]
+}

@@ -148,7 +148,8 @@
         "debt_cost",
         "maturity_redemption",
         "smart_contract",
-        "custody"
+        "custody",
+        "borrower_default"
       ]
     },
     "confidence": {
