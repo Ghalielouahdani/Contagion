@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from backend.api.provisional_decision import decide
+from backend.execution.integration import decide
 from backend.risk import simulate
 
 DEPEG_SHOCKS = [-i / 100 for i in range(0, 41)]  # 0% .. -40%
@@ -41,7 +41,7 @@ def _point(portfolio: dict, snapshot: dict, request: dict, param: str, value: fl
     return {
         "value": f"{value:.2f}",
         "risk_result": result,
-        "decisions": {p["position_id"]: decide(portfolio, snapshot, r, p["position_id"]) for p in portfolio["positions"]},
+        "decisions": {p["position_id"]: decide(portfolio, snapshot, r, p["position_id"], result) for p in portfolio["positions"]},
     }
 
 

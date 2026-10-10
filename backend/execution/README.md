@@ -218,3 +218,22 @@ python3 -m pip install pytest
 python3 -m pytest backend/execution -v      # 59 tests
 python3 -m backend.execution.decision        # prints the aave_01 decision and checks it against the 11.8 fixture
 ```
+
+
+## Dashboard integration
+
+`backend.execution.integration.decide(portfolio, snapshot, request, position_id, risk_result)`
+connects P3 to risk. The API passes the exact saved result from `/simulate` when the frontend
+requests a decision by `simulation_id`. Unknown simulations and cross-portfolio lookups are
+rejected. Frontend run IDs are unique, so background stress comparisons cannot overwrite the
+main run's saved result. Request-based calls remain supported.
+
+The adapter uses the risk result's pre-shock marks, shares the risk engine's snapshot quote
+curve and labels extrapolation as proxy. Lending supplies withdraw from idle market liquidity:
+fractions exceeding that liquidity are omitted, and locked supply is not treated as a loss.
+Withdrawal fee/gas inputs are currently absent and explicitly flagged as shown at zero.
+Negative conditional losses (carry gains) stay signed in residual results.
+
+Offline `risk_surface.json` decisions are generated through this same adapter. The Scenario
+Lab displays a position's exit table next to its risk result; the Decision Engine page keeps
+the detailed view. P3 produces decision analysis, not on-chain trade submission.

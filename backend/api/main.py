@@ -1,9 +1,9 @@
 """FastAPI orchestration for the dashboard (blueprint section 10).
 
 Serves the routes the frontend already calls (frontend/src/data/api.ts):
-- discovery: fixture graph and snapshot of the selected fixture set (P1 live mode pending);
+- discovery: stored, replayed or live P1 graph and snapshot of the selected set;
 - risk: the live engine, so every slider value is computed, not scaled from a fixture;
-- decision: provisional, computed from the risk engine until P3 lands.
+- decision: P3 execution engine, consuming the matching risk result.
 
 Every route takes an optional ?set=<fixture set> (default: env FIXTURE_SET or demo_ethena_01),
 e.g. ?set=verified_2026_10_10 for the markets verified on-chain.
@@ -24,7 +24,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from backend.api.provisional_decision import decide as provisional_decide
+from backend.execution.integration import decide as execution_decide
+from backend.api import discovery_state
 from backend.risk import simulate
 from backend.risk.analytics import analyze
 from backend.risk.analytics.sensitivity import grid
@@ -41,8 +42,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# simulation_id -> scenario request, so /decide can follow up a /simulate call
-_simulations: dict[str, dict] = {}
+# (portfolio_id, simulation_id) -> request, risk result, portfolio and snapshot for execution
+_simulations: dict[tuple[str, str], tuple[dict, dict, dict, dict]] = {}
 
 
 @lru_cache(maxsize=None)
@@ -55,7 +56,15 @@ def _set_files(name: str) -> dict[str, Any]:
 
 
 def _files(name: str | None) -> dict[str, Any]:
-    return _set_files(name or DEFAULT_SET)
+    set_name = name or DEFAULT_SET
+    stored = _set_files(set_name)
+    active = discovery_state.current(set_name, stored)
+    return {**stored, "dependency_graph": active.graph, "market_snapshot": active.snapshot, "_discovery": active}
+
+
+def _active_request(files: dict, request: dict) -> dict:
+    active = files["_discovery"]
+    return discovery_state.readdress(request, active) if active.mode != "stored" else request
 
 
 @lru_cache(maxsize=None)
@@ -86,7 +95,7 @@ def _run(fn, *args):
 @app.get("/api/v1/health")
 def health(set: str | None = Query(None)) -> dict:
     name = set or DEFAULT_SET
-    _files(name)
+    files = _files(name)
     sets = sorted(p.name for p in (CONTRACTS / "fixtures").iterdir() if (p / "manifest.json").is_file())
     return {
         "status": "ok",
@@ -94,7 +103,8 @@ def health(set: str | None = Query(None)) -> dict:
         "schema_version": "1.0",
         "fixture_set": name,
         "fixture_sets": sets,
-        "modules": {"discovery": "fixture", "risk": "live", "execution": "provisional (risk engine)", "assistant": "client-side"},
+        "active_discovery": {"mode": files["_discovery"].mode, "warnings": files["_discovery"].warnings},
+        "modules": {"discovery": files["_discovery"].mode, "risk": "live", "execution": "P3 decision engine", "assistant": "client-side"},
     }
 
 
@@ -104,12 +114,12 @@ def portfolio(set: str | None = Query(None)) -> dict:
 
 
 @app.post("/api/v1/discover")
-def discover(body: dict = Body(default={}), set: str | None = Query(None)) -> dict:
-    files = _files(set)
+def discover(body: dict = Body(default={}), set: str | None = Query(None), discovery: str = Query("stored")) -> dict:
+    files = _set_files(set or DEFAULT_SET)
     wanted = body.get("portfolio_id")
     if wanted and wanted != files["portfolio"]["portfolio_id"]:
         raise HTTPException(404, f"unknown portfolio_id {wanted!r}")
-    return files["dependency_graph"]
+    return _run(discovery_state.run, set or DEFAULT_SET, files, discovery).graph
 
 
 @app.get("/api/v1/market-snapshot")
@@ -120,22 +130,23 @@ def market_snapshot(set: str | None = Query(None)) -> dict:
 @app.post("/api/v1/simulate")
 def post_simulate(request: dict = Body(...), set: str | None = Query(None)) -> dict:
     files = _files(set)
-    result = _run(simulate, files["portfolio"], files["market_snapshot"], _valid_request(request), files["dependency_graph"])
-    _simulations[result["simulation_id"]] = request
+    request = _valid_request(_active_request(files, request))
+    result = _run(simulate, files["portfolio"], files["market_snapshot"], request, files["dependency_graph"])
+    _simulations[(files["portfolio"]["portfolio_id"], result["simulation_id"])] = (request, result, files["portfolio"], files["market_snapshot"])
     return result
 
 
 @app.post("/api/v1/analyze")
 def post_analyze(request: dict = Body(...), set: str | None = Query(None)) -> dict:
     files = _files(set)
-    return _run(analyze, files["portfolio"], files["market_snapshot"], _valid_request(request))
+    return _run(analyze, files["portfolio"], files["market_snapshot"], _valid_request(_active_request(files, request)))
 
 
 @app.post("/api/v1/grid")
 def post_grid(body: dict = Body(...), set: str | None = Query(None)) -> dict:
     """Loss / liquidation heatmap over any two scenario parameters."""
     files = _files(set)
-    request = _valid_request(body.get("request", {}))
+    request = _valid_request(_active_request(files, body.get("request", {})))
     try:
         xs, ys = [float(v) for v in body["x_values"]], [float(v) for v in body["y_values"]]
         x_param, y_param = body["x_param"], body["y_param"]
@@ -152,9 +163,19 @@ def post_grid(body: dict = Body(...), set: str | None = Query(None)) -> dict:
 def post_decide(body: dict = Body(...), set: str | None = Query(None)) -> dict:
     """Body: {position_id, and either request (scenario request) or simulation_id from /simulate}."""
     files = _files(set)
-    request = body.get("request") or _simulations.get(body.get("simulation_id", "")) or files["scenario_request"]
+    cached = _simulations.get((files["portfolio"]["portfolio_id"], body.get("simulation_id", "")))
+    if body.get("simulation_id") and not body.get("request") and cached is None:
+        raise HTTPException(404, "simulation not found for the selected portfolio; run the scenario first")
+    if body.get("request"):
+        request = _active_request(files, body["request"])
+    else:
+        request = cached[0] if cached else _active_request(files, files["scenario_request"])
+    request = _valid_request(request)
     position_id = body.get("position_id") or files["portfolio"]["positions"][0]["position_id"]
-    return _run(provisional_decide, files["portfolio"], files["market_snapshot"], _valid_request(request), position_id)
+    risk = cached[1] if cached and not body.get("request") else _run(
+        simulate, files["portfolio"], files["market_snapshot"], request, files["dependency_graph"])
+    portfolio, snapshot = (cached[2], cached[3]) if cached and not body.get("request") else (files["portfolio"], files["market_snapshot"])
+    return _run(execution_decide, portfolio, snapshot, request, position_id, risk)
 
 
 @app.post("/api/v1/assistant")

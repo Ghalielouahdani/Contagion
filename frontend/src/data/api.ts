@@ -112,6 +112,7 @@ const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.strin
 /** The set's scenario request with the slider values applied (decimal strings, as the contract requires). */
 export function buildScenarioRequest(scenario: ScenarioKind, inputs: ScenarioInputs, set: string) {
   const request = JSON.parse(JSON.stringify(baseScenarioRequest(scenario, set)));
+  request.request_id = `sim_ui_${crypto.randomUUID().replaceAll("-", "_")}`;
   request.scenario.horizon_days = inputs.horizonDays;
   for (const { param, value } of scenarioParams[scenario]) request.scenario.parameters[param] = value(inputs);
   return request;
@@ -160,7 +161,7 @@ export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs
   ]);
   const decisionList = await Promise.all(
     portfolio.positions.map((position) =>
-      requestJson<DecisionResult>(withSet("/api/v1/decide", set), post({ request, position_id: position.position_id })),
+      requestJson<DecisionResult>(withSet("/api/v1/decide", set), post({ simulation_id: risk.simulation_id, position_id: position.position_id })),
     ),
   );
   const decisions = Object.fromEntries(decisionList.map((decision) => [decision.position_id, decision]));

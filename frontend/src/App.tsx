@@ -1308,6 +1308,19 @@ function ScenarioLab({
         {Object.entries(selectedRisk.loss_components).map(([key, value]) => <Definition key={key} label={labelize(key)} value={money(value)} />)}
         <WarningList warnings={selectedRisk.warnings} />
       </section>
+      <section className="visual-panel scenario-results">
+        <p className="eyebrow">Execution decision · {compactId(selectedPosition)}</p>
+        <h2>Cost of acting before this scenario</h2>
+        <p className="microcopy">Exit options use this run's risk loss, snapshot liquidity and horizon.</p>
+        <table><thead><tr><th>Exit</th><th>Exit cost</th><th>Residual loss / gain</th><th>Break-even probability</th></tr></thead>
+          <tbody>{data.decision.exit_options.map(option => <tr key={option.exit_fraction}>
+            <td>{percent(option.exit_fraction, 0)}</td><td>{money(option.estimated_exit_cost_usd)}</td>
+            <td>{money(option.residual_stress_loss_usd)}</td><td>{percent(option.break_even_probability)}</td>
+          </tr>)}</tbody>
+        </table>
+        <p>{data.decision.reason}</p>
+        <WarningList warnings={data.decision.warnings} />
+      </section>
       {data.risk.comparison ? (
         <section className="gauge-panel">
           <div>

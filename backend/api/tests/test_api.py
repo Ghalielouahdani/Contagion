@@ -116,3 +116,18 @@ def test_all_dashboard_presets_feed_matching_portfolio_graph_and_decisions():
                 assert decision['position_id'] == position['position_id']
                 assert decision['portfolio_id'] == portfolio['portfolio_id']
                 assert decision['scenario_id'] == risk['scenario_id']
+
+
+def test_decide_uses_saved_run_and_rejects_cross_portfolio_simulation():
+    request = copy.deepcopy(load('scenario_request'))
+    request['request_id'] = 'sim_execution_link'
+    request['scenario']['parameters']['usde_spot_shock_pct'] = '-0.20'
+    risk = client.post('/api/v1/simulate', json=request).json()
+    decision = client.post('/api/v1/decide', json={'simulation_id': risk['simulation_id'], 'position_id': 'aave_01'})
+    assert decision.status_code == 200
+    body = decision.json()
+    impact = next(p for p in risk['positions'] if p['position_id'] == 'aave_01')
+    assert body['simulation_id'] == risk['simulation_id']
+    assert D(body['exit_options'][0]['residual_stress_loss_usd']) == D(impact['conditional_loss_usd'])
+    assert not any('Provisional' in warning for warning in body['warnings'])
+    assert client.post('/api/v1/decide?set=verified_lending_2026_10_10', json={'simulation_id': risk['simulation_id']}).status_code == 404

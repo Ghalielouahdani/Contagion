@@ -81,7 +81,7 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
             "price_impact_usd": usd(q.price_impact_usd) if q else "0",
             "estimated_exit_cost_usd": usd(cost) if q else "0",
             "foregone_yield_usd": usd(foregone) if x > 0 else "0",
-            "residual_stress_loss_usd": usd(residual) if residual > 0 else "0",
+            "residual_stress_loss_usd": usd(residual) if residual != 0 else "0",
             "break_even_probability": ratio(p_star) if p_star is not None else None,
             "objective_usd": usd(objective) if objective is not None else None,
             # x = 0 : rien à vendre ; on affiche la meilleure méthode utilisée sur cette venue.
