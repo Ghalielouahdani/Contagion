@@ -237,25 +237,32 @@ export const scenarioFixtures = Object.fromEntries(
 ) as Record<ScenarioKind, ReturnType<typeof createMockScenarioRequest>>;
 
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
-  if (mode === "api") {
-    try {
-      return await requestJson<AssistantResponse>("/api/v1/assistant", {
-        method: "POST",
-        body: JSON.stringify({
-          message: request.message,
-          view: request.view,
-          scenario: request.scenario,
-          selected_position: request.selectedPosition,
-          inspected_exit_fraction: request.inspectedExitFraction,
-          scenario_inputs: request.scenarioInputs,
-        }),
-      });
-    } catch {
-      // No server-side assistant yet (the API answers 501): fall back to the local intent parser.
-    }
+  try {
+    const response = await requestJson<AssistantResponse>(withSet("/api/v1/assistant"), {
+      method: "POST",
+      body: JSON.stringify({
+        message: request.message,
+        view: request.view,
+        scenario: request.scenario,
+        selected_position: request.selectedPosition,
+        inspected_exit_fraction: request.inspectedExitFraction,
+        scenario_inputs: request.scenarioInputs,
+        data: request.data,
+        data_mode: mode,
+      }),
+    });
+    const localIntent = parseAssistantIntent(request);
+    console.info("[DeFi Contagion] assistant backend response", response);
+    return { ...response, actions: response.actions?.length ? response.actions : localIntent.actions };
+  } catch (error) {
+    console.warn("[DeFi Contagion] assistant backend unavailable; using deterministic browser fallback", error);
   }
 
-  return fixtureAssistantResponse(request);
+  const fallback = fixtureAssistantResponse(request);
+  return {
+    ...fallback,
+    message: `Offline fallback: ${fallback.message}`,
+  };
 }
 
 function fixtureAssistantResponse(request: AssistantRequest): AssistantResponse {

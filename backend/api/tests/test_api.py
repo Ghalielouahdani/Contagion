@@ -78,8 +78,32 @@ def test_analyze_and_grid():
     assert heat["liquidatable_positions"][1][2] == 2
 
 
-def test_assistant_is_client_side():
-    assert client.post("/api/v1/assistant", json={}).status_code == 501
+def test_assistant_uses_local_model(monkeypatch):
+    def fake_model(request):
+        assert request["model"]
+        assert request["payload"]["messages"][1]["content"]
+        return "Model answer grounded in the visible portfolio.", '{"message":{"content":"ok"}}'
+
+    monkeypatch.setattr("backend.api.assistant_provider.call_local_ollama", fake_model)
+    response = client.post("/api/v1/assistant", json={"message": "Which position is most at risk?", "selected_position": "aave_01"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source"] == "local-ollama"
+    assert body["message"] == "Model answer grounded in the visible portfolio."
+
+
+def test_assistant_fallback_is_explicit(monkeypatch):
+    def broken_model(_request):
+        from backend.api.assistant_provider import AssistantModelError
+
+        raise AssistantModelError("connection refused")
+
+    monkeypatch.setattr("backend.api.assistant_provider.call_local_ollama", broken_model)
+    response = client.post("/api/v1/assistant", json={"message": "What is the verdict?", "selected_position": "aave_01"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source"] == "deterministic-fallback"
+    assert body["message"].startswith("Offline fallback:")
 
 
 @pytest.mark.parametrize("set_name", ["demo_ethena_01", "verified_2026_10_10"])

@@ -24,6 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
+from backend.api.assistant_provider import answer_assistant
 from backend.api.provisional_decision import decide as provisional_decide
 from backend.risk import simulate
 from backend.risk.analytics import analyze
@@ -94,7 +95,7 @@ def health(set: str | None = Query(None)) -> dict:
         "schema_version": "1.0",
         "fixture_set": name,
         "fixture_sets": sets,
-        "modules": {"discovery": "fixture", "risk": "live", "execution": "provisional (risk engine)", "assistant": "client-side"},
+        "modules": {"discovery": "fixture", "risk": "live", "execution": "provisional (risk engine)", "assistant": "local Ollama + fallback"},
     }
 
 
@@ -158,5 +159,6 @@ def post_decide(body: dict = Body(...), set: str | None = Query(None)) -> dict:
 
 
 @app.post("/api/v1/assistant")
-def assistant() -> dict:
-    raise HTTPException(501, "assistant runs client-side; no server model connected")
+def assistant(body: dict = Body(...), set: str | None = Query(None)) -> dict:
+    name = set or DEFAULT_SET
+    return answer_assistant(body, _files(name), name)
