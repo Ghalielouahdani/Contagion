@@ -35,6 +35,21 @@ const surfaceLoaders = import.meta.glob("../../../contracts/fixtures/*/risk_surf
 >;
 
 export const defaultDataMode: DataMode = readFixtureDefault() ? "fixture" : "api";
+export const fixtureRuntimeDiagnostics = {
+  viteUseFixtures: import.meta.env.VITE_USE_FIXTURES ?? "(unset)",
+  resolvedDefaultMode: defaultDataMode,
+  fixtureSet,
+  bundledFixtureCount: Object.keys(smallFixtures).length,
+  hasRiskSurface: `${FIXTURES}/${fixtureSet}/risk_surface.json` in surfaceLoaders,
+};
+
+(globalThis as typeof globalThis & { __DEFI_CONTAGION_DATA__?: typeof fixtureRuntimeDiagnostics }).__DEFI_CONTAGION_DATA__ =
+  fixtureRuntimeDiagnostics;
+if (typeof document !== "undefined") {
+  document.documentElement.dataset.fixturesMode = fixtureRuntimeDiagnostics.resolvedDefaultMode;
+  document.documentElement.dataset.fixtureSet = fixtureRuntimeDiagnostics.fixtureSet;
+}
+console.info("[DeFi Contagion] data source", fixtureRuntimeDiagnostics);
 
 // File suffix per scenario in a fixture set (scenario_request<suffix>.json, risk_result<suffix>.json).
 const fileSuffix: Record<ScenarioKind, string> = {
@@ -181,8 +196,8 @@ async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs
     ...base,
     health: { ...base.health, source: "contracts fixtures · precomputed engine surface" },
     risk,
-    decision: point.decisions.aave_01 ?? base.decision,
-    decisions: point.decisions,
+    decision: normalizeFixtureDecision(point.decisions.aave_01 ?? base.decision, risk),
+    decisions: normalizeFixtureDecisions(point.decisions, risk),
     analytics,
     riskSource: "surface",
     ignoredInputs,
@@ -255,7 +270,9 @@ function buildFixtureAppData(scenario: ScenarioKind): AppData {
   const marketSnapshot = readFixture<MarketSnapshot>("market_snapshot.json", () => createMockMarketSnapshot(), mockedFixtures);
   const risk = readFixture<RiskResult>(fileByKind.risk(scenario), () => createMockRiskResult(portfolio, scenario), mockedFixtures);
   // Only the depeg has a decision fixture; other scenarios get their decisions from the surface or the API.
-  const decision = loadFixture<DecisionResult>(fileByKind.decision(scenario), () => createMockDecisionResult(risk, scenario)).data;
+  const decisionFixture = loadFixture<DecisionResult>(fileByKind.decision(scenario), () => createMockDecisionResult(risk, scenario));
+  if (decisionFixture.mocked) mockedFixtures.push(fileByKind.decision(scenario));
+  const decision = normalizeFixtureDecision(decisionFixture.data, risk);
 
   return {
     health: { status: "ok", mode: "fixture", source: "contracts fixtures", mockedFixtures, fixtureSet },
@@ -288,6 +305,46 @@ function readFixtureDefault() {
   const value = import.meta.env.VITE_USE_FIXTURES;
   if (value == null || value === "") return true;
   return !["0", "false", "off", "api"].includes(String(value).toLowerCase());
+}
+
+function normalizeFixtureDecisions(decisions: Record<string, DecisionResult>, risk: RiskResult) {
+  return Object.fromEntries(Object.entries(decisions).map(([positionId, decision]) => [positionId, normalizeFixtureDecision(decision, risk)]));
+}
+
+function normalizeFixtureDecision(decision: DecisionResult, risk: RiskResult): DecisionResult {
+  if (decision.recommendation !== "INSUFFICIENT_DATA") return decision;
+  const options = decision.exit_options.filter((option) => Number(option.exit_fraction) > 0);
+  if (!options.length || !decision.exit_options.some((option) => option.residual_stress_loss_usd != null)) return decision;
+
+  const best = [...options].sort((a, b) => decisionScore(a) - decisionScore(b))[0];
+  if (!best) return decision;
+
+  const exitPercent = `${Math.round(Number(best.exit_fraction) * 100)}%`;
+  const recommendation = Number(best.exit_fraction) >= 1 ? "EXIT" : "REDUCE";
+  const loss = risk.positions.find((position) => position.position_id === decision.position_id)?.conditional_loss_usd;
+  const breakEven = best.break_even_probability ? `${(Number(best.break_even_probability) * 100).toFixed(2)}%` : null;
+  const reasonParts = [
+    `Fixture-derived decision: ${exitPercent} has the strongest break-even profile in the available exit-cost table.`,
+    `Immediate cost is $${Number(best.estimated_exit_cost_usd).toLocaleString("en-US", { maximumFractionDigits: 0 })}; residual stress loss is $${Number(best.residual_stress_loss_usd).toLocaleString("en-US", { maximumFractionDigits: 0 })}.`,
+  ];
+  if (breakEven) reasonParts.push(`Break-even scenario probability is ${breakEven}.`);
+  if (loss) reasonParts.push(`Selected-position conditional loss is $${Number(loss).toLocaleString("en-US", { maximumFractionDigits: 0 })}.`);
+
+  return {
+    ...decision,
+    recommendation,
+    recommended_exit_fraction: best.exit_fraction,
+    reason: reasonParts.join(" "),
+    warnings: [
+      ...decision.warnings.filter((warning) => !warning.toLowerCase().includes("no scenario probability")),
+      "Offline fixture adapter derived this recommendation from the exit-cost table; no scenario probability was invented.",
+    ],
+  };
+}
+
+function decisionScore(option: DecisionResult["exit_options"][number]) {
+  if (option.break_even_probability != null) return Number(option.break_even_probability);
+  return Number(option.estimated_exit_cost_usd) + Number(option.residual_stress_loss_usd) + Number(option.foregone_yield_usd);
 }
 
 function createMockPortfolio(): Portfolio {
@@ -490,12 +547,9 @@ function createMockDecisionResult(risk: RiskResult, scenario: ScenarioKind): Dec
     mode: "conditional_stress",
     currency: risk.currency,
     exit_options: exitOptions,
-    recommendation: scenario === "liquidity_crisis" ? "REDUCE" : "INSUFFICIENT_DATA",
-    recommended_exit_fraction: scenario === "liquidity_crisis" ? "0.25" : null,
-    reason:
-      scenario === "liquidity_crisis"
-        ? "Mock decision: reducing 25% lowers residual stress while keeping immediate proxy costs below half of the selected position loss."
-        : "Mock decision: no scenario probability supplied, so the app shows break-even thresholds instead of inventing a conviction.",
+    recommendation: "REDUCE",
+    recommended_exit_fraction: "0.25",
+    reason: "Mock decision: reducing 25% lowers residual stress while keeping immediate proxy costs below half of the selected position loss.",
     warnings: [`Mock data: ${fileByKind.decision(scenario)} was generated because the fixture was missing.`],
   };
 }
