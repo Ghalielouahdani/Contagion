@@ -51,7 +51,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { defaultDataMode, loadAppData, postAssistantMessage, presetInputs } from "./data/api";
@@ -224,6 +224,7 @@ const demoCredential = {
 };
 const sessionStorageKey = "defi-contagion-session";
 const passkeyStorageKey = "defi-contagion-demo-passkey";
+const introSeenStorageKey = "defi-contagion-intro-seen";
 const demoUserId = "defi-contagion-demo-user";
 
 function App() {
@@ -263,7 +264,7 @@ function App() {
   const [query, setQuery] = useState("");
   const [hasRun, setHasRun] = useState(true);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [introPreviewOpen, setIntroPreviewOpen] = useState(true);
+  const [introOpen, setIntroOpen] = useState(() => sessionStorage.getItem(introSeenStorageKey) !== "true");
 
   // Deferred so dragging a slider does not queue a request per pixel; the result follows the slider.
   const deferredShock = useDeferredValue(shockPct);
@@ -383,6 +384,15 @@ function App() {
     setCommandOpen(false);
   }
 
+  const dismissIntro = useCallback(() => {
+    sessionStorage.setItem(introSeenStorageKey, "true");
+    setIntroOpen(false);
+  }, []);
+
+  function replayIntro() {
+    setIntroOpen(true);
+  }
+
   if (!session) {
     return <LoginScreen theme={theme} setTheme={setTheme} onAuthenticated={handleAuthenticated} />;
   }
@@ -404,12 +414,17 @@ function App() {
 
       <section className="content-pane">
         <header className="topbar">
-          <div>
-            <p className="eyebrow">DeFi Contagion Explorer</p>
-            <AnimatedHeading text={viewMeta[view].label} />
-            <motion.p className="lead" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}>
-              {scenarioCopy[scenario].summary}
-            </motion.p>
+          <div className="topbar-brand">
+            <div className="topbar-mark" aria-hidden="true">
+              <DeFiLogo compact />
+            </div>
+            <div>
+              <p className="eyebrow">DeFi Contagion Explorer</p>
+              <AnimatedHeading text={viewMeta[view].label} />
+              <motion.p className="lead" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}>
+                {scenarioCopy[scenario].summary}
+              </motion.p>
+            </div>
           </div>
           <div className="topbar-actions">
             <button className="icon-button text-button" onClick={() => setCommandOpen(true)}>
@@ -419,6 +434,10 @@ function App() {
             <button className="icon-button text-button" onClick={reset}>
               <RefreshCw size={15} />
               Reset
+            </button>
+            <button className="icon-button text-button" onClick={replayIntro}>
+              <Sparkles size={15} />
+              Replay intro
             </button>
             <button className="run-button" onClick={runScenario}>
               <Play size={15} />
@@ -530,22 +549,21 @@ function App() {
         />
       ) : null}
     </main>
-    <IntroOverlay open={introPreviewOpen} onDismiss={() => setIntroPreviewOpen(false)} />
+    <IntroOverlay open={introOpen} onComplete={dismissIntro} />
     </>
   );
 }
 
-function IntroOverlay({ open, onDismiss }: { open: boolean; onDismiss: () => void }) {
+function IntroOverlay({ open, onComplete }: { open: boolean; onComplete: () => void }) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const ecosystem = ["Ethena", "Aave", "Morpho", "Pendle"];
   const title = "DeFi Contagion";
 
   useEffect(() => {
     if (!open) return;
-    const onKeyDown = () => onDismiss();
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onDismiss, open]);
+    const timeout = window.setTimeout(onComplete, prefersReducedMotion ? 900 : 3600);
+    return () => window.clearTimeout(timeout);
+  }, [onComplete, open, prefersReducedMotion]);
 
   return (
     <AnimatePresence>
@@ -557,13 +575,18 @@ function IntroOverlay({ open, onDismiss }: { open: boolean; onDismiss: () => voi
           aria-label="DeFi Contagion intro"
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 1.015 }}
-          transition={{ duration: prefersReducedMotion ? 0.12 : 0.72, ease: easeOut }}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) onDismiss();
-          }}
+          exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 1.018 }}
+          transition={{ duration: prefersReducedMotion ? 0.18 : 0.82, ease: easeOut }}
         >
           <div className="intro-noise" aria-hidden="true" />
+          <motion.div
+            className="intro-logo"
+            initial={{ opacity: 0, x: prefersReducedMotion ? 0 : -34, scale: 0.92 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: prefersReducedMotion ? 0.16 : 0.72, delay: prefersReducedMotion ? 0 : 0.2, ease: easeOut }}
+          >
+            <DeFiLogo />
+          </motion.div>
           <motion.div
             className="intro-orbit"
             aria-hidden="true"
@@ -619,12 +642,23 @@ function IntroOverlay({ open, onDismiss }: { open: boolean; onDismiss: () => voi
               transition={{ duration: prefersReducedMotion ? 0.16 : 0.9, delay: prefersReducedMotion ? 0 : 2.02, ease: easeOut }}
             />
           </motion.div>
-          <button className="intro-skip" onClick={onDismiss}>
-            Skip intro
-          </button>
         </motion.div>
       ) : null}
     </AnimatePresence>
+  );
+}
+
+function DeFiLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <svg className={compact ? "defi-logo defi-logo--compact" : "defi-logo"} viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <circle cx="32" cy="32" r="4.8" fill="currentColor" />
+      <path d="M32 12C43 12 52 21 52 32" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+      <path d="M32 52C21 52 12 43 12 32" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+      <path d="M20 22C24.5 16.8 31.4 15.2 38 17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" opacity="0.46" />
+      <path d="M44 42C39.5 47.2 32.6 48.8 26 47" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" opacity="0.46" />
+      <circle cx="48.5" cy="27.5" r="2.7" fill="currentColor" opacity="0.72" />
+      <circle cx="15.5" cy="36.5" r="2.7" fill="currentColor" opacity="0.72" />
+    </svg>
   );
 }
 
@@ -751,8 +785,7 @@ function LoginScreen({
       >
         <div className="auth-topline">
           <div className="brand-mark compact" aria-hidden="true">
-            <span />
-            <span />
+            <DeFiLogo compact />
           </div>
           <button className="mode-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label="Toggle theme">
             {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
@@ -915,8 +948,7 @@ function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand-mark" aria-hidden="true">
-        <span />
-        <span />
+        <DeFiLogo />
       </div>
 
       <nav className="sidebar-nav" aria-label="Dashboard navigation">
