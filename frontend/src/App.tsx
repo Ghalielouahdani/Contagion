@@ -51,7 +51,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { defaultDataMode, loadAppData, postAssistantMessage, presetInputs } from "./data/api";
@@ -223,7 +223,7 @@ function App() {
   const [scenario, setScenario] = useState<ScenarioKind>("usde_depeg");
   const [mode, setMode] = useState<DataMode>(defaultDataMode);
   const [theme, setTheme] = useState<Theme>("light");
-  const [selectedPosition, setSelectedPosition] = useState("aave_01");
+  const [selectedPosition, setSelectedPosition] = useState("ethena_susde_01");
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
   const [inspectedExitFraction, setInspectedExitFraction] = useState<string | null>(null);
@@ -297,6 +297,13 @@ function App() {
   const selectedPortfolio =
     data?.portfolio.positions.find((position) => position.position_id === selectedPosition) ?? data?.portfolio.positions[0];
 
+  useEffect(() => {
+    if (!data?.portfolio.positions.length) return;
+    if (!data.portfolio.positions.some((position) => position.position_id === selectedPosition)) {
+      setSelectedPosition(data.portfolio.positions[0].position_id);
+    }
+  }, [data?.portfolio.positions, selectedPosition]);
+
   function runScenario() {
     setHasRun(true);
     setView("decision");
@@ -343,7 +350,7 @@ function App() {
   function reset() {
     setScenario("usde_depeg");
     setMode("fixture");
-    setSelectedPosition("aave_01");
+    setSelectedPosition("ethena_susde_01");
     setSelectedEdge(null);
     setShockPct(5);
     setHorizonDays(7);
@@ -885,26 +892,69 @@ function PortfolioDashboard({
         return Number(b[sortKey]) - Number(a[sortKey]);
       });
   }, [data.portfolio.positions, filter, sortKey]);
+  const selectedPortfolio = data.portfolio.positions.find((position) => position.position_id === selectedPosition) ?? data.portfolio.positions[0];
+  const selectedRisk = data.risk.positions.find((item) => item.position_id === selectedPortfolio.position_id);
+  const selectedSource = selectedRisk?.source_type ?? selectedPortfolio.data_origin;
+  const peerPositions = data.portfolio.positions.filter((position) => position.position_id !== selectedPortfolio.position_id);
 
   return (
     <div className="page-stack">
       <SummaryStrip portfolio={data.portfolio} risk={data.risk} analytics={data.analytics} analyticsIsPreset={data.analyticsIsPreset} />
-      <section className="position-grid">
-        {data.portfolio.positions.map((position) => {
+      <section className="position-master-detail" aria-label="Position selector">
+        <motion.article
+          key={selectedPortfolio.position_id}
+          className="position-detail-card"
+          data-selected="true"
+          layout
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          onMouseEnter={() => setHoveredPosition(selectedPortfolio.position_id)}
+          onMouseLeave={() => setHoveredPosition(null)}
+        >
+          <div className="position-detail-copy">
+            <div className="card-topline">
+              <span className="node-chip" data-type="position" />
+              <strong>{selectedPortfolio.protocol}</strong>
+              <Badge tone={sourceTone(selectedSource)}>{selectedSource}</Badge>
+            </div>
+            <h2>{compactId(selectedPortfolio.position_id)}</h2>
+            <p>{labelize(selectedPortfolio.position_type)}</p>
+          </div>
+          <div className="position-detail-metrics">
+            <MetricPair label="Gross" value={money(selectedPortfolio.gross_value_usd)} />
+            <MetricPair label="Debt" value={money(selectedPortfolio.debt_value_usd)} />
+            <MetricPair label="Net equity" value={money(selectedPortfolio.net_equity_usd)} />
+          </div>
+          <div className="detail-loss-strip">
+            <span>Stress loss under active scenario</span>
+            <strong>{money(selectedRisk?.conditional_loss_usd)}</strong>
+          </div>
+          <button className="icon-button text-button" onClick={() => setView("decision")}>
+            <ArrowUpDown size={14} />
+            Open decision view
+          </button>
+        </motion.article>
+
+        <div className="position-card-stack">
+          {peerPositions.map((position, index) => {
           const risk = data.risk.positions.find((item) => item.position_id === position.position_id);
           const source = risk?.source_type ?? position.data_origin;
           return (
-            <button
+            <motion.button
               key={position.position_id}
-              className="position-card"
-              data-selected={selectedPosition === position.position_id}
+              className="position-card position-card--compact"
+              data-selected="false"
               data-highlighted={hoveredPosition === position.position_id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
               onMouseEnter={() => setHoveredPosition(position.position_id)}
               onMouseLeave={() => setHoveredPosition(null)}
-              onClick={() => {
-                setSelectedPosition(position.position_id);
-                setView("decision");
-              }}
+              onFocus={() => setHoveredPosition(position.position_id)}
+              onBlur={() => setHoveredPosition(null)}
+              onClick={() => setSelectedPosition(position.position_id)}
             >
               <div className="card-topline">
                 <span className="node-chip" data-type="position" />
@@ -920,9 +970,10 @@ function PortfolioDashboard({
                 <span>stress loss</span>
                 <strong>{money(risk?.conditional_loss_usd)}</strong>
               </div>
-            </button>
+            </motion.button>
           );
         })}
+        </div>
       </section>
 
       <section className="table-panel">
@@ -999,12 +1050,16 @@ function SummaryStrip({
 }) {
   const headline = analytics?.headline;
   const tenPctNav = analytics?.breaking_points.nav_drawdown.find((row) => Number(row.nav_drawdown_pct) === 0.1);
+  const kpiMoney = (value: string | number | null | undefined) => {
+    if (value === null || value === undefined) return "n/a";
+    return `$${(Number(value) / 1_000_000).toFixed(2)}M`;
+  };
   return (
     <section className="summary-strip">
-      <Stat label="Gross exposure" value={money(portfolio.totals.gross_value_usd)} detail="not capital" />
-      <Stat label="Debt" value={money(portfolio.totals.debt_value_usd)} detail="borrow liabilities" />
-      <Stat label="Net equity" value={money(portfolio.totals.net_equity_usd)} detail="capital at risk" />
-      <Stat label="Conditional loss" value={money(risk.portfolio.total_conditional_loss_usd)} detail={risk.portfolio.aggregation_status} />
+      <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" />
+      <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" />
+      <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" />
+      <Stat label="Conditional loss" value={kpiMoney(risk.portfolio.total_conditional_loss_usd)} detail={risk.portfolio.aggregation_status} />
       {headline ? (
         <>
           <Stat
@@ -1017,7 +1072,7 @@ function SummaryStrip({
             value={tenPctNav?.usde_depeg_pct ? percent(tenPctNav.usde_depeg_pct) : "n/a"}
             detail={tenPctNav?.usde_price ? `USDe depeg to ${Number(tenPctNav.usde_price).toFixed(3)}` : "not reached"}
           />
-          <Stat label="Top risk driver" value={headline.top_risk_driver ?? "n/a"} detail="largest loss swing" />
+          <Stat label="Top risk driver" value={headline.top_risk_driver ?? "n/a"} detail="largest loss swing" valueKind="text" />
           <Stat
             label="Act if probability >"
             value={percent(headline.targeted_plan_break_even_probability)}
@@ -1661,13 +1716,77 @@ function CommandPalette({
   executeAction: (action: DashboardAction) => void;
 }) {
   const commands = createActionRegistry(data).filter((command) => command.label.toLowerCase().includes(query.toLowerCase()));
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    inputRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousFocusRef.current?.focus();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [query, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    itemRefs.current[highlightedIndex]?.scrollIntoView({ block: "nearest" });
+  }, [highlightedIndex, open]);
+
+  function runCommand(index: number) {
+    const command = commands[index];
+    if (!command) return;
+    command.actions.forEach(executeAction);
+    setOpen(false);
+    setQuery("");
+  }
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex((current) => Math.min(current + 1, Math.max(commands.length - 1, 0)));
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex((current) => Math.max(current - 1, 0));
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      runCommand(highlightedIndex);
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+    }
+  }
 
   return (
     <AnimatePresence>
       {open ? (
-        <motion.div className="command-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <motion.div
+          className="command-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setOpen(false);
+          }}
+        >
           <motion.div
             className="command-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
+            onKeyDown={handleKeyDown}
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -1675,25 +1794,38 @@ function CommandPalette({
           >
             <div className="command-search">
               <Search size={15} />
-              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Jump to page or position" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Jump to page or position"
+                aria-label="Search commands"
+                aria-controls="command-results"
+                aria-activedescendant={commands[highlightedIndex] ? `command-${highlightedIndex}` : undefined}
+              />
               <button onClick={() => setOpen(false)} aria-label="Close command palette">
                 <X size={15} />
               </button>
             </div>
-            <div className="command-list">
-              {commands.map((command) => (
+            <div className="command-list" id="command-results" role="listbox" aria-label="Command results">
+              {commands.map((command, index) => (
                 <button
                   key={`${command.type}-${command.label}`}
-                  onClick={() => {
-                    command.actions.forEach(executeAction);
-                    setOpen(false);
-                    setQuery("");
+                  id={`command-${index}`}
+                  ref={(element) => {
+                    itemRefs.current[index] = element;
                   }}
+                  role="option"
+                  aria-selected={index === highlightedIndex}
+                  data-highlighted={index === highlightedIndex}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  onClick={() => runCommand(index)}
                 >
                   <span>{command.type}</span>
                   {command.label}
                 </button>
               ))}
+              {!commands.length ? <p className="command-empty">No command matches that search.</p> : null}
             </div>
           </motion.div>
         </motion.div>
@@ -2161,12 +2293,13 @@ function RiskGauge({ metric }: { metric: NonNullable<RiskPosition["risk_metric"]
   );
 }
 
-function Stat({ label, value, detail }: { label: string; value: string; detail?: string }) {
+function Stat({ label, value, detail, valueKind = "figure" }: { label: string; value: string; detail?: string; valueKind?: "figure" | "text" }) {
   return (
-    <div className="stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {detail ? <small>{detail}</small> : null}
+    <div className="stat" data-value-kind={valueKind}>
+      <span className="stat-label">{label}</span>
+      <strong className="stat-value">{value}</strong>
+      <span className="stat-sublabel" aria-hidden="true" />
+      {detail ? <small className="stat-footnote">{detail}</small> : <small className="stat-footnote" aria-hidden="true" />}
     </div>
   );
 }
