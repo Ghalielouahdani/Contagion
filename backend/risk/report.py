@@ -95,6 +95,8 @@ def build_risk_result(request: ScenarioRequest, snapshot: Snapshot, outcome: Sce
         },
         "warnings": warnings,
     }
+    if outcome.cascade is not None:
+        result["cascade"] = _cascade(outcome.cascade)
     if outcome.comparison is not None:
         runs = [(run, money(run["total_loss"])) for run in outcome.comparison["runs"]]
         result["comparison"] = {
@@ -115,3 +117,20 @@ def build_risk_result(request: ScenarioRequest, snapshot: Snapshot, outcome: Sce
             ],
         }
     return result
+
+
+def _cascade(c: dict) -> dict:
+    moves = lambda m: {k: str(ratio(v)) for k, v in m.items()}
+    return {
+        "initial_moves": moves(c["initial_moves"]),
+        "final_moves": moves(c["final_moves"]),
+        "trough_moves": moves(c["trough_moves"]),
+        "amplification": None if c["amplification"] is None else str(ratio(c["amplification"])),
+        "rounds": [{"round": r["round"], "liquidated_debt_usd": str(money(r["liquidated_debt_usd"])),
+                    "collateral_sold_usd": str(money(r["collateral_sold_usd"])), "moves": moves(r["moves"])}
+                   for r in c["rounds"]],
+        "liquidated_debt_usd": str(money(c["liquidated_debt"])),
+        "bad_debt_usd": str(money(c["bad_debt"])),
+        "stuck_debt_usd": str(money(c["stuck_debt"])),
+        "converged": c["converged"],
+    }

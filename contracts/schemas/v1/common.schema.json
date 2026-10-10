@@ -129,7 +129,8 @@
         "combined_crisis",
         "carry_squeeze",
         "governance_change",
-        "node_shock"
+        "node_shock",
+        "liquidation_cascade"
       ]
     },
     "data_origin": {

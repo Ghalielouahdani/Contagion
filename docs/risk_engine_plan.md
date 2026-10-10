@@ -60,8 +60,8 @@ L'effet domino, c'est la vraie contagion endogène :
 
 Sortie : un **facteur d'amplification** (exemple illustratif : « −5 % initial → −8,3 % final »), le nombre de rounds et le volume liquidé.
 
-- [ ] Donnée demandée à P1 : distribution des emprunteurs par prix de liquidation (Aave, Morpho). Sinon, distribution supposée étiquetée `assumed`.
-- [ ] Garde-fous : convergence garantie (nombre max d'itérations, tolérance), résultat étiqueté comme modèle.
+- [x] Distribution des emprunteurs : `borrower_ltv_buckets` (observée sur `verified_lending_2026_10_10`, supposée ailleurs).
+- [x] Garde-fous : convergence garantie (chaque tranche liquidée une fois, plafond de tours), résultat étiqueté comme modèle.
 
 ### 5. Presets calibrés sur l'historique · effort faible · crédibilité
 Des scénarios inspirés d'épisodes réels plutôt que de chiffres inventés :
@@ -172,6 +172,17 @@ Sur `live_ethena_01` :
 
 **Limite à dire honnêtement** : une cotation mesure le carnet d'aujourd'hui, pas celui d'une crise. À −80 % de profondeur, toutes les tailles sortent de la plage cotée et le moteur extrapole : les pertes de crise restent un modèle. Les cotations corrigent surtout les décisions en conditions normales (dé-risquage, protection contre la liquidation). Prochaines étapes : (1) P1 cote des tailles plus grandes (jusqu'à 10× la taille jointe) pour réduire l'extrapolation ; (2) calibrer la réduction de profondeur de crise sur l'historique (octobre 2025) plutôt que la choisir.
 
+## Cascade de liquidations (fait, étape 4)
+
+`backend/risk/cascade.py` + scénario G `liquidation_cascade`. Inspiré des simulations multi-agents (Gauntlet) et des moniteurs de cascades, réduit à des règles déterministes : choc initial → emprunteurs liquidables (vus à travers l'oracle de chaque marché) → les liquidateurs vendent la collatérale sur son venue → impact de prix (courbe de cotations ou proxy) → nouvelles liquidations, jusqu'au point fixe. Chaque tranche n'est liquidée qu'une fois : convergence garantie. La mauvaise dette est comptée au prix du tour où la tranche est liquidée.
+
+Résultats sur `demo_lending_01` (−5 %, profondeur 50 %, absorption 80 %, liquidateurs preneurs de prix) :
+- le −5 % seul ne coûte **rien** au prêteur ; avec la cascade : 85 M$ liquidés, point bas USDe **−44 %**, prix final −12 % (amplification ×2,4), **377 k$** de mauvaise dette pour notre part ;
+- l'**oracle taux de change est un disjoncteur** : le marché sUSDe ne voit pas la cascade, rien n'y est liquidé ;
+- pour un prêteur, la perte dépend d'abord du type d'oracle puis de la profondeur du venue ; l'absorption par l'arbitrage pèse surtout sur le prix final.
+
+**Limite majeure, à dire** : sur le même choc, le prix final va de −6 % à −63 % selon la part de l'impact absorbée par l'arbitrage entre deux tours (pour l'USDe : mint/redeem au pair tant que le backing tient). C'est un paramètre explicite (`arbitrage_absorption_pct`), pas un défaut caché. Le second choix structurant est le comportement des liquidateurs : preneurs de prix (cascade classique, pire cas) ou attentifs à leur impact (la spirale est alors bornée par le bonus de liquidation, ~2,5 %). **À calibrer sur l'épisode d'octobre 2025 avant de montrer un chiffre de cascade comme réaliste.**
+
 ## Niveau 3 : la finition qui fait pro
 
 ### 6. Traçabilité de chaque chiffre
@@ -216,7 +227,7 @@ backend/risk/
 1. [x] Socle + valeurs de référence (les tests passent)
 2. [x] Points de rupture + concentration factorielle (pitch déjà différenciant)
 3. [x] Grilles de sensibilité + tornado
-4. [ ] Cascade de liquidations
+4. [x] Cascade de liquidations (scénario G ; calibration de l'absorption à faire)
 5. [ ] Presets historiques + traçabilité complète
 6. [x] Scénarios C–F : crise combinée, carry squeeze, gouvernance, choc de nœud
 7. [x] Positions prêteur (`lending_supply`) : mauvaise dette, perte cachée par l'oracle, sortie bloquée

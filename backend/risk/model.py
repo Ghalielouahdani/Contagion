@@ -175,3 +175,4 @@ class ScenarioOutcome:
     # Reference runs on the same portfolio and what this scenario adds on top of them
     # ({"runs": [{"run_id", "description", "total_loss"}], "excess_meaning"}); excess = total - sum(runs).
     comparison: dict | None = None
+    cascade: dict | None = None  # rounds, moves, amplification (liquidation_cascade only; see cascade.py)

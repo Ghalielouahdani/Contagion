@@ -32,7 +32,7 @@ DEPEG_FACTORS = {
                          lambda g, p: f"market:{p.position_id}" if p.position_type == "pt_holding" else None),
 }
 NEUTRAL = {"usde_spot_shock_pct": 0.0, "backing_impairment_pct": 0.0, "susde_rate_cut_pct": 0.0, "pt_implied_apy_shock": 0.0}
-DEPEG_LIKE = ("usde_depeg", "combined_crisis", "governance_change")  # scenarios that apply the scenario A shocks
+DEPEG_LIKE = ("usde_depeg", "combined_crisis", "governance_change", "liquidation_cascade")  # scenarios that apply the scenario A shocks
 EXIT_LIQUIDITY = ("liquidity_crisis", "combined_crisis")
 
 # Carry squeeze factors: parameter, (neutral, probe) values, root node.

@@ -108,9 +108,27 @@
       "source_type": "assumed"
     }
   },
-  "exit_venues": {},
+  "exit_venues": {
+    "venue:usde_usdc": {
+      "asset": "USDe",
+      "quote_method": "proxy",
+      "effective_depth_usd": "300000000",
+      "fee_rate": "0.001",
+      "gas_usd": "40",
+      "source_type": "assumed"
+    },
+    "venue:susde_usdc": {
+      "asset": "sUSDe",
+      "quote_method": "proxy",
+      "effective_depth_usd": "200000000",
+      "fee_rate": "0.001",
+      "gas_usd": "40",
+      "source_type": "assumed"
+    }
+  },
   "warnings": [
     "All values are fixture assumptions; the two markets differ only by their oracle.",
-    "Borrower LTV buckets are assumed; P1 must index borrower positions (Morpho positions per market) to replace them."
+    "Borrower LTV buckets are assumed; P1 must index borrower positions (Morpho positions per market) to replace them.",
+    "Collateral exit venues (USDe, sUSDe) carry assumed proxy depths from demo_ethena_01: they price liquidators' selling in the cascade scenario."
   ]
 }

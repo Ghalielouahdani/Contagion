@@ -160,6 +160,112 @@
         "excess_meaning"
       ],
       "additionalProperties": false
+    },
+    "cascade": {
+      "type": "object",
+      "description": "liquidation_cascade only: rounds of liquidations and price impact (a model; see backend/risk/cascade.py).",
+      "properties": {
+        "initial_moves": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "USDe",
+              "sUSDe"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "final_moves": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "USDe",
+              "sUSDe"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "trough_moves": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "USDe",
+              "sUSDe"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "amplification": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "rounds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "round": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "liquidated_debt_usd": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "collateral_sold_usd": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "moves": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "USDe",
+                    "sUSDe"
+                  ]
+                },
+                "additionalProperties": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                }
+              }
+            },
+            "required": [
+              "round",
+              "liquidated_debt_usd",
+              "collateral_sold_usd",
+              "moves"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "liquidated_debt_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "bad_debt_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "stuck_debt_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "converged": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "initial_moves",
+        "final_moves",
+        "trough_moves",
+        "amplification",
+        "rounds",
+        "liquidated_debt_usd",
+        "bad_debt_usd",
+        "stuck_debt_usd",
+        "converged"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

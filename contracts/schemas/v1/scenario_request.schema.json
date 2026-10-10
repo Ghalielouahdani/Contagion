@@ -71,6 +71,9 @@
         },
         {
           "$ref": "scenarios/node_shock.schema.json"
+        },
+        {
+          "$ref": "scenarios/liquidation_cascade.schema.json"
         }
       ]
     }

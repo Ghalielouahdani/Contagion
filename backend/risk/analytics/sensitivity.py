@@ -88,6 +88,12 @@ def assumptions_for(snapshot: Snapshot, request: ScenarioRequest) -> list[Assump
         ]
     elif sid == "combined_crisis":
         rows = _depeg_rows(request) + _liquidity_rows(snapshot, request)
+    elif sid == "liquidation_cascade":
+        absorption = request.param("arbitrage_absorption_pct", 0.0)
+        rows = _depeg_rows(request) + _liquidity_rows(snapshot, request) + [
+            Assumption("Arbitrage absorption between rounds", "param", "arbitrage_absorption_pct",
+                       max(absorption - 0.3, 0.0), min(absorption + 0.15, 1.0)),
+        ]
     elif sid == "governance_change":
         shift = request.param("liquidation_threshold_shift", 0.0)
         rows = _depeg_rows(request, oracle_override=False) + [
@@ -139,7 +145,7 @@ def tornado(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) 
 
 def grid(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest,
          x_param: str, x_values: list[float], y_param: str, y_values: list[float]) -> dict:
-    allowed = set(request.parameters) | (set(NEUTRAL_DEPEG) if request.scenario_id in ("usde_depeg", "combined_crisis") else set())
+    allowed = set(request.parameters) | (set(NEUTRAL_DEPEG) if request.scenario_id in ("usde_depeg", "combined_crisis", "liquidation_cascade") else set())
     for name in (x_param, y_param):
         if name not in allowed:
             raise KeyError(f"{name!r} is not a parameter of scenario {request.scenario_id!r}; allowed: {sorted(allowed)}")
@@ -172,6 +178,8 @@ DEFAULT_GRIDS = {
     "combined_crisis": ("usde_spot_shock_pct", DEPEG_AXIS, "exit_liquidity_reduction_pct", [0.0, 0.25, 0.5, 0.75, 0.9]),
     "governance_change": ("usde_spot_shock_pct", DEPEG_AXIS, "liquidation_threshold_shift", [0.0, -0.025, -0.05, -0.075, -0.10]),
     "carry_squeeze": ("borrow_apy_override", [i / 20 for i in range(0, 21)], "susde_apy", [0.10, 0.07, 0.03, 0.0, -0.05]),
+    "liquidation_cascade": ("usde_spot_shock_pct", [-i / 100 for i in range(0, 21)],
+                            "arbitrage_absorption_pct", [0.0, 0.25, 0.5, 0.8, 0.95]),
     "node_shock": ("loss_pct", [i / 20 for i in range(0, 20)], "oracle_pass_through_override", [0.0, 0.5, 1.0]),
 }
 

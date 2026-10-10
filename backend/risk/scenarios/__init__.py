@@ -28,3 +28,4 @@ def get(scenario_id: str) -> ScenarioFn:
 
 from backend.risk.scenarios import liquidity_crisis, usde_depeg  # noqa: E402,F401  (registers scenarios)
 from backend.risk.scenarios import carry_squeeze, combined_crisis, governance_change, node_shock  # noqa: E402,F401
+from backend.risk.scenarios import liquidation_cascade  # noqa: E402,F401
