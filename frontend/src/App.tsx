@@ -87,7 +87,7 @@ type SpeechRecognitionLike = {
   lang: string;
   onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
   start: () => void;
   stop: () => void;
 };
@@ -2148,7 +2148,8 @@ function AssistantDock({
   const [input, setInput] = useState("");
   const [assistantState, setAssistantState] = useState<AssistantState>("idle");
   const [listening, setListening] = useState(false);
-  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [voiceSupported, setVoiceSupported] = useState(() => typeof window !== "undefined" && Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition));
+  const [voiceIssue, setVoiceIssue] = useState("");
   const [audioMuted, setAudioMuted] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
@@ -2157,11 +2158,18 @@ function AssistantDock({
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionFinalRef = useRef(false);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const speechRunRef = useRef(0);
   const activeSpeechMessageRef = useRef<string | null>(null);
   const preferredVoice = useMemo(() => pickPreferredVoice(voices), [voices]);
   const selectedSpeechVoice = voices.find((voice) => voice.voiceURI === selectedVoiceURI) ?? preferredVoice;
+  const latestAssistantMessage = useMemo(() => [...messages].reverse().find((message) => message.role === "assistant"), [messages]);
+
+  useEffect(() => {
+    setVoiceSupported(Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition));
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -2272,9 +2280,11 @@ function AssistantDock({
 
   function speak(text: string, messageId: string) {
     if (!("speechSynthesis" in window)) {
+      setVoiceIssue("Spoken replies are not supported in this browser.");
       setAssistantState("idle");
       return;
     }
+    setVoiceIssue("");
     window.speechSynthesis.cancel();
     const chunks = splitSpeechChunks(text);
     if (!chunks.length) {
@@ -2303,6 +2313,7 @@ function AssistantDock({
       utterance.onend = () => speakChunk(index + 1);
       utterance.onerror = () => {
         activeSpeechMessageRef.current = null;
+        setVoiceIssue("The browser stopped spoken playback. Try another voice from the list.");
         setAssistantState("idle");
       };
       window.speechSynthesis.speak(utterance);
@@ -2311,13 +2322,29 @@ function AssistantDock({
     speakChunk(0);
   }
 
+  function speakLatestReply() {
+    if (assistantState === "speaking") {
+      cancelSpeech();
+      setAudioMuted(true);
+      return;
+    }
+    if (!latestAssistantMessage) {
+      setVoiceIssue("There is no assistant reply to read yet.");
+      return;
+    }
+    setAudioMuted(false);
+    speak(latestAssistantMessage.content, latestAssistantMessage.id);
+  }
+
   async function startListening() {
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Recognition) {
       setVoiceSupported(false);
+      setVoiceIssue("Speech recognition is not supported in this browser. Chrome on localhost or HTTPS is supported.");
       return;
     }
     setVoiceSupported(true);
+    setVoiceIssue("");
     cancelSpeech();
     setListening(true);
     setAssistantState("listening");
@@ -2325,7 +2352,9 @@ function AssistantDock({
     try {
       const stream = await navigator.mediaDevices?.getUserMedia({ audio: true });
       if (stream) {
+        micStreamRef.current = stream;
         const context = new AudioContext();
+        audioContextRef.current = context;
         const source = context.createMediaStreamSource(stream);
         const analyser = context.createAnalyser();
         analyser.fftSize = 128;
@@ -2340,7 +2369,15 @@ function AssistantDock({
         };
         tick();
       }
-    } catch {
+    } catch (error) {
+      const name = error instanceof DOMException ? error.name : "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setListening(false);
+        setAssistantState("idle");
+        setVoiceIssue("Microphone permission was denied. Allow microphone access for this localhost page, then try again.");
+        return;
+      }
+      setVoiceIssue("Microphone level animation is unavailable, but speech recognition can still try to listen.");
       setAmplitude(0.28);
     }
 
@@ -2362,12 +2399,22 @@ function AssistantDock({
     recognition.onend = () => {
       setListening(false);
       if (!recognitionFinalRef.current) setAssistantState("idle");
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      stopMicLevel();
     };
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
       setListening(false);
       setAssistantState("idle");
-      setVoiceSupported(false);
+      stopMicLevel();
+      const error = event.error ?? "unknown";
+      if (error === "not-allowed" || error === "service-not-allowed") {
+        setVoiceIssue("Microphone permission was denied. Allow microphone access for this localhost page, then try again.");
+      } else if (error === "no-speech") {
+        setVoiceIssue("I did not catch speech. Try again, or type the request.");
+      } else if (error === "network") {
+        setVoiceIssue("Speech recognition could not reach the browser speech service. Typing still works.");
+      } else {
+        setVoiceIssue(`Speech recognition stopped (${error}). Typing still works.`);
+      }
     };
     recognitionRef.current = recognition;
     recognition.start();
@@ -2376,10 +2423,20 @@ function AssistantDock({
   function stopListening() {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    stopMicLevel();
     setListening(false);
     setAssistantState("idle");
     setAmplitude(0.12);
+  }
+
+  function stopMicLevel() {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+    micStreamRef.current?.getTracks().forEach((track) => track.stop());
+    micStreamRef.current = null;
+    void audioContextRef.current?.close().catch(() => undefined);
+    audioContextRef.current = null;
+    analyserRef.current = null;
   }
 
   return (
@@ -2416,7 +2473,8 @@ function AssistantDock({
                   {message.caption && message.role === "assistant" ? <small>{message.caption}</small> : null}
                 </div>
               ))}
-              {!voiceSupported ? <p className="speech-fallback">Voice is not available in this browser; typing still works.</p> : null}
+              {!voiceSupported ? <p className="speech-fallback">Voice input is not supported in this browser; typing still works.</p> : null}
+              {voiceIssue ? <p className="speech-fallback">{voiceIssue}</p> : null}
             </div>
             <div className="assistant-voice-settings" aria-label="Speech settings">
               <label>
@@ -2448,16 +2506,11 @@ function AssistantDock({
               <button
                 type="button"
                 className="icon-button"
-                onClick={() => {
-                  setAudioMuted((muted) => {
-                    if (!muted) cancelSpeech();
-                    return !muted;
-                  });
-                }}
-                aria-label={audioMuted ? "Unmute spoken replies" : "Mute spoken replies"}
-                aria-pressed={audioMuted}
+                onClick={speakLatestReply}
+                aria-label={assistantState === "speaking" ? "Stop spoken reply" : "Read latest assistant reply aloud"}
+                aria-pressed={assistantState === "speaking"}
               >
-                {audioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                {assistantState === "speaking" || !audioMuted ? <Volume2 size={15} /> : <VolumeX size={15} />}
               </button>
             </form>
           </motion.aside>
