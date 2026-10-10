@@ -1273,16 +1273,16 @@ tbody tr[data-highlighted="true"] {
 .assistant-examples { display: flex; flex-wrap: wrap; gap: 6px; }
 .assistant-examples button { padding: 6px 8px; border: 1px solid var(--np-line); border-radius: var(--np-radius); background: var(--np-page); color: var(--np-strong); font-size: var(--np-size-0); cursor: pointer; }
 
-.risk-scenario-agent { margin-bottom: 20px; }
-.risk-scenario-agent form { display: grid; gap: 12px; margin: 16px 0; }
-.risk-scenario-agent label { display: grid; gap: 6px; }
-.risk-scenario-agent textarea { width: 100%; resize: vertical; border: 1px solid var(--np-line); border-radius: var(--np-radius); padding: 12px; background: var(--np-page); color: var(--np-strong); font: inherit; }
-.risk-agent-examples { display: flex; flex-wrap: wrap; gap: 8px; }
-.risk-agent-examples button { padding: 8px 10px; border: 1px solid var(--np-line); border-radius: var(--np-radius); background: var(--np-page); color: var(--np-strong); text-align: left; cursor: pointer; }
-.risk-agent-cards { display: grid; gap: 16px; margin-top: 20px; }
-.risk-agent-card { border: 1px solid var(--np-line); border-radius: var(--np-radius); padding: 16px; display: grid; gap: 12px; overflow-wrap: anywhere; }
-.risk-agent-card ol { margin: 0; padding-left: 22px; }
-.risk-agent-card pre { max-width: 100%; overflow: auto; white-space: pre-wrap; font-size: 11px; }
-.risk-agent-card details { overflow: auto; }
-.risk-agent-card summary { cursor: pointer; }
-.risk-agent-card a { text-decoration: underline; }
+.generated-scenario-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+.generated-scenario-actions button, .assistant-case-count select { border: 1px solid var(--np-line); border-radius: var(--np-radius); background: var(--np-page); color: var(--np-strong); padding: 8px 12px; font: inherit; cursor: pointer; }
+.generated-scenario-actions button:disabled { opacity: .45; cursor: default; }
+.scenario-details-modal { width: min(900px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--np-line); border-radius: var(--np-radius); background: var(--np-page); color: var(--np-strong); overflow: auto; }
+.scenario-details-modal::backdrop { background: rgba(0, 0, 0, .7); backdrop-filter: blur(4px); }
+.scenario-details-content { display: grid; gap: 18px; padding: 24px; overflow-wrap: anywhere; }
+.scenario-details-content .panel-heading { align-items: flex-start; }
+.scenario-details-content ol { margin: 0; padding-left: 22px; }
+.scenario-details-content details { overflow: auto; }
+.scenario-details-content summary { cursor: pointer; }
+.scenario-details-content pre { max-width: 100%; overflow: auto; white-space: pre-wrap; font-size: 11px; }
+.scenario-details-content a { text-decoration: underline; }
+.assistant-case-count { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }

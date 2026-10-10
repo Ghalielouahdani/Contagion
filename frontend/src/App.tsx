@@ -54,7 +54,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
-import { RiskScenarioAgent, RiskScenarioCards } from "./RiskScenarioAgent";
+import { GeneratedScenarioCard } from "./RiskScenarioAgent";
 import { Term } from "./Term";
 import {
   availableScenarios,
@@ -64,6 +64,8 @@ import {
   fixtureSets,
   loadAppData,
   loadPortfolioData,
+  loadRiskAssistantStatus,
+  loadRiskNews,
   inputsFromRequest,
   type PortfolioData,
   postAssistantMessage,
@@ -75,7 +77,6 @@ import type {
   EngineScenarioRequest,
   RiskAgentBatch,
   RiskScenarioProposal,
-  RiskAssistantSeed,
   AssistantMessage,
   DashboardAction,
   DataMode,
@@ -304,8 +305,7 @@ function App() {
   const [hasRun, setHasRun] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [riskBatches, setRiskBatches] = useState<RiskAgentBatch[]>([]);
-  const [assistantSeed, setAssistantSeed] = useState<RiskAssistantSeed | null>(null);
-  useEffect(() => { setRiskBatches([]); setAssistantSeed(null); }, [fixtureSet]);
+  useEffect(() => { setRiskBatches([]); }, [fixtureSet]);
 
   const scenarioInputs: ScenarioInputs = { shockPct, horizonDays, liquidityLossPct, ...extraInputs };
   const draft = useRef({ scenario, inputs: scenarioInputs });
@@ -371,7 +371,7 @@ function App() {
     const next = draft.current;
     if (!availableScenarios(fixtureSet).includes(next.scenario)) return;
     setSubmitted((current) => ({ scenario: next.scenario, inputs: { ...next.inputs }, run: current.run + 1,
-      ...(view === "engine" && !hasPendingChanges && current.customRequest ? { customRequest: current.customRequest, customTitle: current.customTitle } : {}) }));
+      ...(!hasPendingChanges && current.customRequest ? { customRequest: current.customRequest, customTitle: current.customTitle } : {}) }));
     setInspectedExitFraction(null);
     setHasRun(true);
     setSelectedEdge(null);
@@ -386,11 +386,7 @@ function App() {
     setScenario(kind); setShockPct(inputs.shockPct); setHorizonDays(inputs.horizonDays); setLiquidityLossPct(inputs.liquidityLossPct);
     setExtraInputs({ ltShiftPct: inputs.ltShiftPct, susdeApyPct: inputs.susdeApyPct, borrowApyPct: inputs.borrowApyPct, nodeId: inputs.nodeId, nodeLossPct: inputs.nodeLossPct });
     setSubmitted(current => ({ scenario: kind, inputs, run: current.run + 1, customRequest: proposal.request, customTitle: proposal.title }));
-    setInspectedExitFraction(null); setSelectedEdge(null); setHasRun(true); setView("engine"); setAssistantOpen(false);
-  }
-  function generateRiskScenarios(message: string, count: number) {
-    setAssistantSeed({ id: crypto.randomUUID(), message, count });
-    setAssistantOpen(true);
+    setInspectedExitFraction(null); setSelectedEdge(null); setHasRun(true); setView("scenario"); setAssistantOpen(false);
   }
 
   function executeAction(action: DashboardAction) {
@@ -450,7 +446,7 @@ function App() {
   }
 
   function changeFixtureSet(set: string) {
-    setRiskBatches([]); setAssistantSeed(null);
+    setRiskBatches([]);
     setFixtureSet(set);
     setHasRun(false);
     setSelectedEdge(null);
@@ -544,6 +540,11 @@ function App() {
                     data={data}
                     baseline={baseline}
                     fixtureSet={fixtureSet}
+                    batches={riskBatches.filter(batch => batch.context.portfolioId === baseline.portfolio.portfolio_id)}
+                    onRunGenerated={runRiskProposal}
+                    canRunGenerated={mode === "api" && !appQuery.isFetching}
+                    onOpenChat={() => setAssistantOpen(true)}
+                    customTitle={submitted.customTitle}
                     isRunning={appQuery.isFetching}
                     onAnalyze={() => setView("engine")}
                     scenario={scenario}
@@ -571,9 +572,6 @@ function App() {
                   {data ? <StressComparison mode={mode} data={data} inputs={submitted.inputs} /> : null}
                   </div>
                 ) : null}
-            {baseline && view === "engine" ? <RiskScenarioAgent mode={mode} batches={riskBatches.filter(batch => batch.context.portfolioId === baseline.portfolio.portfolio_id)}
-              onGenerate={generateRiskScenarios} onRun={runRiskProposal} isRunning={appQuery.isFetching}
-              onApiMode={() => changeMode("api")} /> : null}
             {view === "engine" && submitted.customTitle && hasRun ? <section id="generated-stress-results" className="visual-panel">
               <p className="eyebrow">Submitted generated stress case</p><h2>{submitted.customTitle}</h2>
               <p className="microcopy">{appQuery.isFetching ? "Computing this case…" : appQuery.isError ? "This run failed; no result is available for this case." : "The results below come from the risk engine using the exact submitted parameters."}</p>
@@ -626,9 +624,7 @@ function App() {
           open={assistantOpen}
           setOpen={setAssistantOpen}
           stateData={data}
-          seed={assistantSeed}
           onRiskBatch={batch => setRiskBatches(current => [batch, ...current].slice(0, 5))}
-          onRunRiskProposal={runRiskProposal}
           onApiMode={() => changeMode("api")}
           mode={mode}
           view={view}
@@ -1173,6 +1169,7 @@ function DependencyGraphView({
 }
 
 function ScenarioLab({
+  batches, onRunGenerated, canRunGenerated, onOpenChat, customTitle,
   data,
   baseline,
   fixtureSet,
@@ -1194,6 +1191,11 @@ function ScenarioLab({
   setExtraInput,
   runScenario,
 }: {
+  batches: RiskAgentBatch[];
+  onRunGenerated: (proposal: RiskScenarioProposal) => void;
+  canRunGenerated: boolean;
+  onOpenChat: () => void;
+  customTitle?: string;
   data?: AppData;
   baseline: PortfolioData;
   fixtureSet: string;
@@ -1246,6 +1248,8 @@ function ScenarioLab({
             <p>{scenarioCopy[kind].summary}</p>
           </button>
         ))}
+        {batches.flatMap(batch => batch.proposals.map(proposal => <GeneratedScenarioCard key={proposal.id} batch={batch} proposal={proposal} onRun={onRunGenerated} canRun={canRunGenerated} />))}
+        <button className="preset-card" onClick={onOpenChat}><span>Global chatbot · Gemini</span><strong>Create a new scenario</strong><p>Describe a market event in the chatbot. Its scenarios will appear here with the other stress cases.</p></button>
       </section>
 
       <section className="control-panel">
@@ -1348,7 +1352,7 @@ function ScenarioLab({
             <p className="eyebrow">Animated before / after</p>
             <h2>Net equity under stress</h2>
             <p className="microcopy">All portfolio positions · USD. Select a position to inspect its liquidation metric and loss breakdown.</p>
-            <p className="microcopy">Last run: {scenarioCopy[data.risk.scenario_id as ScenarioKind]?.title ?? data.risk.scenario_id}</p>
+            <p className="microcopy">Last run: {customTitle ?? scenarioCopy[data.risk.scenario_id as ScenarioKind]?.title ?? data.risk.scenario_id}</p>
             <p className="microcopy">
               {sourceCopy}
               {ignoredCopy}
@@ -1779,9 +1783,7 @@ function CommandPalette({
 }
 
 function AssistantDock({
-  seed,
   onRiskBatch,
-  onRunRiskProposal,
   onApiMode,
   fixtureSet,
   graph,
@@ -1799,9 +1801,7 @@ function AssistantDock({
   open: boolean;
   setOpen: (open: boolean) => void;
   stateData?: AppData;
-  seed: RiskAssistantSeed | null;
   onRiskBatch: (batch: RiskAgentBatch) => void;
-  onRunRiskProposal: (proposal: RiskScenarioProposal) => void;
   onApiMode: () => void;
   fixtureSet: string;
   graph: AppData["graph"];
@@ -1814,6 +1814,9 @@ function AssistantDock({
   executeAction: (action: DashboardAction) => void;
 }) {
   const isRiskAssistant = view !== "decision";
+  const [scenarioCount, setScenarioCount] = useState(3);
+  const assistantStatus = useQuery({ queryKey: ["risk-assistant-status"], queryFn: loadRiskAssistantStatus, enabled: open && isRiskAssistant && mode === "api", staleTime: 30000 });
+  const news = useQuery({ queryKey: ["risk-market-news"], queryFn: loadRiskNews, enabled: open && isRiskAssistant && mode === "api", staleTime: 60000 });
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       id: "assistant-welcome",
@@ -1829,13 +1832,6 @@ function AssistantDock({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
   const [amplitude, setAmplitude] = useState(0.12);
-  const lastSeedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (seed && seed.id !== lastSeedRef.current && view === "engine") {
-      lastSeedRef.current = seed.id;
-      void submitMessage(seed.message, "text", seed.count);
-    }
-  }, [seed?.id]);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionFinalRef = useRef(false);
@@ -1890,7 +1886,7 @@ function AssistantDock({
     };
   }, []);
 
-  async function submitMessage(raw: string, inputMode: AssistantInputMode = "text", count = 3) {
+  async function submitMessage(raw: string, inputMode: AssistantInputMode = "text", count = scenarioCount) {
     const trimmed = raw.trim();
     if (!trimmed) return;
     cancelSpeech();
@@ -2105,6 +2101,12 @@ function AssistantDock({
             </header>
             <div className="assistant-messages" aria-live="polite">
               {isRiskAssistant && mode !== "api" ? <div className="assistant-message" data-role="assistant"><p>Scenario generation requires Engine API mode.</p><button className="primary-button" onClick={onApiMode}>Switch to Engine API</button></div> : null}
+              {isRiskAssistant ? <label className="assistant-case-count">Scenarios to generate <select value={scenarioCount} onChange={event => setScenarioCount(Number(event.target.value))}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option></select></label> : null}
+              {isRiskAssistant && mode === "api" ? <div className="microcopy">
+                {assistantStatus.data && !assistantStatus.data.configured ? <p role="alert">Set GEMINI_API_KEY on the backend to enable scenario generation.</p> : null}
+                <p>News: {news.isError ? "unavailable" : news.data?.status ?? "loading"}. {news.data?.status === "not_configured" ? "Typed events are hypothetical." : ""}</p>
+                {news.data?.articles.length ? <><details><summary>Supplied market news</summary>{news.data.articles.map(article => <p key={article.id}><a href={article.url} target="_blank" rel="noreferrer">{article.title}</a> · {article.source} · {new Date(article.published_at).toLocaleString()}</p>)}</details><button onClick={() => setInput("Analyse les news fournies et propose des scénarios qui challengent les positions de mon portefeuille. Cite les articles utilisés et sépare faits rapportés et hypothèses.")}>Use supplied news</button></> : null}
+              </div> : null}
               <div className="assistant-examples" aria-label="Scenario prompt examples">
                 {(isRiskAssistant ? [
                   ["US rate cut", "USD INTEREST RATE FALLS BY 3 PTN"],
@@ -2118,8 +2120,8 @@ function AssistantDock({
               </div>
               {messages.map((message) => (
                 <div className="assistant-message" data-role={message.role} key={message.id}>
-                  <p>{message.id === "assistant-welcome" && isRiskAssistant ? "Describe a market event in French or English, such as a US interest-rate cut or a weaker dollar. Gemini connects it to this portfolio and proposes named scenarios with explicit assumptions. No simulation runs until you click Run this stress case." : message.content}</p>
-                  {message.riskBatch ? <RiskScenarioCards batch={message.riskBatch} onRun={onRunRiskProposal} canRun={mode === "api"} /> : null}
+                  <p>{message.id === "assistant-welcome" && isRiskAssistant ? "Describe a market event in French or English, such as a US interest-rate cut or a weaker dollar. Gemini connects it to this portfolio and proposes named scenarios with explicit assumptions. New scenarios appear in Scenario Lab. Open Details to review them, then Run this stress case to calculate their impact." : message.content}</p>
+                  {message.riskBatch ? <div className="assistant-scenario-proposal"><p>{message.riskBatch.proposals.length} new scenarios added to Scenario Lab.</p><ul>{message.riskBatch.proposals.map(proposal => <li key={proposal.id}>{proposal.title}</li>)}</ul><button className="primary-button" onClick={() => { executeAction({ type: "navigate_view", view: "scenario" }); setOpen(false); }}>View scenarios in Scenario Lab</button></div> : null}
                   {message.proposal ? (
                     <div className="assistant-scenario-proposal">
                       <strong>{labelize(message.proposal.scenario)}</strong>

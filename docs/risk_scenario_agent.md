@@ -1,14 +1,14 @@
 # Agent de scénarios de Risk
 
-L'agent Gemini est accessible dans le chatbot depuis **Portfolio, Dependency Graph, Scenario Lab et Risk Engine**. Le panneau de génération détaillé reste sur Risk Engine. Il crée de nouveaux cas nommés et personnalisés à partir d'un événement, des positions du portefeuille sélectionné et, lorsqu'un flux est configuré, de news fournies. Chaque cas est une nouvelle combinaison de paramètres d'un des sept mécanismes économiques existants ; le modèle ne crée pas une nouvelle formule de risque.
+L'agent Gemini est accessible dans le chatbot depuis **Portfolio, Dependency Graph, Scenario Lab et Risk Engine**. Les nouvelles cartes apparaissent dans Scenario Lab, à côté des scénarios existants. Il crée de nouveaux cas nommés et personnalisés à partir d'un événement, des positions du portefeuille sélectionné et, lorsqu'un flux est configuré, de news fournies. Chaque cas est une nouvelle combinaison de paramètres d'un des sept mécanismes économiques existants ; le modèle ne crée pas une nouvelle formule de risque.
 
 ## Parcours
 
-1. Ouvrir **Risk Engine**, même avant la première simulation.
-2. Saisir un événement dans « What could challenge this portfolio? », choisir 1 à 3 cas, puis cliquer **Generate in chatbot**. On peut aussi ouvrir le chatbot directement sur cette page.
-3. Lire les cartes : titre, mécanisme utilisé, horizon, positions concernées, chaîne causale, hypothèses et risques non calculés. Les cartes restent disponibles sur la page Risk après fermeture du chatbot pendant la session du navigateur.
-4. Développer les paramètres : **Model assumption** indique une valeur proposée avec sa justification ; **Portfolio preset** indique une valeur inchangée. Les fractions et unités sont explicites. Le détail de la requête montre tous les paramètres qui seront transmis.
-5. Cliquer **Run this stress case**. Le front soumet cette requête exacte à `/simulate` et `/analyze`, conserve le nom du cas et montre les résultats dans Risk. Les décisions existantes continuent de recevoir le résultat correspondant ; leur page n'est pas modifiée.
+1. Ouvrir le **chatbot global** depuis Portfolio, Dependency Graph, Scenario Lab ou Risk Engine.
+2. Décrire un événement et choisir 1 à 3 cas dans le chat. La génération s'effectue uniquement dans le chatbot.
+3. Le chat confirme l'ajout et propose **View scenarios in Scenario Lab**. Les cartes nommées apparaissent à côté des scénarios existants dans la grille de Scenario Lab et restent disponibles pendant la session du navigateur.
+4. Cliquer **Details** sur une carte : une modale présente le mécanisme, l'horizon, les positions, la chaîne causale, les hypothèses, les limites et les sources. Ses sections de paramètres et de requête exacte sont dépliables. Échap ferme la modale et rend le focus au bouton Details.
+5. Cliquer **Run this stress case** sur la carte ou dans la modale. Le front soumet la requête exacte à `/simulate` et `/analyze` et affiche le résultat nommé dans Scenario Lab. Le bouton **Open Risk Engine** permet ensuite d'examiner la propagation et les calculs détaillés. Les décisions existantes continuent de recevoir le résultat correspondant ; leur page n'est pas modifiée.
 
 La génération seule ne produit ni perte, ni HF/LTV calculé, ni résultat de simulation. Le dashboard et le graphe de dépendances initial restent ceux du portefeuille de départ. Les cas générés nécessitent **Engine API** : une surface enregistrée ne peut pas représenter arbitrairement leurs paramètres supplémentaires.
 
@@ -63,7 +63,7 @@ RISK_NEWS_TOKEN=... # facultatif, envoyé en Authorization: Bearer
 
 L'URL d'exemple décrit le contrat ; aucun article fictif n'est injecté dans l'application. Si l'API choisie a un autre format, un adaptateur devra mapper ses champs à ce contrat. Le flux est lu côté serveur, au maximum 20 articles, avec des liens HTTP(S), des identifiants uniques et des dates ISO avec fuseau. Une indisponibilité ou un format invalide est signalé, sans headline inventé.
 
-Dès que le flux fournit des articles, Risk affiche leurs titres, publications et dates, ainsi qu'un bouton **Generate from supplied news**. La génération relit le flux ; les sources des cartes correspondent aux articles réellement transmis à cet appel. Un article fourni n'est pas présenté comme vérifié indépendamment. Un article ancien conserve sa date : le moteur n'en fait pas automatiquement une information récente.
+Dès que le flux fournit des articles, le chatbot affiche leurs titres, publications et dates, ainsi qu'un bouton **Use supplied news** pour préparer la demande. La génération relit le flux ; les sources des cartes correspondent aux articles réellement transmis à cet appel. Un article fourni n'est pas présenté comme vérifié indépendamment. Un article ancien conserve sa date : le moteur n'en fait pas automatiquement une information récente.
 
 Pour une intégration serveur directe, `POST /api/v1/risk/assistant?set=stress_portfolio_01` accepte aussi `{message, count, news: {articles: [...]}}`. Le client ne fournit pas le portefeuille : le backend utilise ses propres données autoritaires.
 
