@@ -6,7 +6,8 @@ schema v1 contract dicts. Deterministic: same inputs, same output.
 
 from __future__ import annotations
 
-from backend.risk import scenarios
+from backend.risk import contagion, scenarios
+from backend.risk.graph import Graph
 from backend.risk.model import Portfolio, ScenarioRequest, Snapshot
 from backend.risk.report import build_risk_result
 
@@ -17,6 +18,7 @@ def simulate(portfolio: dict, snapshot: dict, request: dict, graph: dict | None 
     r = ScenarioRequest.from_contract(request)
     _check_ids(p, s, r, graph)
     outcome = scenarios.get(r.scenario_id)(p, s, r)
+    contagion.annotate(outcome, Graph.from_contract(graph) if graph is not None else None, p, s, r)
     return build_risk_result(r, s, outcome)
 
 

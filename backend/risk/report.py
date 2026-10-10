@@ -50,6 +50,8 @@ def _position(impact: PositionImpact, status: str) -> tuple[dict, Decimal, Decim
         "calculation_status": "insufficient_data" if impact.insufficient_data else status,
         "warnings": impact.warnings,
     }
+    if impact.contagion is not None:
+        row["contagion"] = impact.contagion
     return row, net_before, loss
 
 
@@ -69,7 +71,7 @@ def build_risk_result(request: ScenarioRequest, snapshot: Snapshot, outcome: Sce
     if status == "illustrative":
         warnings.append("Computed from unverified market parameters; illustrative, never a real-market result.")
 
-    return {
+    result = {
         "schema_version": "1.0",
         "simulation_id": f"result_{request.request_id}",
         "request_id": request.request_id,
@@ -92,3 +94,12 @@ def build_risk_result(request: ScenarioRequest, snapshot: Snapshot, outcome: Sce
         },
         "warnings": warnings,
     }
+    if outcome.contagion is not None:
+        result["contagion"] = {
+            **outcome.contagion,
+            "hubs": [
+                {**h, "gross_exposure_usd": str(money(h["gross_exposure_usd"])), "net_equity_usd": str(money(h["net_equity_usd"]))}
+                for h in outcome.contagion["hubs"]
+            ],
+        }
+    return result

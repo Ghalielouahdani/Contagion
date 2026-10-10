@@ -72,6 +72,17 @@ Des scénarios inspirés d'épisodes réels plutôt que de chiffres inventés :
 
 ---
 
+## Moteur relié au graphe de dépendances (fait)
+
+Chaque perte est reliée à son **chemin de contagion** dans le graphe de P1, par exemple `pendle_01 → PT-sUSDe → sUSDe → USDe`, avec la preuve et la confiance de chaque lien.
+
+**Le graphe ne décide pas seul qui est touché.** Un lien manquant donnerait une perte de zéro sans avertissement, ce qui est la pire erreur pour un outil de risque. Les montants viennent de la valorisation, et les deux sont **recoupés dans les deux sens** :
+- **trou du graphe** : perte sans chemin → la dépendance manque dans le graphe (signalé) ;
+- **exposition non modélisée** : chemin sans perte → l'exposition manque dans le moteur (signalé) ;
+- **hubs** : les nœuds dont dépendent plusieurs positions. Dans la démo, **l'USDe porte les 4 positions, soit toute la NAV de 6,2 M$** ; le venue sUSDe est partagé par deux positions.
+
+Ce qu'il faut demander à P1 : passer les liens de `assumed` à `verified` (adresse de contrat + bloc). La confiance affichée pour chaque perte monte automatiquement.
+
 ## Valeur pour le fonds : combien l'outil fait gagner (fait)
 
 Le module `backend/risk/analytics` traduit chaque scénario en **dollars** pour le gérant (contrat `risk_analytics.json`, fixtures `risk_analytics*.json`). Tout est conditionnel au scénario : on ne promet jamais un rendement, on chiffre ce qu'une décision rapporte **si** le scénario arrive.

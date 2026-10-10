@@ -4,8 +4,9 @@
   "title": "Common building blocks (schema v1)",
   "description": "Shared types and vocabularies. To extend a vocabulary (new protocol, relation, risk channel...), add one value here; every contract that references it picks it up.",
   "$defs": {
-    "schema_version": { "const": "1.0" },
-
+    "schema_version": {
+      "const": "1.0"
+    },
     "decimal": {
       "description": "Number serialised as a string to avoid float drift. Signed.",
       "type": "string",
@@ -16,7 +17,14 @@
       "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
     },
     "nullable_decimal": {
-      "oneOf": [{ "$ref": "#/$defs/decimal" }, { "type": "null" }]
+      "oneOf": [
+        {
+          "$ref": "#/$defs/decimal"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "timestamp": {
       "description": "ISO-8601 UTC, always with Z suffix.",
@@ -24,94 +32,280 @@
       "format": "date-time",
       "pattern": "Z$"
     },
-    "chain_id": { "type": "integer", "minimum": 1 },
-    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]*$" },
-    "warnings": { "type": "array", "items": { "type": "string" } },
-
-    "position_id": { "$ref": "#/$defs/slug" },
+    "chain_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_]*$"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "position_id": {
+      "$ref": "#/$defs/slug"
+    },
     "node_id": {
       "description": "<node_type prefix>:<name>, e.g. asset:USDe, venue:susde_usdc.",
       "type": "string",
       "pattern": "^(asset|protocol|market|position|oracle|contract|venue|chain|offchain):[A-Za-z0-9_.-]+$"
     },
-    "venue_id": { "type": "string", "pattern": "^venue:[a-z0-9_]+$" },
-
-    "protocol": { "enum": ["ethena", "aave", "morpho", "pendle"] },
-    "scenario_id": { "enum": ["usde_depeg", "liquidity_crisis"] },
-    "source_type": { "enum": ["observed", "derived", "assumed", "fictional", "user_scenario", "mock"] },
-    "data_origin": { "enum": ["fictional", "observed"] },
-    "quote_method": { "enum": ["executable_quote", "pool_reserves", "proxy"] },
-    "quote_status": { "enum": ["executable", "pool_reserves", "proxy", "unavailable"] },
-
-    "node_type": { "enum": ["asset", "protocol", "market", "position", "oracle", "contract", "venue", "chain", "offchain_entity"] },
+    "venue_id": {
+      "type": "string",
+      "pattern": "^venue:[a-z0-9_]+$"
+    },
+    "protocol": {
+      "enum": [
+        "ethena",
+        "aave",
+        "morpho",
+        "pendle"
+      ]
+    },
+    "scenario_id": {
+      "enum": [
+        "usde_depeg",
+        "liquidity_crisis"
+      ]
+    },
+    "source_type": {
+      "enum": [
+        "observed",
+        "derived",
+        "assumed",
+        "fictional",
+        "user_scenario",
+        "mock"
+      ]
+    },
+    "data_origin": {
+      "enum": [
+        "fictional",
+        "observed"
+      ]
+    },
+    "quote_method": {
+      "enum": [
+        "executable_quote",
+        "pool_reserves",
+        "proxy"
+      ]
+    },
+    "quote_status": {
+      "enum": [
+        "executable",
+        "pool_reserves",
+        "proxy",
+        "unavailable"
+      ]
+    },
+    "node_type": {
+      "enum": [
+        "asset",
+        "protocol",
+        "market",
+        "position",
+        "oracle",
+        "contract",
+        "venue",
+        "chain",
+        "offchain_entity"
+      ]
+    },
     "relation": {
-      "enum": ["issued_by", "position_in", "prices_collateral_with", "redeemable_for", "exits_via", "collateral_asset", "debt_asset", "underlying_of", "part_of_protocol", "deployed_on", "backed_by"]
+      "enum": [
+        "holds",
+        "issued_by",
+        "position_in",
+        "prices_collateral_with",
+        "redeemable_for",
+        "exits_via",
+        "collateral_asset",
+        "debt_asset",
+        "underlying_of",
+        "part_of_protocol",
+        "deployed_on",
+        "backed_by",
+        "reads_price_of"
+      ]
     },
     "risk_channel": {
-      "enum": ["issuer_backing", "collateral_liquidation", "oracle_repricing", "exchange_rate", "exit_liquidity", "debt_cost", "maturity_redemption", "smart_contract", "custody"]
+      "enum": [
+        "mark_to_market",
+        "issuer_backing",
+        "collateral_liquidation",
+        "oracle_repricing",
+        "exchange_rate",
+        "exit_liquidity",
+        "debt_cost",
+        "maturity_redemption",
+        "smart_contract",
+        "custody"
+      ]
     },
-    "confidence": { "enum": ["verified", "documented", "inferred", "assumed"] },
-    "evidence_method": { "enum": ["onchain_call", "protocol_api", "protocol_documentation", "third_party_api", "fixture"] },
-    "evidence_status": { "enum": ["verified", "to_verify", "assumed", "documented"] },
-
+    "confidence": {
+      "enum": [
+        "verified",
+        "documented",
+        "inferred",
+        "assumed"
+      ]
+    },
+    "evidence_method": {
+      "enum": [
+        "onchain_call",
+        "protocol_api",
+        "protocol_documentation",
+        "third_party_api",
+        "fixture"
+      ]
+    },
+    "evidence_status": {
+      "enum": [
+        "verified",
+        "to_verify",
+        "assumed",
+        "documented"
+      ]
+    },
     "sourced_value": {
       "type": "object",
       "properties": {
-        "value": { "$ref": "#/$defs/decimal" },
-        "source_type": { "$ref": "#/$defs/source_type" }
+        "value": {
+          "$ref": "#/$defs/decimal"
+        },
+        "source_type": {
+          "$ref": "#/$defs/source_type"
+        }
       },
-      "required": ["value", "source_type"],
+      "required": [
+        "value",
+        "source_type"
+      ],
       "additionalProperties": false
     },
     "field_sources": {
       "description": "Per-field override of source_type when an object mixes origins.",
       "type": "object",
-      "additionalProperties": { "$ref": "#/$defs/source_type" }
+      "additionalProperties": {
+        "$ref": "#/$defs/source_type"
+      }
     },
-
     "position_base": {
       "description": "Fields every position type has. Position-type files add their own fields.",
       "type": "object",
       "properties": {
-        "position_id": { "$ref": "#/$defs/position_id" },
-        "protocol": { "$ref": "#/$defs/protocol" },
-        "chain_id": { "$ref": "#/$defs/chain_id" },
-        "position_type": { "type": "string" },
-        "market_id": { "type": ["string", "null"] },
-        "gross_value_usd": { "$ref": "#/$defs/non_negative_decimal" },
-        "debt_value_usd": { "$ref": "#/$defs/non_negative_decimal" },
-        "net_equity_usd": { "$ref": "#/$defs/decimal" },
-        "exit_venue_id": { "$ref": "#/$defs/venue_id" },
-        "data_origin": { "$ref": "#/$defs/data_origin" }
+        "position_id": {
+          "$ref": "#/$defs/position_id"
+        },
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "chain_id": {
+          "$ref": "#/$defs/chain_id"
+        },
+        "position_type": {
+          "type": "string"
+        },
+        "market_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gross_value_usd": {
+          "$ref": "#/$defs/non_negative_decimal"
+        },
+        "debt_value_usd": {
+          "$ref": "#/$defs/non_negative_decimal"
+        },
+        "net_equity_usd": {
+          "$ref": "#/$defs/decimal"
+        },
+        "exit_venue_id": {
+          "$ref": "#/$defs/venue_id"
+        },
+        "data_origin": {
+          "$ref": "#/$defs/data_origin"
+        }
       },
-      "required": ["position_id", "protocol", "chain_id", "position_type", "market_id", "gross_value_usd", "debt_value_usd", "net_equity_usd", "exit_venue_id", "data_origin"]
+      "required": [
+        "position_id",
+        "protocol",
+        "chain_id",
+        "position_type",
+        "market_id",
+        "gross_value_usd",
+        "debt_value_usd",
+        "net_equity_usd",
+        "exit_venue_id",
+        "data_origin"
+      ]
     },
-
     "market_base": {
       "description": "Fields every market-parameter object has. Market-kind files add protocol-specific parameters.",
       "type": "object",
       "properties": {
-        "market_kind": { "type": "string" },
-        "verified": { "type": "boolean" },
-        "source_type": { "$ref": "#/$defs/source_type" },
-        "field_sources": { "$ref": "#/$defs/field_sources" },
-        "warnings": { "$ref": "#/$defs/warnings" }
+        "market_kind": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "source_type": {
+          "$ref": "#/$defs/source_type"
+        },
+        "field_sources": {
+          "$ref": "#/$defs/field_sources"
+        },
+        "warnings": {
+          "$ref": "#/$defs/warnings"
+        }
       },
-      "required": ["market_kind", "verified", "source_type"]
+      "required": [
+        "market_kind",
+        "verified",
+        "source_type"
+      ]
     },
-
     "risk_metric_base": {
       "type": "object",
       "properties": {
-        "type": { "type": "string" },
-        "before": { "$ref": "#/$defs/decimal" },
-        "after": { "$ref": "#/$defs/decimal" },
-        "threshold": { "$ref": "#/$defs/decimal" },
-        "liquidatable": { "type": "boolean" },
-        "distance_to_liquidation_before_pct": { "$ref": "#/$defs/decimal" },
-        "distance_to_liquidation_after_pct": { "$ref": "#/$defs/decimal" }
+        "type": {
+          "type": "string"
+        },
+        "before": {
+          "$ref": "#/$defs/decimal"
+        },
+        "after": {
+          "$ref": "#/$defs/decimal"
+        },
+        "threshold": {
+          "$ref": "#/$defs/decimal"
+        },
+        "liquidatable": {
+          "type": "boolean"
+        },
+        "distance_to_liquidation_before_pct": {
+          "$ref": "#/$defs/decimal"
+        },
+        "distance_to_liquidation_after_pct": {
+          "$ref": "#/$defs/decimal"
+        }
       },
-      "required": ["type", "before", "after", "threshold", "liquidatable", "distance_to_liquidation_before_pct", "distance_to_liquidation_after_pct"]
+      "required": [
+        "type",
+        "before",
+        "after",
+        "threshold",
+        "liquidatable",
+        "distance_to_liquidation_before_pct",
+        "distance_to_liquidation_after_pct"
+      ]
     }
   }
 }

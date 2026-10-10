@@ -4,6 +4,7 @@ Version 1.2 • 10 October 2026 • Team of four • MVP scope: Ethereum / Ethen
 
 - Scenario A separates three mechanisms: USDe market depeg, USDe backing loss, and sUSDe exchange-rate cut (new optional `susde_rate_cut_pct`). An exchange-rate oracle with USDe hardcoded at 1 USD sees only the rate cut.
 - Liquidation penalty follows protocol rules: Aave repays 50% of the debt while HF ≥ 0.95 (100% below); Morpho has no close factor.
+- Section 7.6: the risk engine links every loss to its contagion path in the dependency graph, cross-checks graph and valuation both ways, and reports contagion hubs. Full 21-node graph fixture; relations `holds`, `reads_price_of` and channel `mark_to_market` added.
 - New section 7.5 and contract `risk_analytics`: the dollar value the engine creates for the fund (factor concentration, breaking points, targeted de-risking, liquidation protection).
 
 ## Changes in v1.1
@@ -201,6 +202,19 @@ Every object that carries numbers has a `source_type` (observed / derived / assu
 | Sensitivity            | Which assumption drives the result? Where is the liquidation frontier? | Tornado ranks assumptions by loss swing; heatmap of loss and liquidatable positions over any two scenario parameters |
 
 Targeted de-risking allocates exits greedily by marginal cost (fees, gas, joint price impact on shared venues, foregone yield) and is never worse than the uniform plan. Its break-even probability (cost ÷ protection) tells the PM when acting pays off.
+
+## 7.6 Contagion paths: linking losses to the dependency graph
+
+Amounts come from valuation, which rests on facts (assets held, market parameters). The dependency graph explains **how** each shock reaches each position. The engine never lets the graph alone decide who is hit: an incomplete graph would turn a missing edge into a silent zero loss, the worst error a risk tool can make. Instead the two are cross-checked:
+
+| Check                 | Meaning                                                                  | Output                                  |
+|-----------------------|--------------------------------------------------------------------------|-----------------------------------------|
+| Path found            | The loss is explained, edge by edge, with evidence and confidence        | `contagion.paths` per position          |
+| Graph gap             | Valuation shows a loss, the graph has no path: dependency missing        | `contagion.graph_gaps` + warning        |
+| Unmodeled exposure    | The graph has a path, valuation shows no loss: exposure not modeled      | `contagion.unmodeled_exposures`         |
+| Hub                   | A node two or more positions depend on: one failure hits several lines   | `contagion.hubs` (portfolio level)      |
+
+Shock roots: USDe price → `asset:USDe`; USDe backing → `offchain:ethena_backing`; sUSDe rate cut → `asset:sUSDe`; PT yield → the position's Pendle market; liquidity → the position's exit venue. Evidence confidence of a position = weakest edge on its best path for each active factor. In the demo graph every factor agrees with valuation (no gaps), and `asset:USDe` is a hub for all four positions (the whole \$6.2m NAV).
 
 # 8. Decision and execution engine
 
@@ -546,6 +560,8 @@ Notes: `markets` and `yields` are keyed by position_id; `exit_venues` by venue i
 ```
 
 ## 11.6 contracts/risk_result.json — depeg
+
+The file in `contracts/` also carries the `contagion` blocks of section 7.6 (paths per position, hubs); they are omitted here for readability.
 
 Golden values: aave HF 3.0m × 0.85 / 1.8m = 1.4167 → 1.3458; morpho oracle unchanged (pass-through 0) so LTV stays 0.6667 while the mark falls 5%; PT 2.08m × 0.95 / 1.12^(166/365) = 1,876,734.57.
 

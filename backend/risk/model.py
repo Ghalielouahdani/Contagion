@@ -154,6 +154,7 @@ class PositionImpact:
     insufficient_data: bool = False
     warnings: list[str] = field(default_factory=list)
     internals: dict = field(default_factory=dict)  # unrounded facts for analytics; never published
+    contagion: dict | None = None  # paths, evidence confidence, graph gaps (set by contagion.annotate)
 
 
 @dataclass
@@ -161,3 +162,4 @@ class ScenarioOutcome:
     impacts: list[PositionImpact]
     shared_liquidity_penalty: float = 0.0
     warnings: list[str] = field(default_factory=list)
+    contagion: dict | None = None  # graph id, hubs, warnings (set by contagion.annotate)

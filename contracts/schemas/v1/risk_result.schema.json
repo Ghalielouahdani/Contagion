@@ -87,6 +87,37 @@
     },
     "warnings": {
       "$ref": "common.schema.json#/$defs/warnings"
+    },
+    "contagion": {
+      "type": "object",
+      "description": "Graph-level view: nodes several positions depend on at once. Optional; present when a graph is supplied or explicitly absent.",
+      "properties": {
+        "graph_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "common.schema.json#/$defs/slug"
+            }
+          ]
+        },
+        "hubs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hub"
+          }
+        },
+        "warnings": {
+          "$ref": "common.schema.json#/$defs/warnings"
+        }
+      },
+      "required": [
+        "graph_id",
+        "hubs",
+        "warnings"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -192,6 +223,9 @@
         },
         "warnings": {
           "$ref": "common.schema.json#/$defs/warnings"
+        },
+        "contagion": {
+          "$ref": "#/$defs/position_contagion"
         }
       },
       "required": [
@@ -208,6 +242,141 @@
         "source_type",
         "calculation_status",
         "warnings"
+      ],
+      "additionalProperties": false
+    },
+    "contagion_path": {
+      "type": "object",
+      "description": "One dependency path from the position to the node where the shock originates.",
+      "properties": {
+        "factor": {
+          "enum": [
+            "usde_price",
+            "usde_backing",
+            "susde_exchange_rate",
+            "pt_implied_yield",
+            "exit_liquidity"
+          ]
+        },
+        "root": {
+          "$ref": "common.schema.json#/$defs/node_id"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/node_id"
+          },
+          "minItems": 2
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^edge:"
+          }
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/risk_channel"
+          }
+        },
+        "confidence": {
+          "$ref": "common.schema.json#/$defs/confidence"
+        },
+        "unverified_edges": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^edge:"
+          }
+        }
+      },
+      "required": [
+        "factor",
+        "root",
+        "nodes",
+        "edges",
+        "channels",
+        "confidence",
+        "unverified_edges"
+      ],
+      "additionalProperties": false
+    },
+    "position_contagion": {
+      "type": "object",
+      "description": "How the scenario reaches the position through the dependency graph, cross-checked with valuation.",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contagion_path"
+          }
+        },
+        "evidence_confidence": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "common.schema.json#/$defs/confidence"
+            }
+          ]
+        },
+        "graph_gaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unmodeled_exposures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "paths",
+        "evidence_confidence",
+        "graph_gaps",
+        "unmodeled_exposures"
+      ],
+      "additionalProperties": false
+    },
+    "hub": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "$ref": "common.schema.json#/$defs/node_id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "node_type": {
+          "type": "string"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/position_id"
+          },
+          "minItems": 2
+        },
+        "gross_exposure_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "net_equity_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        }
+      },
+      "required": [
+        "node",
+        "label",
+        "node_type",
+        "positions",
+        "gross_exposure_usd",
+        "net_equity_usd"
       ],
       "additionalProperties": false
     }
