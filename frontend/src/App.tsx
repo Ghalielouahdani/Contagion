@@ -31,9 +31,13 @@ import {
   ChevronDown,
   Command,
   Database,
+  Eye,
+  EyeOff,
+  Fingerprint,
   Mic,
   MicOff,
   GitBranch,
+  LogOut,
   Moon,
   Play,
   RefreshCw,
@@ -47,7 +51,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { defaultDataMode, loadAppData, postAssistantMessage, presetInputs } from "./data/api";
@@ -72,6 +76,8 @@ type Theme = "light" | "dark";
 type SortKey = "protocol" | "gross_value_usd" | "debt_value_usd" | "net_equity_usd";
 type AssistantState = "idle" | "listening" | "thinking" | "speaking";
 type AssistantInputMode = "text" | "voice";
+type AuthSession = { email: string; signedInAt: string; method: "password" | "webauthn" };
+type AuthStatus = "idle" | "checking" | "success" | "error";
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -202,7 +208,17 @@ const sections = [
   { label: "Run", items: ["scenario", "decision"] as View[] },
 ];
 
+const demoCredential = {
+  email: "demo@belem.capital",
+  username: "demo",
+  password: "demo",
+};
+const sessionStorageKey = "defi-contagion-session";
+const passkeyStorageKey = "defi-contagion-demo-passkey";
+const demoUserId = "defi-contagion-demo-user";
+
 function App() {
+  const [session, setSession] = useState<AuthSession | null>(() => readStoredSession());
   const [view, setView] = useState<View>("portfolio");
   const [scenario, setScenario] = useState<ScenarioKind>("usde_depeg");
   const [mode, setMode] = useState<DataMode>(defaultDataMode);
@@ -255,6 +271,7 @@ function App() {
         ...deferredExtra,
       }),
     placeholderData: (previousData) => previousData,
+    enabled: Boolean(session),
   });
 
   useEffect(() => {
@@ -337,6 +354,22 @@ function App() {
     setView("portfolio");
   }
 
+  function handleAuthenticated(nextSession: AuthSession, remember: boolean) {
+    writeSession(nextSession, remember);
+    setSession(nextSession);
+  }
+
+  function signOut() {
+    clearStoredSession();
+    setSession(null);
+    setAssistantOpen(false);
+    setCommandOpen(false);
+  }
+
+  if (!session) {
+    return <LoginScreen theme={theme} setTheme={setTheme} onAuthenticated={handleAuthenticated} />;
+  }
+
   return (
     <main className="app-shell">
       <Sidebar
@@ -347,6 +380,8 @@ function App() {
         theme={theme}
         setTheme={setTheme}
         health={data?.health}
+        onSignOut={signOut}
+        session={session}
       />
 
       <section className="content-pane">
@@ -478,6 +513,267 @@ function App() {
   );
 }
 
+function LoginScreen({
+  theme,
+  setTheme,
+  onAuthenticated,
+}: {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  onAuthenticated: (session: AuthSession, remember: boolean) => void;
+}) {
+  const [identifier, setIdentifier] = useState(demoCredential.email);
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [status, setStatus] = useState<AuthStatus>("idle");
+  const [error, setError] = useState("");
+  const [webauthnSupported, setWebauthnSupported] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState("Touch ID");
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    let active = true;
+    async function checkWebAuthn() {
+      const supported =
+        typeof window !== "undefined" &&
+        "PublicKeyCredential" in window &&
+        navigator.credentials != null &&
+        typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function" &&
+        (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(() => false));
+      if (!active) return;
+      setWebauthnSupported(supported);
+      setBiometricLabel(/Mac|iPhone|iPad/.test(navigator.platform) ? "Touch ID" : "Passkey");
+    }
+    checkWebAuthn();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function submitPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedIdentifier = identifier.trim().toLowerCase();
+    setError("");
+    if (!normalizedIdentifier) {
+      setError("Enter the demo email or username.");
+      return;
+    }
+    if (!password) {
+      setError("Enter the demo password.");
+      passwordRef.current?.focus();
+      return;
+    }
+    if (![demoCredential.email, demoCredential.username].includes(normalizedIdentifier) || password !== demoCredential.password) {
+      setError("These demo credentials do not match.");
+      return;
+    }
+    setStatus("success");
+    onAuthenticated(createSession("password", demoCredential.email), remember);
+  }
+
+  async function signInWithPasskey() {
+    if (!webauthnSupported) return;
+    setStatus("checking");
+    setError("");
+    try {
+      const storedCredentialId = localStorage.getItem(passkeyStorageKey);
+      if (storedCredentialId) {
+        await navigator.credentials.get({
+          publicKey: {
+            challenge: randomChallenge(),
+            allowCredentials: [{ id: base64UrlToBuffer(storedCredentialId), type: "public-key" }],
+            userVerification: "required",
+            timeout: 60_000,
+          },
+        });
+      } else {
+        const credential = await navigator.credentials.create({
+          publicKey: {
+            challenge: randomChallenge(),
+            rp: { name: "Belem Capital Demo" },
+            user: {
+              id: new TextEncoder().encode(demoUserId),
+              name: demoCredential.email,
+              displayName: "DeFi Contagion Demo",
+            },
+            pubKeyCredParams: [
+              { type: "public-key", alg: -7 },
+              { type: "public-key", alg: -257 },
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform",
+              residentKey: "preferred",
+              userVerification: "required",
+            },
+            attestation: "none",
+            timeout: 60_000,
+          },
+        });
+        if (!credential || !("rawId" in credential)) throw new Error("No passkey was created.");
+        localStorage.setItem(passkeyStorageKey, bufferToBase64Url((credential as PublicKeyCredential).rawId));
+      }
+      setStatus("success");
+      onAuthenticated(createSession("webauthn", demoCredential.email), true);
+    } catch {
+      setStatus("error");
+      setError(`${biometricLabel} sign-in was cancelled or is not available. Use the demo password instead.`);
+    }
+  }
+
+  return (
+    <main className="auth-shell">
+      <motion.section
+        className="auth-panel"
+        aria-labelledby="auth-title"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="auth-topline">
+          <div className="brand-mark compact" aria-hidden="true">
+            <span />
+            <span />
+          </div>
+          <button className="mode-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label="Toggle theme">
+            {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
+            {theme}
+          </button>
+        </div>
+
+        <div className="auth-heading">
+          <p className="eyebrow">Belem Capital</p>
+          <h1 id="auth-title">DeFi Contagion</h1>
+          <p className="lead">Sign in to inspect dependency risk, scenario loss and exit decisions from the offline fixture portfolio.</p>
+        </div>
+
+        <form className="auth-form" onSubmit={submitPassword} noValidate>
+          <label className="field-label" htmlFor="demo-identifier">
+            Account
+          </label>
+          <input
+            id="demo-identifier"
+            autoComplete="username"
+            value={identifier}
+            onChange={(event) => setIdentifier(event.target.value)}
+            aria-invalid={Boolean(error && !identifier.trim())}
+          />
+
+          <label className="field-label" htmlFor="demo-password">
+            Password
+          </label>
+          <div className="password-field">
+            <input
+              id="demo-password"
+              ref={passwordRef}
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              aria-invalid={Boolean(error)}
+              aria-describedby="auth-feedback auth-demo-note"
+            />
+            <button type="button" className="icon-button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"}>
+              {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          </div>
+
+          <div className="auth-row">
+            <label className="check-row">
+              <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
+              <span>Remember this demo session</span>
+            </label>
+            <span className="demo-credential">{demoCredential.email} / demo</span>
+          </div>
+
+          <button className="run-button auth-submit" type="submit">
+            Sign in
+          </button>
+        </form>
+
+        <div className="auth-divider">
+          <span>or</span>
+        </div>
+
+        <button
+          className="biometric-button"
+          type="button"
+          onClick={signInWithPasskey}
+          disabled={!webauthnSupported || status === "checking"}
+          aria-describedby="auth-demo-note"
+        >
+          <Fingerprint size={17} />
+          {status === "checking" ? `Waiting for ${biometricLabel}` : `Sign in with ${biometricLabel}`}
+        </button>
+
+        <div className="auth-feedback" id="auth-feedback" aria-live="polite">
+          {error ? <p role="alert">{error}</p> : null}
+          {status === "success" ? <p>Signed in. Opening the dashboard.</p> : null}
+          {!webauthnSupported ? <p>{biometricLabel} is not available here; password sign-in is ready.</p> : null}
+        </div>
+
+        <p className="auth-note" id="auth-demo-note">
+          Demo authentication only. Use {demoCredential.email} or username {demoCredential.username} with password {demoCredential.password}; no real credentials are stored or verified by a server.
+        </p>
+      </motion.section>
+    </main>
+  );
+}
+
+function createSession(method: AuthSession["method"], email: string): AuthSession {
+  return { email, method, signedInAt: new Date().toISOString() };
+}
+
+function readStoredSession(): AuthSession | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(sessionStorageKey) ?? sessionStorage.getItem(sessionStorageKey);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<AuthSession>;
+    if (parsed.email && parsed.signedInAt && (parsed.method === "password" || parsed.method === "webauthn")) return parsed as AuthSession;
+  } catch {
+    clearStoredSession();
+  }
+  return null;
+}
+
+function writeSession(session: AuthSession, remember: boolean) {
+  const storage = remember ? localStorage : sessionStorage;
+  storage.setItem(sessionStorageKey, JSON.stringify(session));
+  if (remember) sessionStorage.removeItem(sessionStorageKey);
+  else localStorage.removeItem(sessionStorageKey);
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(sessionStorageKey);
+  sessionStorage.removeItem(sessionStorageKey);
+}
+
+function randomChallenge() {
+  const challenge = new Uint8Array(32);
+  crypto.getRandomValues(challenge);
+  return challenge;
+}
+
+function bufferToBase64Url(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlToBuffer(value: string) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes.buffer;
+}
+
 function Sidebar({
   view,
   setView,
@@ -486,6 +782,8 @@ function Sidebar({
   theme,
   setTheme,
   health,
+  onSignOut,
+  session,
 }: {
   view: View;
   setView: (view: View) => void;
@@ -494,6 +792,8 @@ function Sidebar({
   theme: Theme;
   setTheme: (theme: Theme) => void;
   health?: AppData["health"];
+  onSignOut: () => void;
+  session: AuthSession;
 }) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Explore: true, Run: true });
 
@@ -541,6 +841,7 @@ function Sidebar({
       </nav>
 
       <div className="sidebar-controls">
+        <span className="status-line">Signed in as {session.email}</span>
         <button className="mode-toggle" onClick={() => setMode(mode === "fixture" ? "api" : "fixture")} aria-pressed={mode === "fixture"}>
           <Database size={14} />
           {mode === "fixture" ? "Fixtures ON" : "Live API"}
@@ -548,6 +849,10 @@ function Sidebar({
         <button className="mode-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
           {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
           {theme}
+        </button>
+        <button className="mode-toggle" onClick={onSignOut}>
+          <LogOut size={14} />
+          Sign out
         </button>
         {health?.mockedFixtures.length ? <span className="status-line">{health.mockedFixtures.length} mock</span> : null}
       </div>
