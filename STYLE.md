@@ -8,12 +8,12 @@ Reference mood: nickpyl.space restraint, editorial pacing, asymmetry, small labe
 
 ## Type
 
-- Display: `Canela`, `Fraunces`, `Iowan Old Style`, `Georgia`, serif.
+- Display: `Newsreader`, `Iowan Old Style`, `Georgia`, serif.
   - Used for page titles and large financial figures.
-  - Chosen because the high contrast serif gives the product a more editorial, art-directed voice. Tightness comes from scale and line-height, not negative tracking.
-- Text: `Geist`, `IBM Plex Sans`, `Inter`, system sans.
+  - Chosen because it feels like financial editorial publishing: high-contrast, literary, precise, and less default-dashboard than a neutral sans heading.
+- Text: `IBM Plex Sans`, `Inter`, system sans.
   - Used for UI, labels, tables and controls.
-  - Chosen because the interface still needs precision and legibility.
+  - Chosen because it has engineered clarity and a slightly technical voice without feeling like a generic app template.
 - Mono numerals: `Roboto Mono`, `SFMono-Regular`, monospace.
   - Used for money, percentages, IDs and tabular data.
   - All financial values should use tabular numerals.
@@ -72,6 +72,6 @@ Dark mode:
 - The positions area is master-detail: one large selected position panel, three smaller peer cards, and temporary hover emphasis only on the card under interaction.
 - Selected state uses the single mineral-green accent through surface tint, a hairline accent rule and a restrained active shadow.
 - Figures use tabular numerals and animated count-up for legibility and polish.
-- The chosen font pairing remains:
-  - Display: `Canela`, then `Fraunces`, then system serif fallbacks for high-end editorial tension.
-  - UI/text: `Geist`, then `IBM Plex Sans`, then `Inter`/system for precise controls and dense financial labels.
+- The chosen font pairing is:
+  - Display: `Newsreader`, then system serif fallbacks for high-end editorial tension.
+  - UI/text: `IBM Plex Sans`, then `Inter`/system for precise controls and dense financial labels.

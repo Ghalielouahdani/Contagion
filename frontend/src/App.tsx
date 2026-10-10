@@ -168,6 +168,15 @@ const graphColumn: Record<string, number> = {
   chain: 4,
 };
 const typeOrder = ["position", "market", "venue", "oracle", "contract", "asset", "protocol", "offchain_entity", "chain"];
+const easeOut = [0.22, 1, 0.36, 1] as const;
+const staggerGroup = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.065, delayChildren: 0.04 } },
+};
+const riseItem = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.34, ease: easeOut } },
+};
 
 function layoutGraph(nodes: GraphNode[]): Record<string, { x: number; y: number }> {
   const columns = new Map<number, GraphNode[]>();
@@ -395,8 +404,10 @@ function App() {
         <header className="topbar">
           <div>
             <p className="eyebrow">DeFi Contagion Explorer</p>
-            <h1>{viewMeta[view].label}</h1>
-            <p className="lead">{scenarioCopy[scenario].summary}</p>
+            <AnimatedHeading text={viewMeta[view].label} />
+            <motion.p className="lead" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}>
+              {scenarioCopy[scenario].summary}
+            </motion.p>
           </div>
           <div className="topbar-actions">
             <button className="icon-button text-button" onClick={() => setCommandOpen(true)}>
@@ -898,7 +909,7 @@ function PortfolioDashboard({
   const peerPositions = data.portfolio.positions.filter((position) => position.position_id !== selectedPortfolio.position_id);
 
   return (
-    <div className="page-stack">
+    <motion.div className="page-stack" initial="hidden" animate="show" variants={staggerGroup}>
       <SummaryStrip
         portfolio={data.portfolio}
         risk={data.risk}
@@ -907,7 +918,7 @@ function PortfolioDashboard({
         selectedPosition={selectedPortfolio.position_id}
         setHoveredPosition={setHoveredPosition}
       />
-      <section className="position-master-detail" aria-label="Position selector">
+      <motion.section className="position-master-detail" aria-label="Position selector" variants={riseItem}>
         <motion.article
           key={selectedPortfolio.position_id}
           className="position-detail-card"
@@ -984,9 +995,9 @@ function PortfolioDashboard({
           );
         })}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="table-panel">
+      <motion.section className="table-panel" variants={riseItem}>
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Sortable portfolio table</p>
@@ -1019,11 +1030,14 @@ function PortfolioDashboard({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((position) => (
-              <tr
+            {filtered.map((position, index) => (
+              <motion.tr
                 key={position.position_id}
                 data-selected={position.position_id === selectedPosition}
                 data-highlighted={hoveredPosition === position.position_id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, delay: index * 0.035, ease: [0.22, 1, 0.36, 1] }}
                 onMouseEnter={() => setHoveredPosition(position.position_id)}
                 onMouseLeave={() => setHoveredPosition(null)}
                 onClick={() => setSelectedPosition(position.position_id)}
@@ -1037,13 +1051,13 @@ function PortfolioDashboard({
                 <td>
                   <Badge tone="warn">{position.data_origin}</Badge>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
         <WarningList warnings={data.marketSnapshot.warnings} />
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
 
@@ -1069,7 +1083,7 @@ function SummaryStrip({
     return `$${(Number(value) / 1_000_000).toFixed(2)}M`;
   };
   return (
-    <section className="summary-strip">
+    <motion.section className="summary-strip" variants={staggerGroup}>
       <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
       <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
       <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
@@ -1100,7 +1114,7 @@ function SummaryStrip({
           />
         </>
       ) : null}
-    </section>
+    </motion.section>
   );
 }
 
@@ -2313,6 +2327,35 @@ function RiskGauge({ metric }: { metric: NonNullable<RiskPosition["risk_metric"]
   );
 }
 
+function AnimatedHeading({ text }: { text: string }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+  if (prefersReducedMotion) return <h1>{text}</h1>;
+  let letterIndex = 0;
+  return (
+    <h1 aria-label={text} className="reveal-heading">
+      {text.split(" ").map((word, wordIndex) => (
+        <span className="reveal-word" aria-hidden="true" key={`${word}-${wordIndex}`}>
+          {word.split("").map((letter) => {
+            const index = letterIndex;
+            letterIndex += 1;
+            return (
+              <motion.span
+                key={`${letter}-${index}`}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.34, delay: index * 0.018, ease: easeOut }}
+              >
+                {letter}
+              </motion.span>
+            );
+          })}
+          {wordIndex < text.split(" ").length - 1 ? "\u00A0" : null}
+        </span>
+      ))}
+    </h1>
+  );
+}
+
 function Stat({
   label,
   value,
@@ -2329,10 +2372,11 @@ function Stat({
   setHoveredPosition?: (id: string | null) => void;
 }) {
   return (
-    <div
+    <motion.div
       className="stat"
       data-value-kind={valueKind}
       data-tooltip={detail ? `${label}: ${value}. ${detail}` : `${label}: ${value}`}
+      variants={riseItem}
       onMouseEnter={() => {
         if (highlightId) setHoveredPosition?.(highlightId);
       }}
@@ -2344,7 +2388,7 @@ function Stat({
       <strong className="stat-value">{valueKind === "figure" ? <AnimatedFigure value={value} /> : value}</strong>
       <span className="stat-sublabel" aria-hidden="true" />
       {detail ? <small className="stat-footnote">{detail}</small> : <small className="stat-footnote" aria-hidden="true" />}
-    </div>
+    </motion.div>
   );
 }
 
@@ -2374,10 +2418,13 @@ function AnimatedFigure({ value }: { value: string }) {
   }, [parsed, prefersReducedMotion]);
 
   if (!parsed) return <>{value}</>;
+  const formatted = parsed.grouped
+    ? current.toLocaleString("en-US", { minimumFractionDigits: parsed.decimals, maximumFractionDigits: parsed.decimals })
+    : current.toFixed(parsed.decimals);
   return (
     <span className="animated-figure" aria-label={value}>
       <span>{parsed.prefix}</span>
-      <span>{current.toFixed(parsed.decimals)}</span>
+      <span>{formatted}</span>
       <span className="figure-unit">{parsed.suffix}</span>
     </span>
   );
@@ -2385,15 +2432,16 @@ function AnimatedFigure({ value }: { value: string }) {
 
 function parseDisplayFigure(value: string) {
   const trimmed = value.trim();
-  const normalized = trimmed.replace(/,/g, "");
-  const match = normalized.match(/^(\$)?(-?\d+(?:\.\d+)?)(M|B|K|%|×)?$/);
+  const match = trimmed.match(/^(\$)?(-?[\d,]+(?:\.\d+)?)(M|B|K|%|×)?$/);
   if (!match) return null;
-  const decimals = match[2].includes(".") ? match[2].split(".")[1].length : 0;
+  const numeric = match[2];
+  const decimals = numeric.includes(".") ? numeric.split(".")[1].length : 0;
   return {
     prefix: match[1] ?? "",
-    amount: Number(match[2]),
+    amount: Number(numeric.replace(/,/g, "")),
     suffix: match[3] ?? "",
     decimals,
+    grouped: numeric.includes(","),
   };
 }
 
@@ -2413,7 +2461,9 @@ function MetricPair({ label, value }: { label: string; value: string }) {
   return (
     <div className="metric-pair">
       <span>{label}</span>
-      <strong>{value}</strong>
+      <strong>
+        <AnimatedFigure value={value} />
+      </strong>
     </div>
   );
 }
