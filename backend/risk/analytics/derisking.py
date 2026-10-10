@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from backend.risk.liquidity import haircut
+from backend.risk.liquidity import exit_cost
 from backend.risk.model import Portfolio, ScenarioOutcome, Snapshot
 
 STEP = 0.05
@@ -67,7 +67,7 @@ def cost_parts(fractions: dict[str, float], legs: list[Leg], snapshot: Snapshot)
         sold_by_venue[leg.venue_id] = sold_by_venue.get(leg.venue_id, 0.0) + size
         fees += venue.fee_rate * size
         gas += venue.gas_usd
-    impact = sum(haircut(size, snapshot.venues[v].effective_depth_usd) for v, size in sold_by_venue.items())
+    impact = sum(exit_cost(snapshot.venues[v], size) for v, size in sold_by_venue.items())
     return {"fees_usd": fees, "gas_usd": gas, "price_impact_usd": impact, "foregone_yield_usd": foregone}
 
 

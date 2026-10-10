@@ -8,7 +8,7 @@ a joint exit per shared venue and reports the difference as shared_liquidity_pen
 from __future__ import annotations
 
 from backend.risk import lending
-from backend.risk.liquidity import crisis_depth, group_by_venue, haircut, joint_haircuts
+from backend.risk.liquidity import coverage_note, exit_cost, group_by_venue, joint_haircuts
 from backend.risk.model import Portfolio, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, position_values
 from backend.risk.scenarios import scenario
@@ -21,7 +21,7 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
 
     before = MarketState.from_snapshot(snapshot)
     after = before.shocked(fundamental_shock=fundamental)
-    depth = {vid: crisis_depth(v.effective_depth_usd, reduction) for vid, v in snapshot.venues.items()}
+    k = 1 - reduction  # share of normal depth left in the crisis
 
     outcome = ScenarioOutcome(impacts=[])
     exits: list[tuple[str, float]] = []
@@ -55,12 +55,15 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
             impact.warnings.append(f"No exit venue data for {position.exit_venue_id}; executable value not computed.")
         else:
             # A borrow position exits by selling its collateral (pro-rata unwind at x = 100%).
-            cost = haircut(gross1, depth[venue.venue_id])
+            cost = exit_cost(venue, gross1, k)
             impact.loss_components["execution_haircut"] = cost
             impact.executable_after = gross1 - cost
             standalone[position.position_id] = cost
             exits.append((venue.venue_id, gross1))
-            note = "Proxy depth; standalone exit." if venue.quote_method == "proxy" else "Standalone exit."
+            note = "Proxy depth; standalone exit." if not venue.curve else "Priced on executable quotes; standalone exit."
+            extrapolated = coverage_note(venue, gross1, k)
+            if extrapolated:
+                impact.warnings.append(extrapolated)
             sharing = [p.position_id for p in portfolio.positions
                        if p.exit_venue_id == venue.venue_id and p.position_id != position.position_id]
             if sharing:
@@ -68,7 +71,7 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
             impact.warnings.append(note)
         outcome.impacts.append(impact)
 
-    joint = joint_haircuts(group_by_venue(exits), depth)
+    joint = joint_haircuts(group_by_venue(exits), snapshot.venues, k)
     outcome.shared_liquidity_penalty = sum(joint.values()) - sum(standalone.values())
     if outcome.shared_liquidity_penalty > 0:
         outcome.warnings.append(

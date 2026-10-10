@@ -11,22 +11,23 @@
       "position_id": "ethena_susde_01",
       "gross_value_before_usd": "2002952.69",
       "gross_value_after_usd": "2002952.69",
-      "executable_value_after_usd": "1545531.64",
+      "executable_value_after_usd": "1545531.75",
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "2002952.69",
-      "net_equity_after_usd": "1545531.64",
-      "conditional_loss_usd": "457421.05",
+      "net_equity_after_usd": "1545531.75",
+      "conditional_loss_usd": "457420.94",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "457421.05"
+        "execution_haircut": "457420.94"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Standalone exit. Shares venue:susde_usdc with morpho_01."
+        "venue:susde_usdc: selling 2,002,953 USD with 20% of normal depth left (like 10,014,763 USD in today's book) is beyond the largest executable quote (5,007,382 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit. Shares venue:susde_usdc with morpho_01."
       ],
       "contagion": {
         "paths": [
@@ -56,22 +57,23 @@
       "position_id": "aave_01",
       "gross_value_before_usd": "2998790.46",
       "gross_value_after_usd": "2998790.46",
-      "executable_value_after_usd": "2992389.93",
+      "executable_value_after_usd": "2992384.02",
       "debt_after_usd": "1799757.18",
       "net_equity_before_usd": "1199033.28",
-      "net_equity_after_usd": "1192632.75",
-      "conditional_loss_usd": "6400.53",
+      "net_equity_after_usd": "1192626.84",
+      "conditional_loss_usd": "6406.44",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "6400.53"
+        "execution_haircut": "6406.44"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Standalone exit."
+        "venue:usde_usdc: selling 2,998,790 USD with 20% of normal depth left (like 14,993,952 USD in today's book) is beyond the largest executable quote (2,998,790 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit."
       ],
       "contagion": {
         "paths": [
@@ -101,22 +103,23 @@
       "position_id": "morpho_01",
       "gross_value_before_usd": "3004429.03",
       "gross_value_after_usd": "3004429.03",
-      "executable_value_after_usd": "2080708.28",
+      "executable_value_after_usd": "2080708.48",
       "debt_after_usd": "1999730.20",
       "net_equity_before_usd": "1004698.83",
-      "net_equity_after_usd": "80978.08",
-      "conditional_loss_usd": "923720.75",
+      "net_equity_after_usd": "80978.28",
+      "conditional_loss_usd": "923720.55",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "923720.75"
+        "execution_haircut": "923720.55"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Standalone exit. Shares venue:susde_usdc with ethena_susde_01."
+        "venue:susde_usdc: selling 3,004,429 USD with 20% of normal depth left (like 15,022,145 USD in today's book) is beyond the largest executable quote (5,007,382 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
       ],
       "contagion": {
         "paths": [
@@ -146,22 +149,23 @@
       "position_id": "pendle_01",
       "gross_value_before_usd": "2066258.90",
       "gross_value_after_usd": "2066258.90",
-      "executable_value_after_usd": "2050423.13",
+      "executable_value_after_usd": "2050425.70",
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "2066258.90",
-      "net_equity_after_usd": "2050423.13",
-      "conditional_loss_usd": "15835.77",
+      "net_equity_after_usd": "2050425.70",
+      "conditional_loss_usd": "15833.20",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "15835.77"
+        "execution_haircut": "15833.20"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Standalone exit."
+        "venue:pendle_pt_susde: selling 2,066,259 USD with 20% of normal depth left (like 10,331,295 USD in today's book) is beyond the largest executable quote (2,066,259 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit."
       ],
       "contagion": {
         "paths": [
@@ -190,9 +194,9 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6272943.70",
-    "net_equity_after_usd": "4121281.94",
-    "total_conditional_loss_usd": "2151661.76",
-    "shared_liquidity_penalty_usd": "748283.66",
+    "net_equity_after_usd": "4121278.98",
+    "total_conditional_loss_usd": "2151664.72",
+    "shared_liquidity_penalty_usd": "748283.59",
     "aggregation_status": "complete"
   },
   "provenance": {

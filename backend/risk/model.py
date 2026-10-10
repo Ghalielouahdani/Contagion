@@ -63,6 +63,14 @@ class Venue:
     quote_method: str
     fee_rate: float = 0.0
     gas_usd: float = 0.0
+    # Executable quotes: (size_usd, all-in loss fraction), sorted by size. Empty = proxy depth only.
+    curve: tuple[tuple[float, float], ...] = ()
+    depth_scale: float = 1.0  # sensitivity multiplier on the venue's depth (1 = as observed)
+
+    @staticmethod
+    def curve_from_quotes(quotes: list[dict]) -> tuple[tuple[float, float], ...]:
+        points = {float(q["size_usd"]): float(q["loss_pct"]) / 100 for q in quotes if float(q["size_usd"]) > 0}
+        return tuple(sorted(points.items()))
 
 
 @dataclass(frozen=True)
@@ -88,7 +96,8 @@ class Snapshot:
             markets=markets,
             venues={
                 vid: Venue(vid, v["asset"], float(v["effective_depth_usd"]), v["quote_method"],
-                           float(v.get("fee_rate", 0)), float(v.get("gas_usd", 0)))
+                           float(v.get("fee_rate", 0)), float(v.get("gas_usd", 0)),
+                           Venue.curve_from_quotes(v.get("quotes", [])))
                 for vid, v in raw.get("exit_venues", {}).items()
             },
             verified=bool(markets) and all(m.get("verified", False) for m in markets.values()),

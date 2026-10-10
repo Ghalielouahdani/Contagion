@@ -11,7 +11,7 @@ For every position the scenario makes liquidatable:
 
 from __future__ import annotations
 
-from backend.risk.liquidity import haircut
+from backend.risk.liquidity import exit_cost
 from backend.risk.metrics import deleverage_needed
 from backend.risk.model import Portfolio, ScenarioOutcome, Snapshot
 
@@ -20,7 +20,7 @@ def _trade_cost(size: float, snapshot: Snapshot, venue_id: str) -> float | None:
     venue = snapshot.venues.get(venue_id)
     if venue is None:
         return None
-    return haircut(size, venue.effective_depth_usd) + venue.fee_rate * size + venue.gas_usd
+    return exit_cost(venue, size) + venue.fee_rate * size + venue.gas_usd
 
 
 def protection(portfolio: Portfolio, snapshot: Snapshot, outcome: ScenarioOutcome, horizon_days: int, lag_hours: float) -> list[dict]:

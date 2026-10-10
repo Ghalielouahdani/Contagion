@@ -160,6 +160,18 @@ Après régénération avec le moteur courant, le carry à 60 % d'emprunt et 0 %
 
 Les deux jeux prêteurs disposent des six résultats et de leur `risk_surface.json`. Le front affiche uniquement les préréglages dont la requête et le résultat existent dans le jeu choisi, et recharge les valeurs du préréglage lors du changement de jeu. La surface hors ligne fait varier le curseur principal ; les autres paramètres restent ceux du préréglage, comme indiqué dans l'interface.
 
+## Coûts de sortie sur cotations réelles (fait)
+
+P1 récupère des cotations exécutables (KyberSwap, routeur Pendle) à plusieurs tailles (`exit_venues.*.quotes`). Jusqu'ici le moteur n'en gardait qu'une profondeur produit-constant, calibrée sur la taille jointe. Or la liquidité réelle a des falaises : sUSDe 0,09 % de perte à 2 M$, 12,9 % à 5 M$. Une seule profondeur ne peut pas représenter ça.
+
+Le moteur (`liquidity.exit_cost`) utilise maintenant la courbe : interpolation linéaire de la perte entre les tailles cotées (ancrée en 0, croissante), extrapolation produit-constant au-delà de la plus grande cotation (signalée). Crise : coût_k(taille) = k × coût(taille / k), identique à l'ancien calcul pour un venue proxy (résultats de `demo_ethena_01` inchangés).
+
+Sur `live_ethena_01` :
+- sortir 2 M$ de sUSDe coûte **1 829 $** d'après la cotation, contre 111 934 $ avec la profondeur unique (×61) ;
+- l'économie « dé-risquage ciblé vs uniforme » passe de 169 910 $ à **3 767 $** : le chiffre phare venait du proxy.
+
+**Limite à dire honnêtement** : une cotation mesure le carnet d'aujourd'hui, pas celui d'une crise. À −80 % de profondeur, toutes les tailles sortent de la plage cotée et le moteur extrapole : les pertes de crise restent un modèle. Les cotations corrigent surtout les décisions en conditions normales (dé-risquage, protection contre la liquidation). Prochaines étapes : (1) P1 cote des tailles plus grandes (jusqu'à 10× la taille jointe) pour réduire l'extrapolation ; (2) calibrer la réduction de profondeur de crise sur l'historique (octobre 2025) plutôt que la choisir.
+
 ## Niveau 3 : la finition qui fait pro
 
 ### 6. Traçabilité de chaque chiffre
@@ -208,6 +220,7 @@ backend/risk/
 5. [ ] Presets historiques + traçabilité complète
 6. [x] Scénarios C–F : crise combinée, carry squeeze, gouvernance, choc de nœud
 7. [x] Positions prêteur (`lending_supply`) : mauvaise dette, perte cachée par l'oracle, sortie bloquée
+8. [x] Coûts de sortie sur la courbe de cotations exécutables, pas une profondeur unique
 
 ## Questions ouvertes
 

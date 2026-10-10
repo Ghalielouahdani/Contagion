@@ -19,14 +19,14 @@ from __future__ import annotations
 from dataclasses import replace
 
 from backend.risk import lending
-from backend.risk.liquidity import crisis_depth, haircut
+from backend.risk.liquidity import coverage_note, exit_cost
 from backend.risk.model import Portfolio, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.scenarios import liquidity_crisis, scenario, usde_depeg
 
 
-def queued_haircut(size, forced, depth):
-    """Execution loss of selling `size` after `forced` has already been sold into the same depth."""
-    return haircut(forced + size, depth) - haircut(forced, depth)
+def queued_haircut(venue, size, forced, depth_factor):
+    """Execution loss of selling `size` after `forced` has already been sold into the same venue."""
+    return exit_cost(venue, forced + size, depth_factor) - exit_cost(venue, forced, depth_factor)
 
 
 def seized_collateral(impact) -> float:
@@ -65,7 +65,7 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
 
 def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, forced_selling: bool) -> ScenarioOutcome:
     reduction = request.param("exit_liquidity_reduction_pct", 0.0)
-    depth = {vid: crisis_depth(v.effective_depth_usd, reduction) for vid, v in snapshot.venues.items()}
+    k = 1 - reduction  # share of normal depth left in the crisis
 
     outcome = usde_depeg.run(portfolio, snapshot, request)
     impacts = {i.position_id: i for i in outcome.impacts}
@@ -73,7 +73,7 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
     forced: dict[str, float] = {}
     for position in portfolio.positions:
         seized = seized_collateral(impacts[position.position_id])
-        if forced_selling and seized > 0 and position.exit_venue_id in depth:
+        if forced_selling and seized > 0 and position.exit_venue_id in snapshot.venues:
             forced[position.exit_venue_id] = forced.get(position.exit_venue_id, 0.0) + seized
 
     exits: dict[str, float] = {}
@@ -93,7 +93,10 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
         # A liquidated borrow only has the collateral the liquidators left to sell.
         size = impact.gross_after - seized_collateral(impact)
         ahead = forced.get(venue.venue_id, 0.0)
-        cost = queued_haircut(size, ahead, depth[venue.venue_id])
+        cost = queued_haircut(venue, size, ahead, k)
+        extrapolated = coverage_note(venue, ahead + size, k)
+        if extrapolated:
+            impact.warnings.append(extrapolated)
         impact.loss_components["execution_haircut"] = cost
         impact.executable_after = impact.gross_after - cost
         standalone += cost
@@ -101,9 +104,9 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
         if ahead > 0:
             impact.warnings.append(
                 f"Exit queued behind {ahead:,.0f} USD of liquidation selling on {venue.venue_id}; "
-                f"without it the haircut would be {haircut(size, depth[venue.venue_id]):,.0f} USD.")
+                f"without it the haircut would be {exit_cost(venue, size, k):,.0f} USD.")
 
-    joint = sum(queued_haircut(size, forced.get(vid, 0.0), depth[vid]) for vid, size in exits.items())
+    joint = sum(queued_haircut(snapshot.venues[vid], size, forced.get(vid, 0.0), k) for vid, size in exits.items())
     outcome.shared_liquidity_penalty = joint - standalone
     if outcome.shared_liquidity_penalty > 0:
         outcome.warnings.append(

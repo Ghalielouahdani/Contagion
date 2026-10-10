@@ -69,6 +69,8 @@ Scenarios: `usde_depeg` (A), `liquidity_crisis` (B), `combined_crisis` (C: A the
 
 Position types: `token_holding`, `collateralized_borrow`, `pt_holding`, `lending_supply` (USDC supplied to a lending market: loss = share of bad debt and of debt underwater at market prices, from the market's borrower LTV distribution; see `lending.py`).
 
+Exit costs: `liquidity.exit_cost(venue, size, depth_factor)` prices on the venue's executable quotes when the snapshot has them (linear in loss fraction between quoted sizes, constant-product extrapolation beyond the largest, flagged), else on the constant-product proxy depth. A crisis keeping a share k of depth prices cost_k(size) = k x cost(size / k).
+
 Add a scenario: new file in `scenarios/` decorated with `@scenario("<id>")`, plus its import in `scenarios/__init__.py` and its schema in `contracts/`. Add a lending protocol: one compute function + one `register(...)` line in `metrics.py`.
 
 ## Roadmap

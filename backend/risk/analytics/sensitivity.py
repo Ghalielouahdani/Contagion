@@ -35,7 +35,7 @@ def _apply(snapshot: Snapshot, request: ScenarioRequest, a: Assumption, value: f
         return replace(snapshot, markets=markets), request
     if a.kind == "venue_depth":
         venue = snapshot.venues[a.target]
-        venues = {**snapshot.venues, a.target: replace(venue, effective_depth_usd=venue.effective_depth_usd * value)}
+        venues = {**snapshot.venues, a.target: replace(venue, depth_scale=venue.depth_scale * value)}
         return replace(snapshot, venues=venues), request
     raise ValueError(f"unknown assumption kind {a.kind!r}")
 
