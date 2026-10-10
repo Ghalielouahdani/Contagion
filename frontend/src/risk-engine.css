@@ -374,3 +374,13 @@
   color: var(--np-soft);
   font-size: var(--np-size-0);
 }
+
+.engine-banner {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--np-line);
+  border-left: 3px solid var(--np-accent-gold);
+  border-radius: var(--np-radius);
+  color: var(--np-text);
+  font-size: var(--np-size-0);
+}

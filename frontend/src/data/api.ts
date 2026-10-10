@@ -251,11 +251,12 @@ function withContagion(result: RiskResult, reference: RiskResult): RiskResult {
   };
 }
 
-/** Offline analytics only exist at the depeg presets (-5% and -30%); never show them for another scenario. */
+/** Offline analytics are computed at each scenario's preset (risk_analytics<suffix>.json); the depeg also has a severe preset. */
 function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs, set: string): RiskAnalytics | null {
-  if (scenario !== "usde_depeg") return null;
-  const preset = (smallFixtures[`${FIXTURES}/${set}/risk_analytics.json`] as RiskAnalytics | undefined) ?? null;
-  const severe = (smallFixtures[`${FIXTURES}/${set}/risk_analytics_severe.json`] as RiskAnalytics | undefined) ?? null;
+  const read = (file: string) => (smallFixtures[`${FIXTURES}/${set}/${file}`] as RiskAnalytics | undefined) ?? null;
+  const preset = read(`risk_analytics${fileSuffix[scenario]}.json`);
+  if (scenario !== "usde_depeg") return preset;
+  const severe = read("risk_analytics_severe.json");
   return severe && inputs.shockPct >= 17.5 ? severe : preset;
 }
 

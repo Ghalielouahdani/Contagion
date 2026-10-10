@@ -140,6 +140,14 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
         </div>
       </section>
 
+      {data.riskSource === "surface" && data.analyticsIsPreset && analytics ? (
+        <p className="engine-banner">
+          Offline: the loss, the breakdown and the calculation trace follow your sliders. The uncertainty range, curves,
+          sensitivities and probabilities come from this scenario's preset run (loss {money(analytics.headline.scenario_loss_usd)});
+          switch to the live API to recompute them at your exact settings.
+        </p>
+      ) : null}
+
       <section className="impact-strip">
         <div className="stat"><span>Net equity before</span><strong>{money(navBefore)}</strong><small>Sum of positions, gross and debt netted</small></div>
         <div className="stat"><span>Conditional loss</span><strong>{total === null ? "incomplete" : money(total)}</strong>

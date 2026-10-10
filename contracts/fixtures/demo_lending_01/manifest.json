@@ -79,6 +79,34 @@
     "risk_result_cascade": {
       "path": "risk_result_cascade.json",
       "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics": {
+      "path": "risk_analytics.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_analytics_carry": {
+      "path": "risk_analytics_carry.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_analytics_cascade": {
+      "path": "risk_analytics_cascade.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_analytics_combined": {
+      "path": "risk_analytics_combined.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_analytics_governance": {
+      "path": "risk_analytics_governance.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_analytics_liquidity": {
+      "path": "risk_analytics_liquidity.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_analytics_node_shock": {
+      "path": "risk_analytics_node_shock.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
     }
   },
   "golden": true

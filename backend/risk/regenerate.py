@@ -3,7 +3,8 @@
 Usage: python -m backend.risk.regenerate contracts/fixtures/<set> [--no-surface]
 
 For every scenario_request<suffix>.json: risk_result<suffix>.json = simulate(portfolio, snapshot,
-request, graph), declared in the manifest. Then risk_surface.json. Golden sets (manifest
+request, graph) and risk_analytics<suffix>.json = analyze(...) at the preset (offline pages show the
+analytics of every scenario), declared in the manifest. Then risk_surface.json. Golden sets (manifest
 "golden": true) hold hand-derived expectations: their existing results are never overwritten,
 only missing ones are added.
 """
@@ -15,6 +16,7 @@ import sys
 from pathlib import Path
 
 from backend.risk import simulate
+from backend.risk.analytics import analyze
 from backend.risk.surface import main as build_surface
 
 
@@ -26,6 +28,11 @@ def regenerate(folder: Path, surface: bool = True) -> None:
         request_name = request_file.stem
         result_name = request_name.replace("scenario_request", "risk_result")
         manifest["files"].setdefault(request_name, {"path": f"{request_name}.json", "schema": "../../schemas/v1/scenario_request.schema.json"})
+        analytics_name = request_name.replace("scenario_request", "risk_analytics")
+        if not (manifest.get("golden") and (folder / f"{analytics_name}.json").exists()):
+            analytics = analyze(portfolio, snapshot, load(request_name))
+            (folder / f"{analytics_name}.json").write_text(json.dumps(analytics, indent=2) + "\n")
+            manifest["files"][analytics_name] = {"path": f"{analytics_name}.json", "schema": "../../schemas/v1/risk_analytics.schema.json"}
         if manifest.get("golden") and (folder / f"{result_name}.json").exists():
             continue
         result = simulate(portfolio, snapshot, load(request_name), graph)
