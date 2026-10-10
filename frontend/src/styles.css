@@ -215,6 +215,37 @@ select:focus-visible {
   margin-bottom: 14px;
 }
 
+.auth-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 24px;
+  border: 1px solid var(--np-line-strong);
+}
+
+.auth-switch button {
+  min-height: 38px;
+  border: 0;
+  border-right: 1px solid var(--np-line-strong);
+  background: transparent;
+  color: var(--np-muted);
+  font-size: var(--np-size-0);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    background var(--np-fast) ease,
+    color var(--np-fast) ease;
+}
+
+.auth-switch button:last-child {
+  border-right: 0;
+}
+
+.auth-switch button[aria-selected="true"] {
+  background: var(--np-strong);
+  color: var(--np-page);
+}
+
 .auth-form {
   display: grid;
   gap: 10px;
@@ -880,20 +911,6 @@ p,
   z-index: -1;
   width: 4px;
   background: var(--np-accent);
-}
-
-.position-detail-card::after {
-  content: "";
-  position: absolute;
-  right: clamp(28px, 3vw, 44px);
-  top: clamp(28px, 3vw, 44px);
-  width: clamp(56px, 7vw, 92px);
-  aspect-ratio: 1;
-  border: 1px solid color-mix(in srgb, var(--np-accent) 42%, transparent);
-  border-radius: 50%;
-  opacity: 0.34;
-  pointer-events: none;
-  transform: translate3d(0, 0, 0);
 }
 
 .position-detail-card[data-highlighted="true"] {
