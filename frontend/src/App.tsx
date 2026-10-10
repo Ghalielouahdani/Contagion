@@ -263,6 +263,7 @@ function App() {
   const [query, setQuery] = useState("");
   const [hasRun, setHasRun] = useState(true);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [introPreviewOpen, setIntroPreviewOpen] = useState(true);
 
   // Deferred so dragging a slider does not queue a request per pixel; the result follows the slider.
   const deferredShock = useDeferredValue(shockPct);
@@ -387,6 +388,7 @@ function App() {
   }
 
   return (
+    <>
     <main className="app-shell">
       <Sidebar
         view={view}
@@ -528,6 +530,101 @@ function App() {
         />
       ) : null}
     </main>
+    <IntroOverlay open={introPreviewOpen} onDismiss={() => setIntroPreviewOpen(false)} />
+    </>
+  );
+}
+
+function IntroOverlay({ open, onDismiss }: { open: boolean; onDismiss: () => void }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const ecosystem = ["Ethena", "Aave", "Morpho", "Pendle"];
+  const title = "DeFi Contagion";
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = () => onDismiss();
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onDismiss, open]);
+
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="intro-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="DeFi Contagion intro"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 1.015 }}
+          transition={{ duration: prefersReducedMotion ? 0.12 : 0.72, ease: easeOut }}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) onDismiss();
+          }}
+        >
+          <div className="intro-noise" aria-hidden="true" />
+          <motion.div
+            className="intro-orbit"
+            aria-hidden="true"
+            initial={{ opacity: 0, scale: 0.82 }}
+            animate={{ opacity: prefersReducedMotion ? 0.18 : 0.42, scale: 1, rotate: prefersReducedMotion ? 0 : 8 }}
+            transition={{ duration: prefersReducedMotion ? 0.2 : 2.1, ease: easeOut }}
+          />
+          <motion.div
+            className="intro-panel"
+            initial={{ opacity: 0, x: prefersReducedMotion ? 0 : -58 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -18 }}
+            transition={{ duration: prefersReducedMotion ? 0.18 : 0.9, ease: easeOut }}
+          >
+            <div className="intro-kicker">
+              {ecosystem.map((item, index) => (
+                <motion.span
+                  key={item}
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.36, delay: prefersReducedMotion ? 0 : 0.28 + index * 0.14, ease: easeOut }}
+                >
+                  {item}
+                </motion.span>
+              ))}
+            </div>
+            <h1 className="intro-wordmark" aria-label={title}>
+              {title.split("").map((letter, index) => (
+                <motion.span
+                  key={`${letter}-${index}`}
+                  aria-hidden="true"
+                  initial={{ opacity: 0, x: prefersReducedMotion ? 0 : -24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.44, delay: prefersReducedMotion ? 0 : 0.78 + index * 0.035, ease: easeOut }}
+                >
+                  {letter === " " ? "\u00A0" : letter}
+                </motion.span>
+              ))}
+            </h1>
+            <motion.p
+              className="intro-tagline"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.54, delay: prefersReducedMotion ? 0 : 1.72, ease: easeOut }}
+            >
+              Mapping hidden dependency risk before stress becomes contagion.
+            </motion.p>
+            <motion.div
+              className="intro-resolve"
+              aria-hidden="true"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: prefersReducedMotion ? 0.16 : 0.9, delay: prefersReducedMotion ? 0 : 2.02, ease: easeOut }}
+            />
+          </motion.div>
+          <button className="intro-skip" onClick={onDismiss}>
+            Skip intro
+          </button>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
