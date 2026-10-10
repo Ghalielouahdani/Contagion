@@ -12,20 +12,49 @@
       "gross_value_before_usd": "2000000.00",
       "gross_value_after_usd": "1900000.00",
       "executable_value_after_usd": null,
-      "debt_after_usd": "0",
+      "debt_after_usd": "0.00",
       "net_equity_before_usd": "2000000.00",
       "net_equity_after_usd": "1900000.00",
       "conditional_loss_usd": "100000.00",
       "loss_components": {
         "market_repricing": "100000.00",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
-        "execution_haircut": "0"
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "illustrative",
-      "warnings": []
+      "warnings": [],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:ethena_susde_01",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:7",
+              "edge:3"
+            ],
+            "channels": [
+              "mark_to_market",
+              "exchange_rate"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:7",
+              "edge:3"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     },
     {
       "position_id": "aave_01",
@@ -38,15 +67,15 @@
       "conditional_loss_usd": "150000.00",
       "loss_components": {
         "market_repricing": "150000.00",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
-        "execution_haircut": "0"
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
       },
       "risk_metric": {
         "type": "health_factor",
         "before": "1.4167",
         "after": "1.3458",
-        "threshold": "1.0",
+        "threshold": "1.0000",
         "liquidatable": false,
         "distance_to_liquidation_before_pct": "0.2941",
         "distance_to_liquidation_after_pct": "0.2570"
@@ -54,8 +83,63 @@
       "source_type": "derived",
       "calculation_status": "illustrative",
       "warnings": [
-        "Liquidation threshold and oracle response are fixture assumptions."
-      ]
+        "Liquidation parameters and oracle response are fixture assumptions."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:aave_01",
+              "market:aave_01",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:9",
+              "edge:10"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "mark_to_market"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:9",
+              "edge:10"
+            ]
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:aave_01",
+              "market:aave_01",
+              "oracle:aave_01_usde",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:9",
+              "edge:12",
+              "edge:13"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "oracle_repricing",
+              "oracle_repricing"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:9",
+              "edge:12",
+              "edge:13"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     },
     {
       "position_id": "morpho_01",
@@ -68,15 +152,15 @@
       "conditional_loss_usd": "150000.00",
       "loss_components": {
         "market_repricing": "150000.00",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
-        "execution_haircut": "0"
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
       },
       "risk_metric": {
         "type": "ltv",
         "before": "0.6667",
         "after": "0.6667",
-        "threshold": "0.915",
+        "threshold": "0.9150",
         "liquidatable": false,
         "distance_to_liquidation_before_pct": "0.2714",
         "distance_to_liquidation_after_pct": "0.2714"
@@ -84,37 +168,152 @@
       "source_type": "derived",
       "calculation_status": "illustrative",
       "warnings": [
-        "Oracle assumed not to reflect USDe market price (pass-through 0); if it does, LTV rises to 0.7018."
-      ]
+        "Liquidation parameters and oracle response are fixture assumptions.",
+        "Oracle assumed to pass through 0 of the market move; if it fully follows the market, ltv becomes 0.7018 (liquidatable: False)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_01",
+              "market:morpho_01",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:16",
+              "edge:17",
+              "edge:3"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "mark_to_market",
+              "exchange_rate"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:16",
+              "edge:17",
+              "edge:3"
+            ]
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_01",
+              "market:morpho_01",
+              "oracle:morpho_01_susde",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:16",
+              "edge:19",
+              "edge:20",
+              "edge:3"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "oracle_repricing",
+              "exchange_rate",
+              "exchange_rate"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:16",
+              "edge:19",
+              "edge:20",
+              "edge:3"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     },
     {
       "position_id": "pendle_01",
       "gross_value_before_usd": "2000055.14",
       "gross_value_after_usd": "1876734.57",
       "executable_value_after_usd": null,
-      "debt_after_usd": "0",
+      "debt_after_usd": "0.00",
       "net_equity_before_usd": "2000055.14",
       "net_equity_after_usd": "1876734.57",
       "conditional_loss_usd": "123320.57",
       "loss_components": {
         "market_repricing": "123320.57",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
-        "execution_haircut": "0"
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "illustrative",
       "warnings": [
         "PT valued with implied-APY discount approximation."
-      ]
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:pendle_01",
+              "asset:PT-sUSDe",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:23",
+              "edge:5",
+              "edge:3"
+            ],
+            "channels": [
+              "mark_to_market",
+              "maturity_redemption",
+              "exchange_rate"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:23",
+              "edge:5",
+              "edge:3"
+            ]
+          },
+          {
+            "factor": "pt_implied_yield",
+            "root": "market:pendle_01",
+            "nodes": [
+              "position:pendle_01",
+              "market:pendle_01"
+            ],
+            "edges": [
+              "edge:24"
+            ],
+            "channels": [
+              "maturity_redemption"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:24"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     }
   ],
   "portfolio": {
     "net_equity_before_usd": "6200055.14",
     "net_equity_after_usd": "5676734.57",
     "total_conditional_loss_usd": "523320.57",
-    "shared_liquidity_penalty_usd": "0",
+    "shared_liquidity_penalty_usd": "0.00",
     "aggregation_status": "complete"
   },
   "provenance": {
@@ -123,6 +322,85 @@
     "input_graph_id": "graph_demo_01"
   },
   "warnings": [
-    "Illustrative output from fixture assumptions; never display as real-market result."
-  ]
+    "Computed from unverified market parameters; illustrative, never a real-market result."
+  ],
+  "contagion": {
+    "graph_id": "graph_demo_01",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "asset:sUSDe",
+        "label": "sUSDe",
+        "node_type": "asset",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "7000055.14",
+        "net_equity_usd": "5000055.14"
+      },
+      {
+        "node": "venue:susde_usdc",
+        "label": "sUSDe/USDC exit route",
+        "node_type": "venue",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "5000000.00",
+        "net_equity_usd": "3000000.00"
+      },
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "6000000.00",
+        "net_equity_usd": "2200000.00"
+      }
+    ],
+    "warnings": []
+  }
 }

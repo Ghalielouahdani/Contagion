@@ -15,6 +15,16 @@
       "label": "sUSDe"
     },
     {
+      "id": "asset:USDC",
+      "type": "asset",
+      "label": "USDC"
+    },
+    {
+      "id": "asset:PT-sUSDe",
+      "type": "asset",
+      "label": "PT-sUSDe"
+    },
+    {
       "id": "protocol:ethena",
       "type": "protocol",
       "label": "Ethena"
@@ -25,9 +35,34 @@
       "label": "Aave"
     },
     {
+      "id": "protocol:morpho",
+      "type": "protocol",
+      "label": "Morpho"
+    },
+    {
+      "id": "protocol:pendle",
+      "type": "protocol",
+      "label": "Pendle"
+    },
+    {
+      "id": "offchain:ethena_backing",
+      "type": "offchain_entity",
+      "label": "Ethena backing (custody, hedges, reserve fund)"
+    },
+    {
       "id": "market:aave_01",
       "type": "market",
-      "label": "Selected Aave market"
+      "label": "Aave USDe/USDC market"
+    },
+    {
+      "id": "market:morpho_01",
+      "type": "market",
+      "label": "Morpho sUSDe/USDC market"
+    },
+    {
+      "id": "market:pendle_01",
+      "type": "market",
+      "label": "Pendle PT-sUSDe market"
     },
     {
       "id": "oracle:aave_01_usde",
@@ -35,9 +70,9 @@
       "label": "Aave USDe price oracle"
     },
     {
-      "id": "position:aave_01",
-      "type": "position",
-      "label": "Aave fictional position"
+      "id": "oracle:morpho_01_susde",
+      "type": "oracle",
+      "label": "Morpho sUSDe exchange-rate oracle"
     },
     {
       "id": "position:ethena_susde_01",
@@ -45,14 +80,34 @@
       "label": "sUSDe holding"
     },
     {
+      "id": "position:aave_01",
+      "type": "position",
+      "label": "Aave USDe-collateral borrow"
+    },
+    {
       "id": "position:morpho_01",
       "type": "position",
-      "label": "Morpho fictional position"
+      "label": "Morpho sUSDe-collateral borrow"
+    },
+    {
+      "id": "position:pendle_01",
+      "type": "position",
+      "label": "PT-sUSDe holding"
     },
     {
       "id": "venue:susde_usdc",
       "type": "venue",
       "label": "sUSDe/USDC exit route"
+    },
+    {
+      "id": "venue:usde_usdc",
+      "type": "venue",
+      "label": "USDe/USDC exit route"
+    },
+    {
+      "id": "venue:pendle_pt_susde",
+      "type": "venue",
+      "label": "Pendle PT-sUSDe AMM"
     }
   ],
   "edges": [
@@ -72,34 +127,20 @@
     },
     {
       "id": "edge:2",
-      "source": "position:aave_01",
-      "target": "market:aave_01",
-      "relation": "position_in",
-      "risk_channel": "collateral_liquidation",
+      "source": "asset:USDe",
+      "target": "offchain:ethena_backing",
+      "relation": "backed_by",
+      "risk_channel": "custody",
       "evidence": {
-        "method": "fixture",
-        "reference": "fictional portfolio",
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
         "observed_at": "2026-10-10T08:00:00Z",
-        "status": "assumed"
+        "status": "documented"
       },
-      "confidence": "assumed"
+      "confidence": "documented"
     },
     {
       "id": "edge:3",
-      "source": "market:aave_01",
-      "target": "oracle:aave_01_usde",
-      "relation": "prices_collateral_with",
-      "risk_channel": "oracle_repricing",
-      "evidence": {
-        "method": "onchain_call",
-        "reference": "TO_VERIFY_ORACLE_ADDRESS",
-        "observed_at": "2026-10-10T08:00:00Z",
-        "status": "to_verify"
-      },
-      "confidence": "assumed"
-    },
-    {
-      "id": "edge:4",
       "source": "asset:sUSDe",
       "target": "asset:USDe",
       "relation": "redeemable_for",
@@ -113,7 +154,63 @@
       "confidence": "documented"
     },
     {
+      "id": "edge:4",
+      "source": "asset:sUSDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
       "id": "edge:5",
+      "source": "asset:PT-sUSDe",
+      "target": "asset:sUSDe",
+      "relation": "redeemable_for",
+      "risk_channel": "maturity_redemption",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.pendle.finance/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:6",
+      "source": "asset:PT-sUSDe",
+      "target": "protocol:pendle",
+      "relation": "issued_by",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.pendle.finance/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:7",
+      "source": "position:ethena_susde_01",
+      "target": "asset:sUSDe",
+      "relation": "holds",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:8",
       "source": "position:ethena_susde_01",
       "target": "venue:susde_usdc",
       "relation": "exits_via",
@@ -127,9 +224,247 @@
       "confidence": "assumed"
     },
     {
-      "id": "edge:6",
+      "id": "edge:9",
+      "source": "position:aave_01",
+      "target": "market:aave_01",
+      "relation": "position_in",
+      "risk_channel": "collateral_liquidation",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:10",
+      "source": "market:aave_01",
+      "target": "asset:USDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_AAVE_MARKET",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:11",
+      "source": "market:aave_01",
+      "target": "asset:USDC",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_AAVE_MARKET",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:12",
+      "source": "market:aave_01",
+      "target": "oracle:aave_01_usde",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_ORACLE_ADDRESS",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:13",
+      "source": "oracle:aave_01_usde",
+      "target": "asset:USDe",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_ORACLE_ADDRESS",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:14",
+      "source": "market:aave_01",
+      "target": "protocol:aave",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://aave.com/docs",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:15",
+      "source": "position:aave_01",
+      "target": "venue:usde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:16",
+      "source": "position:morpho_01",
+      "target": "market:morpho_01",
+      "relation": "position_in",
+      "risk_channel": "collateral_liquidation",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:17",
+      "source": "market:morpho_01",
+      "target": "asset:sUSDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_MORPHO_MARKET_ID",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:18",
+      "source": "market:morpho_01",
+      "target": "asset:USDC",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_MORPHO_MARKET_ID",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:19",
+      "source": "market:morpho_01",
+      "target": "oracle:morpho_01_susde",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_ORACLE_ADDRESS",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:20",
+      "source": "oracle:morpho_01_susde",
+      "target": "asset:sUSDe",
+      "relation": "reads_price_of",
+      "risk_channel": "exchange_rate",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "TO_VERIFY_ORACLE_ADDRESS",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:21",
+      "source": "market:morpho_01",
+      "target": "protocol:morpho",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.morpho.org/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:22",
       "source": "position:morpho_01",
       "target": "venue:susde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:23",
+      "source": "position:pendle_01",
+      "target": "asset:PT-sUSDe",
+      "relation": "holds",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:24",
+      "source": "position:pendle_01",
+      "target": "market:pendle_01",
+      "relation": "position_in",
+      "risk_channel": "maturity_redemption",
+      "evidence": {
+        "method": "fixture",
+        "reference": "fictional portfolio",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "assumed"
+      },
+      "confidence": "assumed"
+    },
+    {
+      "id": "edge:25",
+      "source": "market:pendle_01",
+      "target": "protocol:pendle",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.pendle.finance/",
+        "observed_at": "2026-10-10T08:00:00Z",
+        "status": "to_verify"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:26",
+      "source": "position:pendle_01",
+      "target": "venue:pendle_pt_susde",
       "relation": "exits_via",
       "risk_channel": "exit_liquidity",
       "evidence": {
@@ -142,6 +477,6 @@
     }
   ],
   "warnings": [
-    "Example graph is partial; live discovery must expand oracle, collateral, debt and liquidity dependencies for all positions."
+    "Fixture graph: structure follows the fictional portfolio; addresses and on-chain evidence must be verified by P1 discovery."
   ]
 }

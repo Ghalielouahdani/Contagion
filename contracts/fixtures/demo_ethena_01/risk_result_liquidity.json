@@ -12,22 +12,47 @@
       "gross_value_before_usd": "2000000.00",
       "gross_value_after_usd": "2000000.00",
       "executable_value_after_usd": "1904761.90",
-      "debt_after_usd": "0",
+      "debt_after_usd": "0.00",
       "net_equity_before_usd": "2000000.00",
       "net_equity_after_usd": "1904761.90",
       "conditional_loss_usd": "95238.10",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "95238.10"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "illustrative",
       "warnings": [
-        "Proxy depth; standalone exit."
-      ]
+        "Proxy depth; standalone exit. Shares venue:susde_usdc with morpho_01."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:ethena_susde_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:8"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:8"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     },
     {
       "position_id": "aave_01",
@@ -39,9 +64,9 @@
       "net_equity_after_usd": "1057142.86",
       "conditional_loss_usd": "142857.14",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "142857.14"
       },
       "risk_metric": null,
@@ -49,7 +74,32 @@
       "calculation_status": "illustrative",
       "warnings": [
         "Proxy depth; standalone exit."
-      ]
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:usde_usdc",
+            "nodes": [
+              "position:aave_01",
+              "venue:usde_usdc"
+            ],
+            "edges": [
+              "edge:15"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:15"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     },
     {
       "position_id": "morpho_01",
@@ -61,9 +111,9 @@
       "net_equity_after_usd": "790697.67",
       "conditional_loss_usd": "209302.33",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "209302.33"
       },
       "risk_metric": null,
@@ -71,21 +121,46 @@
       "calculation_status": "illustrative",
       "warnings": [
         "Proxy depth; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
-      ]
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:morpho_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:22"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:22"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     },
     {
       "position_id": "pendle_01",
       "gross_value_before_usd": "2000055.14",
       "gross_value_after_usd": "2000055.14",
       "executable_value_after_usd": "1777821.35",
-      "debt_after_usd": "0",
+      "debt_after_usd": "0.00",
       "net_equity_before_usd": "2000055.14",
       "net_equity_after_usd": "1777821.35",
       "conditional_loss_usd": "222233.79",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "222233.79"
       },
       "risk_metric": null,
@@ -93,7 +168,32 @@
       "calculation_status": "illustrative",
       "warnings": [
         "Proxy depth; standalone exit."
-      ]
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:pendle_pt_susde",
+            "nodes": [
+              "position:pendle_01",
+              "venue:pendle_pt_susde"
+            ],
+            "edges": [
+              "edge:26"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:26"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
     }
   ],
   "portfolio": {
@@ -109,6 +209,86 @@
     "input_graph_id": "graph_demo_01"
   },
   "warnings": [
-    "Portfolio total uses joint exit per shared venue; it exceeds the sum of position losses (669,631.36) by shared_liquidity_penalty_usd."
-  ]
+    "Portfolio total uses a joint exit per shared venue; it exceeds the sum of position losses by shared_liquidity_penalty_usd.",
+    "Computed from unverified market parameters; illustrative, never a real-market result."
+  ],
+  "contagion": {
+    "graph_id": "graph_demo_01",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "asset:sUSDe",
+        "label": "sUSDe",
+        "node_type": "asset",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "7000055.14",
+        "net_equity_usd": "5000055.14"
+      },
+      {
+        "node": "venue:susde_usdc",
+        "label": "sUSDe/USDC exit route",
+        "node_type": "venue",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "5000000.00",
+        "net_equity_usd": "3000000.00"
+      },
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "6000000.00",
+        "net_equity_usd": "2200000.00"
+      }
+    ],
+    "warnings": []
+  }
 }

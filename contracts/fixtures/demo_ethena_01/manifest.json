@@ -39,6 +39,18 @@
     "decision_result": {
       "path": "decision_result.json",
       "schema": "../../schemas/v1/decision_result.schema.json"
+    },
+    "scenario_request_severe": {
+      "path": "scenario_request_severe.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_analytics": {
+      "path": "risk_analytics.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_analytics_severe": {
+      "path": "risk_analytics_severe.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
     }
   },
   "golden": true
