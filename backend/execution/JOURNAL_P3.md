@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : étapes 0 à 5 terminées sur 8
+> État : étapes 0 à 6 terminées sur 8
 
 ---
 
@@ -321,6 +321,27 @@ Le coût est **identique** parce qu'on sort **avant** la crise, avec la profonde
 
 **Limite repérée (à discuter, non corrigée car le blueprint fait foi) :** dans la crise de liquidité, la perte est un coût de vente forcée, et ce coût est convexe. Le blueprint dit perte résiduelle = (1 − x) × perte, une règle proportionnelle. Mais si on garde 75 % d'aave_01 et qu'on doit le vendre pendant la crise, le vrai coût serait 2,25 M² / (60 M + 2,25 M) = **81 325 $**, pas 0,75 × 142 857 = **107 143 $**. La règle proportionnelle **surestime** donc le risque restant, ce qui pousse à sortir un peu trop.
 
+Commit `f98ae3f`.
+
+### Étape 6 : tests exigés par la section 16
+
+Le fichier `tests/test_section16.py` contient un test par exigence du blueprint. Ces tests vérifient des **propriétés financières**, pas seulement des chiffres : si quelqu'un modifie le moteur et casse le bon sens économique, un test échoue. Les tests marqués « × 4 » tournent sur les 4 positions (`pytest.mark.parametrize`).
+
+| Test | En une ligne |
+|---|---|
+| `test_zero_exit_costs_nothing` (× 4) | Ne rien vendre coûte 0 : ni frais, ni gas, ni impact, ni rendement perdu |
+| `test_exit_cost_is_convex_in_size` (× 4) | Vendre 2× plus coûte plus de 2× plus en impact, et chaque tranche de 25 % coûte plus que la précédente |
+| `test_full_exit_leaves_no_residual_loss` | Tout vendre ne laisse aucune perte possible ; à p = 40 %, c'est EXIT |
+| `test_no_incident_means_stay` | Si le scénario ne fait rien perdre, on reste (STAY) : vendre ne ferait que coûter |
+| `test_higher_probability_never_lowers_the_exit` (× 4) | En faisant monter p de 0 à 100 %, la part vendue ne baisse jamais ; p = 0 → STAY, p = 1 → EXIT |
+| `test_more_slippage_never_raises_the_exit` (× 4) | En rendant la pool de plus en plus mince (profondeur × 10 → × 0,1), la part vendue ne monte jamais, et elle change vraiment |
+| `test_partial_exit_can_win` | À p = 15 %, vendre 25 % bat à la fois « garder tout » et « tout vendre » |
+| `test_golden_values_section_11_8` | Les 5 lignes du corrigé (coût, rendement perdu, p\*) et INSUFFICIENT_DATA sans probabilité |
+
+**Pourquoi la monotonie est garantie (intuition).** Augmenter p rend chaque tranche vendue plus précieuse (elle évite p × 37 500 $), sans changer son coût. On ne peut donc que vendre plus. À l'inverse, une pool plus mince rend chaque tranche plus chère, sans changer ce qu'elle évite : on ne peut que vendre moins. C'est le raisonnement par tranches de la question de l'étape 1.
+
+**Résultat :** 20 tests dans ce fichier, **37 au total**, tous verts.
+
 ---
 
 ## 4. Organisation du code actuel
@@ -332,7 +353,8 @@ backend/execution/
 ├── exit_cost.py             estimateur de coût de sortie (sources de prix interchangeables)
 ├── tests/
 │   ├── test_decision.py     tests du moteur
-│   └── test_exit_cost.py    tests de l'estimateur
+│   ├── test_exit_cost.py    tests de l'estimateur
+│   └── test_section16.py    tests exigés par la section 16
 ├── README.md                (consignes d'origine, sera réécrit à l'étape 8)
 └── JOURNAL_P3.md            ce fichier
 ```
@@ -398,7 +420,9 @@ python3 -m pytest backend/execution -v
 | `test_reason_names_the_cheapest_threshold_not_always_25pct` | Gas énorme + pool infinie → le texte cite « Exiting fully », pas 25 % |
 | `test_liquidity_crisis_exits_at_pre_crisis_depth` | Scénario liquidité : bons identifiants, coûts identiques au depeg (profondeur d'avant crise), p\* 25 % = 8,13 % |
 
-Dernier résultat : **17 passed**.
+Plus les 20 tests de `tests/test_section16.py`, détaillés dans la section « Étape 6 » ci-dessus.
+
+Dernier résultat : **37 passed**.
 
 On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : le script affiche « IDENTIQUE » puis le JSON complet.
 
@@ -407,7 +431,8 @@ On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : 
 ## 6. Historique git (branche `feat/p3`)
 
 ```
-(étape 5) P3: complete section 8 recommendation rules + liquidity check  ← étape 5
+(étape 6) P3: section 16 test suite  ← étape 6
+f98ae3f  P3: complete section 8 recommendation rules + liquidity check  ← étape 5
 20d31e4  P3: pluggable exit cost estimator (executable → pool → proxy)  ← étape 4
 ff6fbc4  P3: run decisions on all four positions + portfolio summary  ← étape 3
 fdad924  P3: add step-by-step journal (steps 0-2)
@@ -437,6 +462,5 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 
 | Étape | Contenu |
 |---|---|
-| 6 | Tests pytest complets (section 16 P3) |
 | 7 | Données de sensibilité pour le curseur du dashboard |
 | 8 | Point d'entrée pour l'API `POST /api/v1/decide` + README |
