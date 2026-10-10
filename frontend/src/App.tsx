@@ -28,6 +28,7 @@ import {
   ArrowUpDown,
   BadgeCheck,
   BarChart3,
+  Calculator,
   ChevronDown,
   Command,
   Database,
@@ -50,6 +51,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
+import { RiskEngine } from "./RiskEngine";
 import {
   availableScenarios,
   compareRiskLevels,
@@ -106,6 +108,7 @@ const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section:
   portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore" },
   graph: { label: "Contagion Graph", icon: GitBranch, section: "Explore" },
   scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run" },
+  engine: { label: "Risk Engine", icon: Calculator, section: "Run" },
   decision: { label: "Decision Engine", icon: BarChart3, section: "Run" },
 };
 
@@ -243,7 +246,7 @@ const nodeTypeColor: Record<string, string> = {
 
 const sections = [
   { label: "Explore", items: ["portfolio", "graph"] as View[] },
-  { label: "Run", items: ["scenario", "decision"] as View[] },
+  { label: "Run", items: ["scenario", "engine", "decision"] as View[] },
 ];
 
 function App() {
@@ -518,6 +521,7 @@ function App() {
                   {submitted.run > 0 ? <StressComparison mode={mode} data={data} inputs={submitted.inputs} /> : null}
                   </div>
                 ) : null}
+                {view === "engine" ? <RiskEngine data={data} onExecute={() => setView("decision")} /> : null}
                 {view === "decision" ? (
                   <DecisionEngine
                     data={data}

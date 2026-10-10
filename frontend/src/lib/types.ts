@@ -6,7 +6,7 @@ export type ScenarioKind =
   | "carry_squeeze"
   | "node_shock"
   | "liquidation_cascade";
-export type View = "portfolio" | "graph" | "scenario" | "decision";
+export type View = "portfolio" | "graph" | "scenario" | "engine" | "decision";
 export type DataMode = "fixture" | "api";
 
 export type ScenarioInputs = {
