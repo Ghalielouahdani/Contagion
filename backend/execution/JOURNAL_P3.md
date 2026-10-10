@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : étapes 0, 1, 1bis, 2 et 3 terminées sur 8
+> État : étapes 0 à 4 terminées sur 8
 
 ---
 
@@ -245,7 +245,42 @@ Comment lire ce tableau :
 
 **Ce résumé n'a pas de schéma dans `contracts/`.** C'est une sortie interne de P3, destinée à l'API et à P4. Si P4 veut l'utiliser, il faudra ajouter un schéma (P3 est propriétaire de `decision_result`) via une PR d'équipe.
 
-Commit : voir l'historique plus bas.
+Commit `ff6fbc4`.
+
+### Étape 4 : estimateur de coût de sortie interchangeable
+
+**Pourquoi :** la qualité d'un prix de sortie dépend énormément de sa source. Le proxy est une formule de secours. Dès que P1 saura obtenir un vrai prix, il faut pouvoir le brancher **sans toucher au moteur de décision**.
+
+**Les 3 sources, dans l'ordre de priorité** (section 7.2) :
+
+| Rang | Source (`quote_status`) | Ce que c'est | Statut |
+|---|---|---|---|
+| 1 | `executable` | Un vrai devis : un agrégateur (1inch, CowSwap…) répond « pour 750 000 USDe je te donne exactement X USDC » | emplacement vide, pour P1 |
+| 2 | `pool_reserves` | On lit l'état réel de la pool (réserves, courbe) et on calcule l'impact | emplacement vide, pour P1 |
+| 3 | `proxy` | La formule taille² / (profondeur + taille) | implémentée |
+
+Pour chaque taille de sortie (25 %, 50 %…), l'estimateur essaie les sources dans cet ordre et **prend la première qui répond**. Une même position peut donc avoir un vrai devis pour 25 % et le proxy pour 100 %. Ça arrive quand un agrégateur ne cote pas les très gros montants : chaque ligne affiche alors sa propre méthode.
+
+**Comment P1 branchera un vrai prix :**
+```python
+def mon_devis(venue_id, venue, size_usd):
+    ...                      # appel à l'agrégateur
+    return impact_en_usd     # ou None si pas de devis pour cette taille
+
+decide_position(..., estimator=ExitCostEstimator(executable=mon_devis))
+```
+La fonction renvoie **l'impact de prix seulement**. Les frais (0,1 %) et le gas (40 $) restent lus dans la venue.
+
+**`quote_status` dit toujours la vérité** : c'est la méthode réellement utilisée. Si la venue annonce `executable_quote` mais qu'aucun devis n'a répondu, on affiche `proxy` et on ajoute un avertissement. La table `DECLARED_METHOD` traduit le vocabulaire de P1 (`executable_quote`) vers celui de P3 (`executable`).
+
+**Aucun prix du tout** (venue absente, profondeur inconnue, frais inconnus) :
+- recommandation **INSUFFICIENT_DATA**, mode `conditional_stress`, **même si une probabilité est fournie** ;
+- on ne garde que la ligne 0 % (rien à vendre, coût 0), notée `unavailable` ;
+- les autres lignes sont **retirées**, pas remplies avec des chiffres inventés. Le schéma de `decision_result` impose des nombres dans les champs de coût (pas de `null`) : retirer la ligne est la seule façon honnête de rester valide.
+
+**Le golden aave_01 est toujours identique** : rien ne change tant que seul le proxy répond.
+
+**Changement pratique :** `decision.py` importe maintenant `exit_cost.py`. On lance donc le script comme un module : `python3 -m backend.execution.decision`.
 
 ---
 
@@ -255,8 +290,10 @@ Commit : voir l'historique plus bas.
 backend/execution/
 ├── __init__.py              (vide : fait du dossier un package)
 ├── decision.py              moteur de décision
+├── exit_cost.py             estimateur de coût de sortie (sources de prix interchangeables)
 ├── tests/
-│   └── test_decision.py     tests pytest
+│   ├── test_decision.py     tests du moteur
+│   └── test_exit_cost.py    tests de l'estimateur
 ├── README.md                (consignes d'origine, sera réécrit à l'étape 8)
 └── JOURNAL_P3.md            ce fichier
 ```
@@ -266,7 +303,6 @@ backend/execution/
 | Fonction | Rôle |
 |---|---|
 | `usd(x)` / `ratio(x)` | Arrondi **à la sortie seulement** : 2 décimales pour les $, 4 pour les ratios |
-| `price_impact(size, depth)` | Proxy produit constant : size² / (depth + size) |
 | `annual_carry(position, yields)` | Rendement net annuel en $ (garantie × APY − dette × APY d'emprunt) |
 | `option_label(x)` | « Reducing by 25% » / « Exiting fully » pour le texte `reason` |
 | `decide(...)` | Le cœur du calcul : 5 options, coûts, p\*, J(x), recommandation |
@@ -274,6 +310,16 @@ backend/execution/
 | `decide_position(...)` | **Point d'entrée** : contrats JSON → `decision_result` au format 11.8 |
 | `portfolio_summary(...)` | Additionne les choix des positions et signale les venues partagées |
 | `decide_portfolio(...)` | Décision des 4 positions + résumé |
+
+**Contenu de `exit_cost.py` :**
+
+| Élément | Rôle |
+|---|---|
+| `proxy_impact(venue_id, venue, size)` | Source proxy : size² / (depth + size), ou None si la profondeur est inconnue |
+| `ExitQuote` | Un devis : frais, gas, impact de prix, `quote_status`, et `total_usd` |
+| `ExitCostEstimator` | Essaie executable → pool_reserves → proxy et renvoie le premier devis, ou None |
+| `DEFAULT_ESTIMATOR` | L'estimateur par défaut (proxy seul) |
+| `DECLARED_METHOD` | Traduction du vocabulaire P1 (`executable_quote`) → P3 (`executable`) |
 
 **Règles respectées :**
 - Tous les calculs sont en `Decimal` (pas de `float`), pour éviter les erreurs d'arrondi du type 0,1 + 0,2 = 0,30000000000000004.
@@ -301,16 +347,24 @@ python3 -m pytest backend/execution -v
 | `test_summary_stay_loss_matches_risk_result_total` | La perte totale « on ne fait rien » = total de P2 ; pas de total des choix sans probabilité |
 | `test_summary_adds_chosen_actions_and_flags_shared_venue` | Avec p = 10 %, le total = somme des choix, et la venue partagée sUSDe est signalée |
 
-Dernier résultat : **7 passed**.
+| `test_priority_executable_then_pool_then_proxy` | L'ordre de priorité des sources est respecté ; le proxy redonne 1 870,32 $ et 2 660,32 $ |
+| `test_source_without_price_for_a_size_falls_back_per_size` | Un devis limité à 1 M$ sert pour 25 % ; au-delà, on retombe sur le proxy, ligne par ligne |
+| `test_plugged_executable_quote_removes_proxy_flags` | Avec un vrai devis branché : `executable` partout, mode `expected_cost`, plus d'alerte proxy |
+| `test_no_price_at_all_gives_insufficient_data` | Profondeur inconnue → INSUFFICIENT_DATA même avec p = 40 %, seule la ligne 0 % reste |
+| `test_missing_venue_gives_insufficient_data` | Venue absente du snapshot → INSUFFICIENT_DATA |
+| `test_venue_claiming_better_method_than_used_is_flagged` | La venue annonce `executable_quote` mais seul le proxy répond → `proxy` + avertissement |
 
-On peut aussi lancer `python3 backend/execution/decision.py` : le script affiche « IDENTIQUE » puis le JSON complet.
+Dernier résultat : **13 passed**.
+
+On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : le script affiche « IDENTIQUE » puis le JSON complet.
 
 ---
 
 ## 6. Historique git (branche `feat/p3`)
 
 ```
-(étape 3) P3: run decisions on all four positions + portfolio summary  ← étape 3
+(étape 4) P3: pluggable exit cost estimator (executable → pool → proxy)  ← étape 4
+ff6fbc4  P3: run decisions on all four positions + portfolio summary  ← étape 3
 fdad924  P3: add step-by-step journal (steps 0-2)
 eea69a3  P3: decide_position reads the real contract files      ← étape 2
 c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bis
@@ -328,6 +382,7 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 - **Perte manquante** : on lève une erreur pour l'instant. On pourra plus tard renvoyer un `INSUFFICIENT_DATA` propre si P4 préfère.
 - **Le proxy surestime** probablement l'impact de prix sur les pools de stablecoins (Curve). C'est à signaler dans le README final.
 - **Rendement de la garantie morpho_01 (à remonter à P1)** : le snapshot met `collateral_supply_apy = 0.00`, parce que Morpho ne verse pas d'intérêts sur la garantie. Mais la garantie est du **sUSDe**, dont la valeur en USDe monte d'elle-même d'environ 7 %/an (c'est le `token_apy` d'ethena_susde_01). Avec 0 %, le carry de morpho_01 vaut −110 000 $/an. En comptant les 7 %, il vaudrait environ +100 000 $/an (3 M$ × 7 % − 2 M$ × 5,5 %). Les p\* de morpho_01 seraient alors plus élevés. Proposition : que P1 ajoute ce rendement « intrinsèque » au snapshot. P3 n'y touche pas.
+- **Schéma `decision_result` (P3 en est propriétaire)** : les champs de coût (`fees_usd`, `price_impact_usd`…) ne peuvent pas valoir `null`. Quand une taille n'a pas de prix, on doit donc retirer la ligne. Proposition pour une PR d'équipe : autoriser `null` sur ces champs quand `quote_status = "unavailable"`, pour que P4 puisse afficher « pas de prix » au lieu d'une ligne manquante. C'est un changement additif, compatible v1.
 
 ---
 
@@ -335,7 +390,6 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 
 | Étape | Contenu |
 |---|---|
-| 4 | Estimateur de coût de sortie interchangeable (vrai prix → réserves de pool → proxy) |
 | 5 | Règles de recommandation complètes ; vérification avec le scénario liquidité |
 | 6 | Tests pytest complets (section 16 P3) |
 | 7 | Données de sensibilité pour le curseur du dashboard |

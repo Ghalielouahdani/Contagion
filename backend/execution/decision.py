@@ -11,6 +11,8 @@ import json
 from decimal import Decimal as D, ROUND_HALF_UP
 from pathlib import Path
 
+from .exit_cost import DECLARED_METHOD, DEFAULT_ESTIMATOR, PRIORITY
+
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "contracts" / "fixtures" / "demo_ethena_01"
 FRACTIONS = [D("0.00"), D("0.25"), D("0.50"), D("0.75"), D("1.00")]
 SCENARIO_LABELS = {"usde_depeg": "depeg", "liquidity_crisis": "liquidity crisis"}
@@ -22,13 +24,6 @@ def usd(x):   # arrondi 2 décimales, seulement à la sortie
 
 def ratio(x):  # arrondi 4 décimales
     return str(x.quantize(D("0.0001"), rounding=ROUND_HALF_UP))
-
-
-def price_impact(size, depth):
-    """Proxy produit constant : size² / (depth + size)."""
-    if size == 0:
-        return D(0)
-    return size * size / (depth + size)
 
 
 def annual_carry(position, yields):
@@ -44,13 +39,11 @@ def option_label(x):
     return "Exiting fully" if x == 1 else f"Reducing by {int(x * 100)}%"
 
 
-def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=None, scenario_id=None):
+def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=None, scenario_id=None,
+           estimator=DEFAULT_ESTIMATOR):
     pid = position["position_id"]
-    venue = snapshot["exit_venues"][position["exit_venue_id"]]
-    depth = D(venue["effective_depth_usd"])          # profondeur AVANT la crise
-    fee_rate = D(venue["fee_rate"])
-    gas = D(venue["gas_usd"])
-    quote_status = "proxy"                           # méthode réellement utilisée : seul le proxy existe (étape 4)
+    venue_id = position["exit_venue_id"]
+    venue = snapshot["exit_venues"].get(venue_id)    # profondeur et frais AVANT la crise
 
     # Ce qu'on vend, au prix d'avant le choc (section 7.2) :
     #  - token / PT : x × quantité × prix = x × valeur brute ;
@@ -58,46 +51,58 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
     gross = D(position["gross_value_usd"])
     loss0 = D(conditional_loss_usd)
     carry_h = annual_carry(position, snapshot["yields"][pid]) * D(horizon_days) / D(365)
-    p = D(probability) if probability is not None else None
 
-    options = []
-    for x in FRACTIONS:
-        size = x * gross
-        fees = size * fee_rate
-        g = gas if x > 0 else D(0)
-        impact = price_impact(size, depth)
-        cost = fees + g + impact
+    # Une cotation par taille de sortie ; les tailles sans prix sont écartées (jamais de coût inventé).
+    quotes = {x: estimator.quote(venue_id, venue, x * gross) for x in FRACTIONS[1:]}
+    priced = {x: q for x, q in quotes.items() if q is not None}
+    statuses = {q.quote_status for q in priced.values()}
+    best_status = min(statuses, key=PRIORITY.index) if statuses else "unavailable"
+    # Sans aucun prix, pas de J(x) : on retombe en conditional_stress (section 8).
+    p = D(probability) if probability is not None and priced else None
+
+    def option(x, q):
+        cost = q.total_usd if q else D(0)
         residual = (1 - x) * loss0
         foregone = x * carry_h
         avoided = loss0 - residual
         p_star = (cost + foregone) / avoided if avoided > 0 else None
         objective = cost + p * residual + foregone if p is not None else None
-        options.append({
+        return {
             "exit_fraction": str(x),
-            "fees_usd": usd(fees) if x > 0 else "0",
-            "gas_usd": usd(g) if x > 0 else "0",
-            "price_impact_usd": usd(impact) if x > 0 else "0",
-            "estimated_exit_cost_usd": usd(cost) if x > 0 else "0",
+            "fees_usd": usd(q.fees_usd) if q else "0",
+            "gas_usd": usd(q.gas_usd) if q else "0",
+            "price_impact_usd": usd(q.price_impact_usd) if q else "0",
+            "estimated_exit_cost_usd": usd(cost) if q else "0",
             "foregone_yield_usd": usd(foregone) if x > 0 else "0",
             "residual_stress_loss_usd": usd(residual) if residual > 0 else "0",
             "break_even_probability": ratio(p_star) if p_star is not None else None,
             "objective_usd": usd(objective) if objective is not None else None,
-            "quote_status": quote_status,
+            # x = 0 : rien à vendre ; on affiche la meilleure méthode utilisée sur cette venue.
+            "quote_status": q.quote_status if q else best_status,
             "_objective": objective,   # internes, retirés plus bas
             "_p_star": p_star,
-        })
+        }
+
+    options = [option(FRACTIONS[0], None)] + [option(x, q) for x, q in priced.items()]
 
     warnings = []
-    if quote_status == "proxy":
+    if "proxy" in statuses:
         warnings.append("Exit costs use the constant-product proxy on assumed depth; replace with executable quotes.")
-    if venue["quote_method"] != "proxy":
-        warnings.append(f"Venue {position['exit_venue_id']} declares quote_method={venue['quote_method']} "
-                        f"but no quote adapter is wired in P3 yet; proxy used.")
+    declared = DECLARED_METHOD.get(venue.get("quote_method")) if venue else None
+    if declared and statuses and PRIORITY.index(declared) < PRIORITY.index(best_status):
+        warnings.append(f"Venue {venue_id} declares quote_method={venue['quote_method']} "
+                        f"but no such quote was available; {best_status} used.")
+    missing = [str(x) for x in FRACTIONS[1:] if x not in priced]
+    if missing:
+        warnings.append(f"No exit price on {venue_id} for exit fractions {', '.join(missing)}; rows omitted.")
 
-    if p is None:
+    if not priced:
+        mode, rec, rec_x = "conditional_stress", "INSUFFICIENT_DATA", None
+        reason = f"No exit price available on {venue_id}: exit costs cannot be estimated, no trade is recommended."
+    elif p is None:
         mode, rec, rec_x = "conditional_stress", "INSUFFICIENT_DATA", None
         reason = "No scenario probability supplied"
-        reason += " and all quotes are proxies." if quote_status == "proxy" else "."
+        reason += " and all quotes are proxies." if statuses == {"proxy"} else "."
         candidates = [o for o in options if o["_p_star"] is not None]
         if candidates:
             best = min(candidates, key=lambda o: o["_p_star"])   # option rentable au p le plus bas
@@ -111,7 +116,7 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
         rec = "STAY" if bx == 0 else "EXIT" if bx == 1 else "REDUCE"
         rec_x = best["exit_fraction"]
         reason = f"Lowest expected cost at exit fraction {rec_x} with probability {p}."
-        if quote_status == "proxy":
+        if "proxy" in statuses:
             warnings.append("proxy_quotes: recommendation relies on proxy exit costs.")
 
     for o in options:
@@ -139,7 +144,7 @@ def load_contracts(liquidity=False, fixture_dir=FIXTURE_DIR):
     return {key: json.loads((Path(fixture_dir) / f"{name}.json").read_text()) for key, name in names.items()}
 
 
-def decide_position(portfolio, snapshot, risk_result, scenario_request, position_id):
+def decide_position(portfolio, snapshot, risk_result, scenario_request, position_id, estimator=DEFAULT_ESTIMATOR):
     """Décision pour une position, à partir des contrats JSON de P1/P2 (format 11.8)."""
     scenario = scenario_request["scenario"]
     for field, a, b in [("request_id", risk_result["request_id"], scenario_request["request_id"]),
@@ -158,7 +163,7 @@ def decide_position(portfolio, snapshot, risk_result, scenario_request, position
         raise ValueError(f"No conditional_loss_usd for {position_id!r} in risk_result")
 
     out = decide(position, snapshot, impact["conditional_loss_usd"], scenario["horizon_days"],
-                 scenario_request["assumptions"]["probability"], scenario["scenario_id"])
+                 scenario_request["assumptions"]["probability"], scenario["scenario_id"], estimator)
     ids = {"decision_id": f"decision_{scenario_request['request_id']}",
            "simulation_id": risk_result["simulation_id"],
            "portfolio_id": portfolio["portfolio_id"],
@@ -214,9 +219,9 @@ def portfolio_summary(portfolio, decisions):
     }
 
 
-def decide_portfolio(portfolio, snapshot, risk_result, scenario_request):
+def decide_portfolio(portfolio, snapshot, risk_result, scenario_request, estimator=DEFAULT_ESTIMATOR):
     """Une décision par position du portefeuille + le résumé additif."""
-    decisions = [decide_position(portfolio, snapshot, risk_result, scenario_request, p["position_id"])
+    decisions = [decide_position(portfolio, snapshot, risk_result, scenario_request, p["position_id"], estimator)
                  for p in portfolio["positions"]]
     return {"decisions": decisions, "summary": portfolio_summary(portfolio, decisions)}
 
