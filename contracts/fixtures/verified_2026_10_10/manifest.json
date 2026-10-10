@@ -47,6 +47,10 @@
     "risk_analytics_severe": {
       "path": "risk_analytics_severe.json",
       "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_surface": {
+      "path": "risk_surface.json",
+      "schema": "../../schemas/v1/risk_surface.schema.json"
     }
   },
   "golden": false

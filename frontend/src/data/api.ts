@@ -8,41 +8,42 @@ import type {
   DependencyGraph,
   MarketSnapshot,
   Portfolio,
+  RiskAnalytics,
   RiskResult,
+  ScenarioInputs,
   ScenarioKind,
 } from "../lib/types";
 
-const FIXTURE_ROOT = "../../../contracts/fixtures/demo_ethena_01";
-const fixtureModules = import.meta.glob("../../../contracts/fixtures/demo_ethena_01/*.json", { eager: true }) as Record<string, { default?: unknown } | unknown>;
+/**
+ * Data layer. Two modes, same AppData:
+ * - fixture: offline. Small contract files are bundled; the risk surface (engine results
+ *   precomputed for every slider value) is loaded on demand, so sliders stay live offline.
+ * - api: the FastAPI backend runs the risk engine on the exact slider values.
+ * The fixture set (demo or on-chain verified) comes from VITE_FIXTURE_SET.
+ */
+
+const FIXTURES = "../../../contracts/fixtures";
+export const fixtureSet: string = import.meta.env.VITE_FIXTURE_SET || "demo_ethena_01";
+
+const smallFixtures = import.meta.glob(["../../../contracts/fixtures/*/*.json", "!**/risk_surface.json"], {
+  eager: true,
+  import: "default",
+}) as Record<string, unknown>;
+const surfaceLoaders = import.meta.glob("../../../contracts/fixtures/*/risk_surface.json", { import: "default" }) as Record<
+  string,
+  () => Promise<unknown>
+>;
 
 export const defaultDataMode: DataMode = readFixtureDefault() ? "fixture" : "api";
 
-const fixtureFileNames = {
-  portfolio: "portfolio.json",
-  graph: "dependency_graph.json",
-  marketSnapshot: "market_snapshot.json",
-  scenarioDepeg: "scenario_request.json",
-  scenarioLiquidity: "scenario_request_liquidity.json",
-  riskDepeg: "risk_result.json",
-  riskLiquidity: "risk_result_liquidity.json",
-  decisionDepeg: "decision_result.json",
-  decisionLiquidity: "decision_result_liquidity.json",
-};
+const fileByKind = {
+  scenario: { usde_depeg: "scenario_request.json", liquidity_crisis: "scenario_request_liquidity.json" },
+  risk: { usde_depeg: "risk_result.json", liquidity_crisis: "risk_result_liquidity.json" },
+  decision: { usde_depeg: "decision_result.json", liquidity_crisis: "decision_result_liquidity.json" },
+} as const;
 
-const scenarioFileByKind: Record<ScenarioKind, string> = {
-  usde_depeg: fixtureFileNames.scenarioDepeg,
-  liquidity_crisis: fixtureFileNames.scenarioLiquidity,
-};
-
-const riskFileByKind: Record<ScenarioKind, string> = {
-  usde_depeg: fixtureFileNames.riskDepeg,
-  liquidity_crisis: fixtureFileNames.riskLiquidity,
-};
-
-const decisionFileByKind: Record<ScenarioKind, string> = {
-  usde_depeg: fixtureFileNames.decisionDepeg,
-  liquidity_crisis: fixtureFileNames.decisionLiquidity,
-};
+type SurfacePoint = { value: string; risk_result: RiskResult; decisions: Record<string, DecisionResult> };
+type RiskSurface = { scenarios: Record<string, { param: string; points: SurfacePoint[] }> };
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -55,60 +56,120 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function loadAppData(mode: DataMode, scenario: ScenarioKind): Promise<AppData> {
-  if (mode === "fixture") return buildFixtureAppData(scenario);
+const withSet = (path: string) => `${path}?set=${encodeURIComponent(fixtureSet)}`;
+const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
 
-  const health = await requestJson<{ status: string; mode?: DataMode }>("/api/v1/health");
-  const portfolio = await requestJson<Portfolio>("/api/v1/portfolio");
-  const graph = await requestJson<DependencyGraph>("/api/v1/discover", {
-    method: "POST",
-    body: JSON.stringify({ schema_version: "1.0", portfolio_id: portfolio.portfolio_id }),
-  });
-  const scenarioRequest = loadFixture(scenarioFileByKind[scenario], () => createMockScenarioRequest(scenario)).data;
-  const risk = await requestJson<RiskResult>("/api/v1/simulate", {
-    method: "POST",
-    body: JSON.stringify(scenarioRequest),
-  });
-  const decision = await requestJson<DecisionResult>("/api/v1/decide", {
-    method: "POST",
-    body: JSON.stringify({
-      schema_version: "1.0",
-      portfolio_id: portfolio.portfolio_id,
-      simulation_id: risk.simulation_id,
-      position_id: "aave_01",
-    }),
-  });
-  const marketSnapshot = await requestJson<MarketSnapshot>("/api/v1/market-snapshot");
+/** The set's scenario request with the slider values applied (decimal strings, as the contract requires). */
+export function buildScenarioRequest(scenario: ScenarioKind, inputs: ScenarioInputs) {
+  const base = loadFixture(fileByKind.scenario[scenario], () => createMockScenarioRequest(scenario)).data;
+  const request = JSON.parse(JSON.stringify(base));
+  request.scenario.horizon_days = inputs.horizonDays;
+  if (scenario === "usde_depeg") request.scenario.parameters.usde_spot_shock_pct = (-inputs.shockPct / 100).toFixed(2);
+  else request.scenario.parameters.exit_liquidity_reduction_pct = (inputs.liquidityLossPct / 100).toFixed(2);
+  return request;
+}
+
+export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs): Promise<AppData> {
+  if (mode === "fixture") return loadFixtureAppData(scenario, inputs);
+
+  const request = buildScenarioRequest(scenario, inputs);
+  const [health, portfolio, graph, marketSnapshot, risk, analytics] = await Promise.all([
+    requestJson<{ status: string; fixture_set?: string }>(withSet("/api/v1/health")),
+    requestJson<Portfolio>(withSet("/api/v1/portfolio")),
+    requestJson<DependencyGraph>(withSet("/api/v1/discover"), post({ schema_version: "1.0" })),
+    requestJson<MarketSnapshot>(withSet("/api/v1/market-snapshot")),
+    requestJson<RiskResult>(withSet("/api/v1/simulate"), post(request)),
+    requestJson<RiskAnalytics>(withSet("/api/v1/analyze"), post(request)),
+  ]);
+  const decisionList = await Promise.all(
+    portfolio.positions.map((position) =>
+      requestJson<DecisionResult>(withSet("/api/v1/decide"), post({ request, position_id: position.position_id })),
+    ),
+  );
+  const decisions = Object.fromEntries(decisionList.map((decision) => [decision.position_id, decision]));
 
   return {
-    health: { status: health.status, mode: "api", source: "FastAPI", mockedFixtures: [] },
+    health: { status: health.status, mode: "api", source: "FastAPI · live risk engine", mockedFixtures: [], fixtureSet: health.fixture_set ?? fixtureSet },
     portfolio,
     graph,
     marketSnapshot,
     risk,
-    decision,
+    decision: decisions.aave_01 ?? decisionList[0],
+    decisions,
+    analytics,
+    riskSource: "engine",
   };
+}
+
+async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs): Promise<AppData> {
+  const base = buildFixtureAppData(scenario);
+  const surface = await loadSurface();
+  const points = surface?.scenarios[scenario]?.points;
+  if (!points?.length) return base;
+
+  const target = scenario === "usde_depeg" ? -inputs.shockPct / 100 : inputs.liquidityLossPct / 100;
+  const point = points.reduce((best, p) => (Math.abs(Number(p.value) - target) < Math.abs(Number(best.value) - target) ? p : best));
+  const risk = withContagion(point.risk_result, base.risk);
+  return {
+    ...base,
+    health: { ...base.health, source: "contracts fixtures · precomputed engine surface" },
+    risk,
+    decision: point.decisions.aave_01 ?? base.decision,
+    decisions: point.decisions,
+    analytics: fixtureAnalytics(scenario, inputs),
+    riskSource: "surface",
+  };
+}
+
+let surfaceCache: Promise<RiskSurface | null> | null = null;
+function loadSurface(): Promise<RiskSurface | null> {
+  const loader = surfaceLoaders[`${FIXTURES}/${fixtureSet}/risk_surface.json`];
+  if (!loader) return Promise.resolve(null);
+  surfaceCache ??= loader().then((data) => data as RiskSurface).catch(() => null);
+  return surfaceCache;
+}
+
+/** Surface points omit contagion paths (they do not depend on the slider); take them from the set's risk result. */
+function withContagion(result: RiskResult, reference: RiskResult): RiskResult {
+  const paths = new Map(reference.positions.map((position) => [position.position_id, position.contagion]));
+  return {
+    ...result,
+    contagion: reference.contagion,
+    positions: result.positions.map((position) => ({ ...position, contagion: paths.get(position.position_id) })),
+  };
+}
+
+/** Offline analytics only exist at the presets (-5% and -30% depeg); pick the closest. */
+function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs): RiskAnalytics | null {
+  const preset = loadFixture<RiskAnalytics | null>("risk_analytics.json", () => null).data;
+  const severe = loadFixture<RiskAnalytics | null>("risk_analytics_severe.json", () => null).data;
+  if (scenario === "usde_depeg" && severe && inputs.shockPct >= 17.5) return severe;
+  return preset;
 }
 
 export const marketSnapshot = buildFixtureAppData("usde_depeg").marketSnapshot;
 export const scenarioFixtures = {
-  usde_depeg: loadFixture(scenarioFileByKind.usde_depeg, () => createMockScenarioRequest("usde_depeg")).data,
-  liquidity_crisis: loadFixture(scenarioFileByKind.liquidity_crisis, () => createMockScenarioRequest("liquidity_crisis")).data,
+  usde_depeg: loadFixture(fileByKind.scenario.usde_depeg, () => createMockScenarioRequest("usde_depeg")).data,
+  liquidity_crisis: loadFixture(fileByKind.scenario.liquidity_crisis, () => createMockScenarioRequest("liquidity_crisis")).data,
 };
 
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
   if (mode === "api") {
-    return requestJson<AssistantResponse>("/api/v1/assistant", {
-      method: "POST",
-      body: JSON.stringify({
-        message: request.message,
-        view: request.view,
-        scenario: request.scenario,
-        selected_position: request.selectedPosition,
-        inspected_exit_fraction: request.inspectedExitFraction,
-        scenario_inputs: request.scenarioInputs,
-      }),
-    });
+    try {
+      return await requestJson<AssistantResponse>("/api/v1/assistant", {
+        method: "POST",
+        body: JSON.stringify({
+          message: request.message,
+          view: request.view,
+          scenario: request.scenario,
+          selected_position: request.selectedPosition,
+          inspected_exit_fraction: request.inspectedExitFraction,
+          scenario_inputs: request.scenarioInputs,
+        }),
+      });
+    } catch {
+      // No server-side assistant yet (the API answers 501): fall back to the local intent parser.
+    }
   }
 
   return fixtureAssistantResponse(request);
@@ -126,19 +187,22 @@ function fixtureAssistantResponse(request: AssistantRequest): AssistantResponse 
 
 function buildFixtureAppData(scenario: ScenarioKind): AppData {
   const mockedFixtures: string[] = [];
-  const portfolio = readFixture<Portfolio>(fixtureFileNames.portfolio, () => createMockPortfolio(), mockedFixtures);
-  const graph = readFixture<DependencyGraph>(fixtureFileNames.graph, () => createMockDependencyGraph(portfolio), mockedFixtures);
-  const marketSnapshot = readFixture<MarketSnapshot>(fixtureFileNames.marketSnapshot, () => createMockMarketSnapshot(), mockedFixtures);
-  const risk = readFixture<RiskResult>(riskFileByKind[scenario], () => createMockRiskResult(portfolio, scenario), mockedFixtures);
-  const decision = readFixture<DecisionResult>(decisionFileByKind[scenario], () => createMockDecisionResult(risk, scenario), mockedFixtures);
+  const portfolio = readFixture<Portfolio>("portfolio.json", () => createMockPortfolio(), mockedFixtures);
+  const graph = readFixture<DependencyGraph>("dependency_graph.json", () => createMockDependencyGraph(portfolio), mockedFixtures);
+  const marketSnapshot = readFixture<MarketSnapshot>("market_snapshot.json", () => createMockMarketSnapshot(), mockedFixtures);
+  const risk = readFixture<RiskResult>(fileByKind.risk[scenario], () => createMockRiskResult(portfolio, scenario), mockedFixtures);
+  const decision = readFixture<DecisionResult>(fileByKind.decision[scenario], () => createMockDecisionResult(risk, scenario), mockedFixtures);
 
   return {
-    health: { status: "ok", mode: "fixture", source: "contracts fixtures", mockedFixtures },
+    health: { status: "ok", mode: "fixture", source: "contracts fixtures", mockedFixtures, fixtureSet },
     portfolio,
     graph,
     marketSnapshot,
     risk,
     decision,
+    decisions: { [decision.position_id]: decision },
+    analytics: null,
+    riskSource: "fixture",
   };
 }
 
@@ -149,8 +213,8 @@ function readFixture<T>(fileName: string, fallback: () => T, mockedFixtures: str
 }
 
 function loadFixture<T>(fileName: string, fallback: () => T): { data: T; mocked: boolean } {
-  const module = fixtureModules[`${FIXTURE_ROOT}/${fileName}`] as { default?: T } | T | undefined;
-  if (module) return { data: ("default" in Object(module) ? (module as { default: T }).default : module) as T, mocked: false };
+  const data = smallFixtures[`${FIXTURES}/${fixtureSet}/${fileName}`] as T | undefined;
+  if (data !== undefined) return { data, mocked: false };
   return { data: fallback(), mocked: true };
 }
 
@@ -305,7 +369,7 @@ function createMockRiskResult(portfolio: Portfolio, scenario: ScenarioKind): Ris
       risk_metric: null,
       source_type: "mock",
       calculation_status: "mock",
-      warnings: [`Mock data: ${riskFileByKind[scenario]} was generated because the fixture was missing.`],
+      warnings: [`Mock data: ${fileByKind.risk[scenario]} was generated because the fixture was missing.`],
     };
   });
   const total = positions.reduce((sum, position) => sum + Number(position.conditional_loss_usd), 0);
@@ -323,7 +387,7 @@ function createMockRiskResult(portfolio: Portfolio, scenario: ScenarioKind): Ris
       shared_liquidity_penalty_usd: scenario === "liquidity_crisis" ? (total * 0.12).toFixed(2) : "0",
       aggregation_status: "mock",
     },
-    warnings: [`Mock data: ${riskFileByKind[scenario]} was generated because the fixture was missing.`],
+    warnings: [`Mock data: ${fileByKind.risk[scenario]} was generated because the fixture was missing.`],
   };
 }
 
@@ -366,6 +430,6 @@ function createMockDecisionResult(risk: RiskResult, scenario: ScenarioKind): Dec
       scenario === "liquidity_crisis"
         ? "Mock decision: reducing 25% lowers residual stress while keeping immediate proxy costs below half of the selected position loss."
         : "Mock decision: no scenario probability supplied, so the app shows break-even thresholds instead of inventing a conviction.",
-    warnings: [`Mock data: ${decisionFileByKind[scenario]} was generated because the fixture was missing.`],
+    warnings: [`Mock data: ${fileByKind.decision[scenario]} was generated because the fixture was missing.`],
   };
 }

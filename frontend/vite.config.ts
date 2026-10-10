@@ -7,5 +7,9 @@ export default defineConfig({
     fs: {
       allow: [".."],
     },
+    // API mode: forward /api to the FastAPI backend (uvicorn backend.api.main:app --port 8000).
+    proxy: {
+      "/api": process.env.VITE_API_TARGET ?? "http://127.0.0.1:8000",
+    },
   },
 });

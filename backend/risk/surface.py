@@ -1,0 +1,70 @@
+"""Precomputed risk surface: engine results over a grid of slider values, for an offline demo.
+
+The dashboard must run without a network (blueprint section 16, P4). With this file the
+fixture mode stays live: each slider position maps to a real engine result, not a scaled
+fixture. Contagion blocks are left out (they do not depend on the shock size); the
+frontend takes them from the set's risk_result files.
+
+Usage: python -m backend.risk.surface contracts/fixtures/<set>
+"""
+
+from __future__ import annotations
+
+import copy
+import json
+import sys
+from pathlib import Path
+
+from backend.api.provisional_decision import decide
+from backend.risk import simulate
+
+DEPEG_SHOCKS = [-i / 100 for i in range(0, 41)]  # 0% .. -40%
+LIQUIDITY_LOSSES = [i / 20 for i in range(0, 20)]  # 0% .. 95%
+
+
+def _point(portfolio: dict, snapshot: dict, request: dict, param: str, value: float) -> dict:
+    r = copy.deepcopy(request)
+    r["scenario"]["parameters"][param] = f"{value:.2f}"
+    result = simulate(portfolio, snapshot, r)
+    result.pop("contagion", None)
+    return {
+        "value": f"{value:.2f}",
+        "risk_result": result,
+        "decisions": {p["position_id"]: decide(portfolio, snapshot, r, p["position_id"]) for p in portfolio["positions"]},
+    }
+
+
+def build(portfolio: dict, snapshot: dict, depeg_request: dict, liquidity_request: dict) -> dict:
+    return {
+        "schema_version": "1.0",
+        "surface_id": f"surface_{snapshot['snapshot_id']}",
+        "portfolio_id": portfolio["portfolio_id"],
+        "snapshot_id": snapshot["snapshot_id"],
+        "scenarios": {
+            "usde_depeg": {
+                "param": "usde_spot_shock_pct",
+                "base_request_id": depeg_request["request_id"],
+                "points": [_point(portfolio, snapshot, depeg_request, "usde_spot_shock_pct", v) for v in DEPEG_SHOCKS],
+            },
+            "liquidity_crisis": {
+                "param": "exit_liquidity_reduction_pct",
+                "base_request_id": liquidity_request["request_id"],
+                "points": [_point(portfolio, snapshot, liquidity_request, "exit_liquidity_reduction_pct", v) for v in LIQUIDITY_LOSSES],
+            },
+        },
+    }
+
+
+def main(folder: str) -> None:
+    root = Path(folder)
+    load = lambda name: json.loads((root / f"{name}.json").read_text())  # noqa: E731
+    surface = build(load("portfolio"), load("market_snapshot"), load("scenario_request"), load("scenario_request_liquidity"))
+    (root / "risk_surface.json").write_text(json.dumps(surface, separators=(",", ":")) + "\n")
+    manifest = load("manifest")
+    manifest["files"]["risk_surface"] = {"path": "risk_surface.json", "schema": "../../schemas/v1/risk_surface.schema.json"}
+    (root / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"{root / 'risk_surface.json'}: {(root / 'risk_surface.json').stat().st_size / 1024:.0f} KB")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1])

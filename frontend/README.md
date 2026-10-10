@@ -29,7 +29,23 @@ Read: blueprint sections 5 (user journey), 11 (data shown), 16 P4.
 
 ## Data source
 
-The app defaults to offline fixtures. Leave `VITE_USE_FIXTURES=true` or unset to read from `contracts/fixtures/demo_ethena_01`. Set `VITE_USE_FIXTURES=false` only when the FastAPI backend is running, then use the visible sidebar switch to compare fixtures with live API data.
+Two modes, same screens. In both, the sliders drive real risk-engine results.
+
+| Mode | How | Risk numbers |
+|---|---|---|
+| Fixture (default, offline) | `VITE_USE_FIXTURES=true` or unset | Engine results precomputed for every slider value (`risk_surface.json`, loaded on demand), at a 7-day horizon |
+| API | `VITE_USE_FIXTURES=false`, backend running | Live engine on the exact slider values, plus live analytics and per-position decisions |
+
+`VITE_FIXTURE_SET` chooses the data set: `demo_ethena_01` (golden demo, default) or `verified_2026_10_10` (real markets verified on-chain, see `docs/verified_markets.md`).
+
+Run the API mode:
+
+```bash
+.venv/bin/uvicorn backend.api.main:app --reload --port 8000   # repo root
+cd frontend && VITE_USE_FIXTURES=false npm run dev              # /api is proxied to :8000
+```
+
+The graph lays itself out by node type, and highlights the selected position's contagion paths computed by the risk engine. The inspector lists those paths, any graph gaps, and the contagion hubs.
 
 ## Definition of done
 

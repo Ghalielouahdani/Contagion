@@ -45,6 +45,14 @@ def build_legs(portfolio: Portfolio, snapshot: Snapshot, outcome: ScenarioOutcom
 
 def exit_costs(fractions: dict[str, float], legs: list[Leg], snapshot: Snapshot) -> dict[str, float]:
     """Trading cost (fees + gas + joint price impact per venue) and foregone yield of an exit plan."""
+    parts = cost_parts(fractions, legs, snapshot)
+    trading = parts["fees_usd"] + parts["gas_usd"] + parts["price_impact_usd"]
+    return {"trading_cost_usd": trading, "foregone_yield_usd": parts["foregone_yield_usd"],
+            "total_cost_usd": trading + parts["foregone_yield_usd"]}
+
+
+def cost_parts(fractions: dict[str, float], legs: list[Leg], snapshot: Snapshot) -> dict[str, float]:
+    """Fees, gas, joint price impact per venue and foregone yield of an exit plan, separately."""
     sold_by_venue: dict[str, float] = {}
     fees = gas = foregone = 0.0
     for leg in legs:
@@ -60,8 +68,7 @@ def exit_costs(fractions: dict[str, float], legs: list[Leg], snapshot: Snapshot)
         fees += venue.fee_rate * size
         gas += venue.gas_usd
     impact = sum(haircut(size, snapshot.venues[v].effective_depth_usd) for v, size in sold_by_venue.items())
-    trading = fees + gas + impact
-    return {"trading_cost_usd": trading, "foregone_yield_usd": foregone, "total_cost_usd": trading + foregone}
+    return {"fees_usd": fees, "gas_usd": gas, "price_impact_usd": impact, "foregone_yield_usd": foregone}
 
 
 def _plan(name: str, fractions: dict[str, float], legs: list[Leg], snapshot: Snapshot) -> dict:

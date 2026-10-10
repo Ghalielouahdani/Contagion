@@ -2,6 +2,12 @@ export type ScenarioKind = "usde_depeg" | "liquidity_crisis";
 export type View = "portfolio" | "graph" | "scenario" | "decision";
 export type DataMode = "fixture" | "api";
 
+export type ScenarioInputs = {
+  shockPct: number;
+  horizonDays: number;
+  liquidityLossPct: number;
+};
+
 export type PortfolioPosition = {
   position_id: string;
   protocol: string;
@@ -78,6 +84,32 @@ export type RiskMetric = {
   distance_to_liquidation_after_pct: string;
 };
 
+export type ContagionPath = {
+  factor: string;
+  root: string;
+  nodes: string[];
+  edges: string[];
+  channels: string[];
+  confidence: string;
+  unverified_edges: string[];
+};
+
+export type PositionContagion = {
+  paths: ContagionPath[];
+  evidence_confidence: string | null;
+  graph_gaps: string[];
+  unmodeled_exposures: string[];
+};
+
+export type ContagionHub = {
+  node: string;
+  label: string;
+  node_type: string;
+  positions: string[];
+  gross_exposure_usd: string;
+  net_equity_usd: string;
+};
+
 export type RiskPosition = {
   position_id: string;
   gross_value_before_usd: string;
@@ -92,6 +124,7 @@ export type RiskPosition = {
   source_type: string;
   calculation_status: string;
   warnings: string[];
+  contagion?: PositionContagion;
 };
 
 export type RiskResult = {
@@ -111,6 +144,30 @@ export type RiskResult = {
   };
   metadata?: Record<string, unknown>;
   warnings?: string[];
+  contagion?: { graph_id: string | null; hubs: ContagionHub[]; warnings: string[] };
+  [key: string]: unknown;
+};
+
+/** Dollar value of the engine for the fund (contracts/schemas/v1/risk_analytics.schema.json). */
+export type RiskAnalytics = {
+  analytics_id: string;
+  scenario_id: string;
+  headline: {
+    nav_usd: string;
+    scenario_loss_usd: string;
+    scenario_loss_pct_nav: string;
+    usde_exposure_usd: string;
+    usde_effective_leverage: string;
+    derisking_savings_usd: string;
+    derisking_savings_bps_nav: string;
+    liquidation_protection_net_benefit_usd: string;
+    targeted_plan_break_even_probability: string | null;
+    top_risk_driver: string | null;
+  };
+  breaking_points: {
+    liquidation: Array<{ position_id: string; mechanism: string; breaks_at_shock_pct: string | null; immune: boolean }>;
+    nav_drawdown: Array<{ nav_drawdown_pct: string; usde_depeg_pct: string | null; usde_price: string | null }>;
+  };
   [key: string]: unknown;
 };
 
@@ -160,12 +217,18 @@ export type MarketSnapshot = {
 };
 
 export type AppData = {
-  health: { status: string; mode: DataMode; source: string; mockedFixtures: string[] };
+  health: { status: string; mode: DataMode; source: string; mockedFixtures: string[]; fixtureSet: string };
   portfolio: Portfolio;
   graph: DependencyGraph;
   marketSnapshot: MarketSnapshot;
   risk: RiskResult;
+  /** Decision for the default position (aave_01); per-position decisions live in `decisions`. */
   decision: DecisionResult;
+  decisions: Record<string, DecisionResult>;
+  /** Null when no analytics is available for this scenario and data mode. */
+  analytics: RiskAnalytics | null;
+  /** How the risk numbers were produced: live engine, precomputed surface, or static fixture. */
+  riskSource: "engine" | "surface" | "fixture";
 };
 
 export type DashboardAction =

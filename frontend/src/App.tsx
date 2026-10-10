@@ -47,7 +47,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { defaultDataMode, loadAppData, postAssistantMessage } from "./data/api";
@@ -112,18 +112,36 @@ const scenarioCopy = {
   },
 };
 
-const nodePositions: Record<string, { x: number; y: number }> = {
-  "position:ethena_susde_01": { x: 40, y: 230 },
-  "position:aave_01": { x: 40, y: 32 },
-  "position:morpho_01": { x: 40, y: 410 },
-  "asset:sUSDe": { x: 330, y: 250 },
-  "asset:USDe": { x: 570, y: 250 },
-  "protocol:ethena": { x: 830, y: 250 },
-  "market:aave_01": { x: 330, y: 44 },
-  "oracle:aave_01_usde": { x: 580, y: 44 },
-  "protocol:aave": { x: 830, y: 44 },
-  "venue:susde_usdc": { x: 330, y: 492 },
+// Left to right follows the direction of dependency: position -> market / exit venue -> oracle -> asset -> protocol.
+const graphColumn: Record<string, number> = {
+  position: 0,
+  market: 1,
+  venue: 1,
+  oracle: 2,
+  contract: 2,
+  asset: 3,
+  protocol: 4,
+  offchain_entity: 4,
+  chain: 4,
 };
+const typeOrder = ["position", "market", "venue", "oracle", "contract", "asset", "protocol", "offchain_entity", "chain"];
+
+function layoutGraph(nodes: GraphNode[]): Record<string, { x: number; y: number }> {
+  const columns = new Map<number, GraphNode[]>();
+  for (const node of nodes) {
+    const column = graphColumn[node.type] ?? 4;
+    columns.set(column, [...(columns.get(column) ?? []), node]);
+  }
+  const positions: Record<string, { x: number; y: number }> = {};
+  columns.forEach((items, column) => {
+    items
+      .sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type) || a.id.localeCompare(b.id))
+      .forEach((node, row) => {
+        positions[node.id] = { x: 40 + column * 270, y: 30 + row * 96 };
+      });
+  });
+  return positions;
+}
 
 const confidenceTone: Record<string, string> = {
   verified: "good",
@@ -139,6 +157,7 @@ const nodeTypeColor: Record<string, string> = {
   oracle: "var(--np-accent-periwinkle)",
   position: "var(--np-strong)",
   venue: "var(--np-accent-lilac)",
+  offchain_entity: "var(--np-accent-coral)",
 };
 
 const sections = [
@@ -163,9 +182,14 @@ function App() {
   const [hasRun, setHasRun] = useState(true);
   const [assistantOpen, setAssistantOpen] = useState(false);
 
+  // Deferred so dragging a slider does not queue a request per pixel; the result follows the slider.
+  const deferredShock = useDeferredValue(shockPct);
+  const deferredHorizon = useDeferredValue(horizonDays);
+  const deferredLiquidity = useDeferredValue(liquidityLossPct);
   const appQuery = useQuery({
-    queryKey: ["app-data", mode, scenario],
-    queryFn: () => loadAppData(mode, scenario),
+    queryKey: ["app-data", mode, scenario, deferredShock, deferredHorizon, deferredLiquidity],
+    queryFn: () =>
+      loadAppData(mode, scenario, { shockPct: deferredShock, horizonDays: deferredHorizon, liquidityLossPct: deferredLiquidity }),
     placeholderData: (previousData) => previousData,
   });
 
@@ -185,7 +209,9 @@ function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const data = appQuery.data;
+  const rawData = appQuery.data;
+  // Show the decision of the selected position (the engine computes one per position).
+  const data = rawData ? { ...rawData, decision: rawData.decisions[selectedPosition] ?? rawData.decision } : undefined;
   const selectedRisk = data?.risk.positions.find((position) => position.position_id === selectedPosition) ?? data?.risk.positions[0];
   const selectedPortfolio =
     data?.portfolio.positions.find((position) => position.position_id === selectedPosition) ?? data?.portfolio.positions[0];
@@ -307,6 +333,7 @@ function App() {
                   <ReactFlowProvider>
                     <DependencyGraphView
                       graph={data.graph}
+                      risk={data.risk}
                       scenario={scenario}
                       selectedPosition={selectedPosition}
                       setSelectedPosition={setSelectedPosition}
@@ -489,7 +516,7 @@ function PortfolioDashboard({
 
   return (
     <div className="page-stack">
-      <SummaryStrip portfolio={data.portfolio} risk={data.risk} />
+      <SummaryStrip portfolio={data.portfolio} risk={data.risk} analytics={data.analytics} />
       <section className="position-grid">
         {data.portfolio.positions.map((position) => {
           const risk = data.risk.positions.find((item) => item.position_id === position.position_id);
@@ -587,19 +614,42 @@ function PortfolioDashboard({
   );
 }
 
-function SummaryStrip({ portfolio, risk }: { portfolio: Portfolio; risk: AppData["risk"] }) {
+function SummaryStrip({ portfolio, risk, analytics }: { portfolio: Portfolio; risk: AppData["risk"]; analytics: AppData["analytics"] }) {
+  const headline = analytics?.headline;
+  const tenPctNav = analytics?.breaking_points.nav_drawdown.find((row) => Number(row.nav_drawdown_pct) === 0.1);
   return (
     <section className="summary-strip">
       <Stat label="Gross exposure" value={money(portfolio.totals.gross_value_usd)} detail="not capital" />
       <Stat label="Debt" value={money(portfolio.totals.debt_value_usd)} detail="borrow liabilities" />
       <Stat label="Net equity" value={money(portfolio.totals.net_equity_usd)} detail="capital at risk" />
       <Stat label="Conditional loss" value={money(risk.portfolio.total_conditional_loss_usd)} detail={risk.portfolio.aggregation_status} />
+      {headline ? (
+        <>
+          <Stat
+            label="USDe effective leverage"
+            value={`${Number(headline.usde_effective_leverage).toFixed(2)}×`}
+            detail={`${money(headline.usde_exposure_usd)} on one factor`}
+          />
+          <Stat
+            label="NAV −10% at"
+            value={tenPctNav?.usde_depeg_pct ? percent(tenPctNav.usde_depeg_pct) : "n/a"}
+            detail={tenPctNav?.usde_price ? `USDe depeg to ${Number(tenPctNav.usde_price).toFixed(3)}` : "not reached"}
+          />
+          <Stat label="Top risk driver" value={headline.top_risk_driver ?? "n/a"} detail="largest loss swing" />
+          <Stat
+            label="Act if probability >"
+            value={percent(headline.targeted_plan_break_even_probability)}
+            detail={`targeted plan saves ${money(headline.derisking_savings_usd)}`}
+          />
+        </>
+      ) : null}
     </section>
   );
 }
 
 function DependencyGraphView({
   graph,
+  risk,
   scenario,
   selectedPosition,
   setSelectedPosition,
@@ -609,6 +659,7 @@ function DependencyGraphView({
   setHoveredPosition,
 }: {
   graph: DependencyGraph;
+  risk: AppData["risk"];
   scenario: ScenarioKind;
   selectedPosition: string;
   setSelectedPosition: (id: string) => void;
@@ -627,7 +678,11 @@ function DependencyGraphView({
     venue: true,
   });
   const flow = useReactFlow();
-  const criticalEdges = scenario === "usde_depeg" ? new Set(["edge:1", "edge:2", "edge:3", "edge:4"]) : new Set(["edge:5", "edge:6"]);
+  // Highlight the selected position's contagion paths, as computed by the risk engine for this scenario.
+  const selectedContagion = risk.positions.find((position) => position.position_id === selectedPosition)?.contagion;
+  const criticalEdges = useMemo(() => new Set(selectedContagion?.paths.flatMap((path) => path.edges) ?? []), [selectedContagion]);
+  const layout = useMemo(() => layoutGraph(graph.nodes), [graph.nodes]);
+  const nodeLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
   const visibleNodeIds = useMemo(() => {
     return new Set(
       graph.nodes
@@ -642,7 +697,7 @@ function DependencyGraphView({
       .filter((node) => visibleNodeIds.has(node.id))
       .map((node) => ({
         id: node.id,
-        position: nodePositions[node.id] ?? { x: 160, y: 160 },
+        position: layout[node.id] ?? { x: 160, y: 160 },
         data: {
           label: (
             <div
@@ -661,7 +716,7 @@ function DependencyGraphView({
         },
         draggable: true,
       }));
-  }, [graph.nodes, selectedPosition, setSelectedPosition, visibleNodeIds]);
+  }, [graph.nodes, layout, selectedPosition, setSelectedPosition, visibleNodeIds]);
 
   const flowEdges = useMemo<Edge[]>(() => {
     return graph.edges
@@ -744,6 +799,43 @@ function DependencyGraphView({
         ) : (
           <p className="muted">Click an edge to inspect relation, source and confidence.</p>
         )}
+
+        <div className="divider" />
+        <p className="eyebrow">Contagion paths · {compactId(selectedPosition)}</p>
+        {selectedContagion?.paths.length ? (
+          <div className="evidence-card">
+            {selectedContagion.paths.map((path) => (
+              <Definition
+                key={`${path.factor}-${path.edges.join("-")}`}
+                label={labelize(path.factor)}
+                value={
+                  <>
+                    {path.nodes.map(nodeLabel).join(" → ")} <Badge tone={confidenceTone[path.confidence]}>{path.confidence}</Badge>
+                  </>
+                }
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="muted">No contagion path for this position in the current result.</p>
+        )}
+        <WarningList warnings={[...(selectedContagion?.graph_gaps ?? []), ...(selectedContagion?.unmodeled_exposures ?? [])]} />
+
+        {risk.contagion?.hubs.length ? (
+          <>
+            <div className="divider" />
+            <p className="eyebrow">Contagion hubs</p>
+            <div className="evidence-card">
+              {risk.contagion.hubs.slice(0, 5).map((hub) => (
+                <Definition
+                  key={hub.node}
+                  label={hub.label}
+                  value={`${hub.positions.length} positions · ${money(hub.net_equity_usd)} net equity`}
+                />
+              ))}
+            </div>
+          </>
+        ) : null}
         <WarningList warnings={graph.warnings ?? []} />
       </aside>
     </div>
@@ -782,13 +874,18 @@ function ScenarioLab({
   runScenario: () => void;
 }) {
   const selectedRisk = data.risk.positions.find((position) => position.position_id === selectedPosition) ?? data.risk.positions[0];
-  const previewScale = scenario === "usde_depeg" ? shockPct / 5 : liquidityLossPct / 80;
+  // Real engine results for the current sliders (API: live; offline: precomputed surface).
   const valuationData = data.risk.positions.map((position) => ({
     id: position.position_id,
     name: compactId(position.position_id),
     before: Number(position.net_equity_before_usd),
-    after: Number(position.net_equity_before_usd) - Number(position.conditional_loss_usd) * previewScale,
+    after: Number(position.net_equity_after_usd),
   }));
+  const sourceCopy = {
+    engine: "Live risk engine result for the current sliders.",
+    surface: "Risk engine results precomputed for every slider value (offline mode).",
+    fixture: "Static fixture result: slider values are not applied.",
+  }[data.riskSource];
 
   return (
     <div className="scenario-layout">
@@ -804,7 +901,7 @@ function ScenarioLab({
 
       <section className="control-panel">
         <Control label="USDe shock magnitude" value={signedPercent(-shockPct)}>
-          <input type="range" min="1" max="25" value={shockPct} onChange={(event) => setShockPct(Number(event.target.value))} />
+          <input type="range" min="1" max="40" value={shockPct} onChange={(event) => setShockPct(Number(event.target.value))} />
         </Control>
         <Control label="Liquidity depth reduction" value={`${liquidityLossPct}%`}>
           <input type="range" min="0" max="95" value={liquidityLossPct} onChange={(event) => setLiquidityLossPct(Number(event.target.value))} />
@@ -814,7 +911,7 @@ function ScenarioLab({
         </Control>
         <button className="run-card" onClick={runScenario}>
           <Play size={16} />
-          Run deterministic fixture
+          Run risk engine
         </button>
       </section>
 
@@ -823,7 +920,7 @@ function ScenarioLab({
           <div>
             <p className="eyebrow">Animated before / after</p>
             <h2>Net equity under stress</h2>
-            <p className="microcopy">Fixture-scaled preview for slider interaction; canonical golden results stay in contracts/.</p>
+            <p className="microcopy">{sourceCopy}</p>
           </div>
           <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} aria-label="Select position">
             {data.portfolio.positions.map((position) => (
