@@ -228,7 +228,6 @@ const sessionStorageKey = "defi-contagion-session";
 const accountsStorageKey = "defi-contagion-demo-accounts";
 const rememberedIdentifierKey = "defi-contagion-remembered-email";
 const passkeyStorageKey = "defi-contagion-demo-passkey";
-const introSeenStorageKey = "defi-contagion-intro-seen";
 const demoUserId = "defi-contagion-demo-user";
 
 function App() {
@@ -268,7 +267,7 @@ function App() {
   const [query, setQuery] = useState("");
   const [hasRun, setHasRun] = useState(true);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [introOpen, setIntroOpen] = useState(() => sessionStorage.getItem(introSeenStorageKey) !== "true");
+  const [introOpen, setIntroOpen] = useState(true);
 
   // Deferred so dragging a slider does not queue a request per pixel; the result follows the slider.
   const deferredShock = useDeferredValue(shockPct);
@@ -392,7 +391,6 @@ function App() {
   }
 
   const dismissIntro = useCallback(() => {
-    sessionStorage.setItem(introSeenStorageKey, "true");
     setIntroOpen(false);
   }, []);
 
@@ -401,7 +399,24 @@ function App() {
   }
 
   if (!session) {
-    return <LoginScreen theme={theme} setTheme={setTheme} onAuthenticated={handleAuthenticated} />;
+    return (
+      <>
+        <AnimatePresence mode="wait">
+          {!introOpen ? (
+            <motion.div
+              key="login"
+              initial={{ opacity: 0, scale: 0.992 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.992 }}
+              transition={{ duration: 0.62, ease: easeOut }}
+            >
+              <LoginScreen theme={theme} setTheme={setTheme} onAuthenticated={handleAuthenticated} />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+        <IntroOverlay open={introOpen} onComplete={dismissIntro} />
+      </>
+    );
   }
 
   return (
