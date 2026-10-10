@@ -1216,3 +1216,7 @@ tbody tr[data-highlighted="true"] {
 .edge-critical.animated .react-flow__edge-path {
   animation-direction: reverse;
 }
+
+.scenario-results {
+  grid-column: 1 / -1;
+}

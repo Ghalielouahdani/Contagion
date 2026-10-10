@@ -52,6 +52,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createActionRegistry } from "./actions/registry";
 import {
   availableScenarios,
+  compareRiskLevels,
   defaultDataMode,
   defaultFixtureSet,
   fixtureSets,
@@ -322,7 +323,7 @@ function App() {
     setInspectedExitFraction(null);
     setHasRun(true);
     setSelectedEdge(null);
-    setView("graph");
+    setView("scenario");
   }
 
   function executeAction(action: DashboardAction) {
@@ -474,6 +475,7 @@ function App() {
                   </ReactFlowProvider>
                 ) : null}
                 {view === "scenario" ? (
+                  <div className="page-stack">
                   <ScenarioLab
                     data={data}
                     scenario={scenario}
@@ -492,6 +494,14 @@ function App() {
                     setExtraInput={setExtraInput}
                     runScenario={runScenario}
                   />
+                  <ReactFlowProvider>
+                    <DependencyGraphView graph={data.graph} risk={data.risk} scenario={data.risk.scenario_id as ScenarioKind}
+                      selectedPosition={selectedPosition} setSelectedPosition={setSelectedPosition}
+                      selectedEdge={selectedEdge} setSelectedEdge={setSelectedEdge}
+                      hoveredPosition={hoveredPosition} setHoveredPosition={setHoveredPosition} />
+                  </ReactFlowProvider>
+                  {submitted.run > 0 ? <StressComparison mode={mode} data={data} inputs={submitted.inputs} /> : null}
+                  </div>
                 ) : null}
                 {view === "decision" ? (
                   <DecisionEngine
@@ -805,6 +815,23 @@ function SummaryStrip({
   );
 }
 
+function factorLabel(factor: string) {
+  return ({ usde_price: "USDe price decline", usde_backing: "Ethena backing impairment",
+    susde_exchange_rate: "sUSDe exchange-rate decline", pt_implied_yield: "PT yield repricing",
+    exit_liquidity: "Exit liquidity shortage", susde_yield: "sUSDe yield change",
+    borrow_rate: "Borrowing-rate change", node_shock: "Dependency failure" } as Record<string, string>)[factor] ?? labelize(factor);
+}
+
+function edgeLabel(relation: string) {
+  return ({ collateral_asset: "Collateral exposure", debt_asset: "Debt exposure", redeemable_for: "Redeemable into",
+    priced_by: "Oracle valuation", prices_with: "Oracle valuation", prices_collateral_with: "Values collateral through oracle",
+    prices_debt_with: "Values debt through oracle", holds: "Holding exposure", position_in: "Position in market", reads_price_of: "Reads asset price",
+    exits_via: "Shared exit route", backed_by: "Backing exposure", issued_by: "Issuer exposure",
+    deposited_in: "Lending-market exposure", supplied_to: "Lending-market exposure",
+    uses_feed: "Price-feed dependency", part_of_protocol: "Protocol dependency",
+    deployed_on: "Chain dependency" } as Record<string, string>)[relation] ?? labelize(relation);
+}
+
 function DependencyGraphView({
   graph,
   risk,
@@ -839,9 +866,12 @@ function DependencyGraphView({
   const [pathScope, setPathScope] = useState<"all" | "selected">("all");
   // Paths come from the engine; position amounts are never allocated to individual edges.
   const selectedContagion = risk.positions.find((position) => position.position_id === selectedPosition)?.contagion;
+  const [factorFilter, setFactorFilter] = useState("all");
+  const factors = [...new Set(risk.positions.flatMap(position => position.contagion?.paths.map(path => path.factor) ?? []))];
+  const activeFactor = factors.includes(factorFilter) ? factorFilter : "all";
   const displayedPaths = useMemo(() => (pathScope === "all" ? risk.positions :
     risk.positions.filter((position) => position.position_id === selectedPosition))
-    .flatMap((position) => position.contagion?.paths ?? []), [pathScope, risk.positions, selectedPosition]);
+    .flatMap((position) => position.contagion?.paths ?? []).filter(path => activeFactor === "all" || path.factor === activeFactor), [pathScope, risk.positions, selectedPosition, activeFactor]);
   const criticalEdges = useMemo(() => new Set(displayedPaths.flatMap((path) => path.edges)), [displayedPaths]);
   const criticalNodes = useMemo(() => new Set(displayedPaths.flatMap((path) => path.nodes)), [displayedPaths]);
   const roots = useMemo(() => new Set(displayedPaths.map((path) => path.root)), [displayedPaths]);
@@ -899,7 +929,7 @@ function DependencyGraphView({
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        label: edge.relation,
+        label: edgeLabel(edge.relation),
         animated: criticalEdges.has(edge.id),
         className: `edge-${edge.confidence} ${criticalEdges.has(edge.id) ? "edge-critical" : ""}`,
         data: edge,
@@ -908,7 +938,7 @@ function DependencyGraphView({
   }, [criticalEdges, graph.edges, visibleNodeIds]);
 
   const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
-  const flowKey = `${risk.simulation_id}-${risk.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
+  const flowKey = `${activeFactor}-${risk.simulation_id}-${risk.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
 
   return (
     <div className="page-stack">
@@ -920,6 +950,10 @@ function DependencyGraphView({
             <p className="microcopy">Highlighted paths show how scenario factors reach positions. Graph edges point toward dependencies; read the propagation from the factor back to the position.</p>
           </div>
           <div className="toolbar-row">
+            <select aria-label="Propagation factor" value={activeFactor} onChange={event => setFactorFilter(event.target.value)}>
+              <option value="all">All propagation channels</option>
+              {factors.map(factor => <option key={factor} value={factor}>{factorLabel(factor)}</option>)}
+            </select>
             <button className="filter-chip" data-active={pathScope === "all"} onClick={() => setPathScope("all")}>Whole portfolio</button>
             <button className="filter-chip" data-active={pathScope === "selected"} onClick={() => setPathScope("selected")}>Selected position</button>
           </div>
@@ -1001,7 +1035,7 @@ function DependencyGraphView({
         <p className="eyebrow">Edge evidence</p>
         {selectedEdge ? (
           <div className="evidence-card">
-            <h2>{labelize(selectedEdge.relation)}</h2>
+            <h2>{edgeLabel(selectedEdge.relation)}</h2>
             <Definition label="Risk channel" value={labelize(selectedEdge.risk_channel)} />
             <Definition label="Confidence" value={<Badge tone={confidenceTone[selectedEdge.confidence]}>{selectedEdge.confidence}</Badge>} />
             <Definition label="Method" value={labelize(selectedEdge.evidence.method)} />
@@ -1017,10 +1051,10 @@ function DependencyGraphView({
         <p className="microcopy">Paths explain exposure. The position loss is counted once even when several paths reach it.</p>
         {selectedContagion?.paths.length ? (
           <div className="evidence-card">
-            {selectedContagion.paths.map((path) => (
+            {selectedContagion.paths.filter(path => activeFactor === "all" || path.factor === activeFactor).map((path) => (
               <Definition
                 key={`${path.factor}-${path.edges.join("-")}`}
-                label={labelize(path.factor)}
+                label={factorLabel(path.factor)}
                 value={
                   <>
                     {[...path.nodes].reverse().map(nodeLabel).join(" → ")} <Badge tone={confidenceTone[path.confidence]}>{path.confidence}</Badge>
@@ -1202,6 +1236,11 @@ function ScenarioLab({
         </button>
       </section>
 
+      <section className="impact-strip scenario-results" aria-label="Latest run results">
+        <Stat label="Portfolio equity before" value={money(data.risk.positions.reduce((sum, position) => sum + Number(position.net_equity_before_usd), 0))} detail="Same selected portfolio" />
+        <Stat label="Portfolio equity after" value={money(data.risk.portfolio.net_equity_after_usd as string | null)} detail="Last submitted run" />
+        <Stat label="Conditional loss / gain" value={money(data.risk.portfolio.total_conditional_loss_usd)} detail={data.risk.portfolio.aggregation_status} />
+      </section>
       <section className="visual-panel">
         <div className="panel-heading">
           <div>
@@ -1263,6 +1302,12 @@ function ScenarioLab({
         {selectedRisk.risk_metric ? <RiskGauge metric={selectedRisk.risk_metric} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
       </section>
 
+      <section className="visual-panel scenario-results">
+        <p className="eyebrow">What caused the impact · {compactId(selectedPosition)}</p>
+        <h2>Loss breakdown</h2>
+        {Object.entries(selectedRisk.loss_components).map(([key, value]) => <Definition key={key} label={labelize(key)} value={money(value)} />)}
+        <WarningList warnings={selectedRisk.warnings} />
+      </section>
       {data.risk.comparison ? (
         <section className="gauge-panel">
           <div>
@@ -1280,6 +1325,47 @@ function ScenarioLab({
       ) : null}
     </div>
   );
+}
+
+function StressComparison({ mode, data, inputs }: { mode: DataMode; data: AppData; inputs: ScenarioInputs }) {
+  const scenario = data.risk.scenario_id as ScenarioKind;
+  const comparison = useQuery({
+    queryKey: ["stress-comparison", mode, data.health.fixtureSet, scenario, inputs],
+    queryFn: () => compareRiskLevels(mode, scenario, inputs, data.health.fixtureSet),
+  });
+  const rows = comparison.data?.map(({ value, risk }) => ({
+    magnitude: Math.abs(value) * 100,
+    total: risk.portfolio.total_conditional_loss_usd == null ? null : Number(risk.portfolio.total_conditional_loss_usd),
+    ...Object.fromEntries(risk.positions.map(position => [position.position_id, Number(position.conditional_loss_usd)])),
+    liquidatable: risk.positions.filter(position => position.risk_metric?.liquidatable).map(position => compactId(position.position_id)).join(", ") || "None",
+  }));
+  const parameter = comparison.data?.[0]?.param ?? "";
+  return <section className="visual-panel">
+    <div className="panel-heading"><div>
+      <p className="eyebrow">Compare propagation at different stress levels</p>
+      <h2>Where does the impact accelerate?</h2>
+      <p className="microcopy">Each point is a risk-engine calculation on the same portfolio. Varying {labelize(parameter)}; other assumptions stay fixed.
+        {mode === "fixture" ? " Offline comparisons use the scenario preset assumptions and horizon." : " Using the submitted assumptions and horizon."}</p>
+    </div></div>
+    {comparison.isLoading ? <p>Calculating stress levels…</p> : null}
+    {comparison.isError ? <p>Stress comparison unavailable. The main run result remains above.</p> : null}
+    {rows ? <>
+      <div className="chart-frame"><ResponsiveContainer width="100%" height={280}>
+        <LineChart data={rows}>
+          <CartesianGrid stroke="var(--np-line)" />
+          <XAxis dataKey="magnitude" tickFormatter={value => `${value}%`} />
+          <YAxis tickFormatter={value => money(value)} />
+          <Tooltip formatter={value => value == null ? "n/a" : money(Number(value))} labelFormatter={value => `${value}% stress`} />
+          <Line type="linear" dataKey="total" name="Portfolio loss" stroke="var(--np-strong)" strokeWidth={3} dot />
+          {data.risk.positions.map((position, index) => <Line key={position.position_id} type="linear" dataKey={position.position_id}
+            name={compactId(position.position_id)} stroke={["var(--np-accent-blue)", "var(--np-accent-coral)", "var(--np-accent-gold)", "var(--np-accent-periwinkle)"][index % 4]} dot />)}
+        </LineChart>
+      </ResponsiveContainer></div>
+      <table><thead><tr><th>Stress magnitude</th><th>Portfolio loss / gain</th><th>Liquidatable fund borrows</th></tr></thead>
+        <tbody>{rows.map(row => <tr key={row.magnitude}><td>{row.magnitude}%</td><td>{money(row.total)}</td><td>{row.liquidatable}</td></tr>)}</tbody></table>
+      <p className="microcopy">These are conditional stress tests, not probabilities. Connected paths show exposure; their losses are counted once per position.</p>
+    </> : null}
+  </section>;
 }
 
 function DecisionEngine({

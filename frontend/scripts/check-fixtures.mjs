@@ -37,7 +37,19 @@ try {
         }
       }
     }
-    console.log(`${set.id}: ${scenarios.length} presets checked`);
+    for (const scenario of scenarios) {
+      const inputs = { shockPct: 5, horizonDays: 7, liquidityLossPct: 80, ltShiftPct: -5,
+        susdeApyPct: 0, borrowApyPct: 60, nodeId: 'offchain:ethena_backing', nodeLossPct: 10,
+        ...api.presetInputs(scenario, set.id) };
+      const levels = await api.compareRiskLevels('fixture', scenario, inputs, set.id);
+      assert.ok(levels.length >= 5);
+      for (const level of levels) {
+        assert.equal(level.risk.portfolio_id, (await api.loadAppData('fixture', scenario, inputs, set.id)).portfolio.portfolio_id);
+        assert.equal(level.risk.scenario_id, scenario);
+        assert.ok(Number.isFinite(Number(level.risk.portfolio.total_conditional_loss_usd)));
+      }
+    }
+    console.log(`${set.id}: ${scenarios.length} presets and stress comparisons checked`);
   }
   assert.deepEqual(api.availableScenarios('live_ethena_01'), ['usde_depeg', 'liquidity_crisis']);
   await assert.rejects(() => api.loadAppData('fixture', 'carry_squeeze', {}, 'live_ethena_01'));

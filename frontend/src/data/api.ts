@@ -515,3 +515,26 @@ function createMockDecisionResult(risk: RiskResult, scenario: ScenarioKind): Dec
     warnings: [`Mock data: ${fileByKind.decision(scenario)} was generated because the fixture was missing.`],
   };
 }
+
+/** Deterministic stress sweep: hold the submitted assumptions fixed and vary one factor. */
+export async function compareRiskLevels(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs, set: string) {
+  const param = scenarioParams[scenario][0].param;
+  const values = scenario === 'carry_squeeze' ? [0, .2, .4, .6, .8, 1] :
+    scenario === 'liquidity_crisis' ? [0, .2, .4, .6, .8, .95] :
+    scenario === 'node_shock' ? [0, .1, .2, .3, .4, .5] : [0, -.1, -.2, -.3, -.4];
+  if (mode === 'fixture') {
+    const surface = await loadSurface(set);
+    const points = surface?.scenarios[scenario]?.points;
+    if (!points?.length) throw new Error('No precomputed stress comparison for this scenario.');
+    return values.map(value => {
+      const point = points.reduce((best, p) => Math.abs(Number(p.value) - value) < Math.abs(Number(best.value) - value) ? p : best);
+      return { value: Number(point.value), risk: point.risk_result, param };
+    });
+  }
+  return Promise.all(values.map(async value => {
+    const request = buildScenarioRequest(scenario, inputs, set);
+    request.scenario.parameters[param] = value.toFixed(2);
+    const risk = await requestJson<RiskResult>(withSet('/api/v1/simulate', set), post(request));
+    return { value, risk, param };
+  }));
+}
