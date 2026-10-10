@@ -2164,6 +2164,7 @@ function AssistantDock({
   const amplitudeIntervalRef = useRef<number | null>(null);
   const speechRunRef = useRef(0);
   const activeSpeechMessageRef = useRef<string | null>(null);
+  const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const latestAssistantMessage = useMemo(() => [...messages].reverse().find((message) => message.role === "assistant"), [messages]);
 
   useEffect(() => {
@@ -2252,7 +2253,14 @@ function AssistantDock({
 
   function cancelSpeech() {
     speechRunRef.current += 1;
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    if ("speechSynthesis" in window) {
+      console.info("[Assistant speech] cancel", {
+        pending: window.speechSynthesis.pending,
+        speaking: window.speechSynthesis.speaking,
+      });
+      window.speechSynthesis.cancel();
+    }
+    speechUtteranceRef.current = null;
     if (activeSpeechMessageRef.current) {
       const messageId = activeSpeechMessageRef.current;
       setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
@@ -2262,49 +2270,78 @@ function AssistantDock({
   }
 
   function speak(text: string, messageId: string) {
+    const cleanText = text.replace(/\s+/g, " ").trim();
+    console.info("[Assistant speech] speaker requested", {
+      messageId,
+      characters: cleanText.length,
+      supported: "speechSynthesis" in window,
+    });
     if (!("speechSynthesis" in window)) {
       setVoiceIssue("Spoken replies are not supported in this browser.");
       setAssistantState("idle");
       return;
     }
-    setVoiceIssue("");
-    window.speechSynthesis.cancel();
-    const chunks = splitSpeechChunks(text);
-    if (!chunks.length) {
+    if (!cleanText) {
+      console.warn("[Assistant speech] no text to speak");
+      setVoiceIssue("There is no readable assistant reply yet.");
       setAssistantState("idle");
       return;
+    }
+    setVoiceIssue("");
+    const synth = window.speechSynthesis;
+    if (synth.speaking || synth.pending) {
+      console.info("[Assistant speech] clearing existing speech queue before manual playback", {
+        pending: synth.pending,
+        speaking: synth.speaking,
+      });
+      synth.cancel();
     }
     const runId = speechRunRef.current + 1;
     speechRunRef.current = runId;
     activeSpeechMessageRef.current = messageId;
-    setAssistantState("speaking");
+    setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: cleanText } : message)));
 
-    const speakChunk = (index: number) => {
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    speechUtteranceRef.current = utterance;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.onstart = () => {
       if (speechRunRef.current !== runId) return;
-      const chunk = chunks[index];
-      if (!chunk) {
-        setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
-        activeSpeechMessageRef.current = null;
-        setAssistantState("idle");
-        return;
-      }
-      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: chunk } : message)));
-      const utterance = new SpeechSynthesisUtterance(chunk);
-      utterance.rate = 0.98;
-      utterance.pitch = 1;
-      utterance.onend = () => speakChunk(index + 1);
-      utterance.onerror = () => {
-        activeSpeechMessageRef.current = null;
-        setVoiceIssue("The browser stopped spoken playback. Try pressing the speaker again.");
-        setAssistantState("idle");
-      };
-      window.speechSynthesis.speak(utterance);
+      console.info("[Assistant speech] playback started");
+      setAssistantState("speaking");
     };
-
-    speakChunk(0);
+    utterance.onend = () => {
+      if (speechRunRef.current !== runId) return;
+      console.info("[Assistant speech] playback ended");
+      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+      activeSpeechMessageRef.current = null;
+      speechUtteranceRef.current = null;
+      setAssistantState("idle");
+    };
+    utterance.onerror = (event) => {
+      if (speechRunRef.current !== runId) return;
+      console.warn("[Assistant speech] playback error", event);
+      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+      activeSpeechMessageRef.current = null;
+      speechUtteranceRef.current = null;
+      setVoiceIssue(`The browser stopped spoken playback (${event.error}). Try pressing the speaker again.`);
+      setAssistantState("idle");
+    };
+    if (synth.paused) synth.resume();
+    console.info("[Assistant speech] invoking speechSynthesis.speak", {
+      pending: synth.pending,
+      speaking: synth.speaking,
+      paused: synth.paused,
+      voice: "browser default",
+    });
+    synth.speak(utterance);
   }
 
   function speakLatestReply() {
+    console.info("[Assistant speech] speaker button pressed", {
+      hasLatestReply: Boolean(latestAssistantMessage),
+      currentState: assistantState,
+    });
     if (assistantState === "speaking") {
       cancelSpeech();
       return;
@@ -2559,24 +2596,6 @@ function AssistantDock({
       </AnimatePresence>
     </>
   );
-}
-
-function splitSpeechChunks(text: string) {
-  return text
-    .replace(/\s+/g, " ")
-    .split(/(?<=[.!?])\s+|;\s+/)
-    .flatMap((sentence) => {
-      const clean = sentence.trim();
-      if (clean.length <= 150) return clean;
-      return clean.split(/,\s+/).reduce<string[]>((chunks, clause) => {
-        const last = chunks[chunks.length - 1];
-        if (!last || `${last}, ${clause}`.length > 145) chunks.push(clause);
-        else chunks[chunks.length - 1] = `${last}, ${clause}`;
-        return chunks;
-      }, []);
-    })
-    .map((chunk) => chunk.trim())
-    .filter(Boolean);
 }
 
 function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: number }) {
