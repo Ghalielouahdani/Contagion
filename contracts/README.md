@@ -24,12 +24,18 @@ contracts/
 │   ├── scenarios/      usde_depeg · liquidity_crisis
 │   └── risk_metrics/   health_factor · ltv
 └── fixtures/
-    └── demo_ethena_01/                 one self-consistent data set
-        ├── manifest.json               ids + which file uses which schema
-        ├── portfolio.json · dependency_graph.json · market_snapshot.json
-        ├── scenario_request.json · scenario_request_liquidity.json
-        └── risk_result.json · risk_result_liquidity.json · decision_result.json
+    ├── demo_ethena_01/                 one self-consistent data set (golden, assumed values)
+    │   ├── manifest.json               ids + which file uses which schema
+    │   ├── portfolio.json · dependency_graph.json · market_snapshot.json
+    │   ├── scenario_request.json · scenario_request_liquidity.json
+    │   └── risk_result.json · risk_result_liquidity.json · decision_result.json
+    └── live_ethena_01/                 same 4 positions discovered on real markets by P1 (not golden)
+        └── portfolio.json · dependency_graph.json · market_snapshot.json · scenario_request*.json
 ```
+
+P1's live discovery adds optional fields (additive, still `1.0`): graph `chain_id`, `block_number`,
+`coverage` (five dependency layers per position), `unresolved`, `discovery`; evidence `call` and `note`;
+snapshot `exit_venues.*.quotes` and `markets.*.details`. See `backend/discovery/README.md`.
 
 ## Why it is modular
 

@@ -151,6 +151,41 @@
         },
         "field_sources": {
           "$ref": "common.schema.json#/$defs/field_sources"
+        },
+        "quotes": {
+          "type": "array",
+          "description": "Executable quotes behind effective_depth_usd, one per size (each position alone and the venue's joint size). Sizes marked at snapshot prices.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "size_tokens": {
+                "$ref": "common.schema.json#/$defs/non_negative_decimal"
+              },
+              "size_usd": {
+                "$ref": "common.schema.json#/$defs/non_negative_decimal"
+              },
+              "proceeds_usd": {
+                "$ref": "common.schema.json#/$defs/non_negative_decimal"
+              },
+              "loss_pct": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "positions": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/position_id"
+                }
+              }
+            },
+            "required": [
+              "size_tokens",
+              "size_usd",
+              "proceeds_usd",
+              "loss_pct",
+              "positions"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [

@@ -1,38 +1,60 @@
 # backend/adapters/ — owner: P1 (Data & Dependency Discovery)
 
-One adapter per protocol: **Ethena, Aave, Morpho, Pendle**. For one position, an adapter reads the real Ethereum contracts and protocol APIs, then returns:
-- the **graph pieces**: nodes (asset, market, oracle, venue…) and edges (`issued_by`, `prices_collateral_with`, `exits_via`…), each with evidence;
-- the **market parameters** that P2/P3 need (thresholds, oracle type, yields, maturity…).
+One adapter per protocol or token family. Each answers "what does this entity depend on?" by
+reading contracts at the pinned block (and protocol APIs as a second source), writing typed nodes
+and evidence-backed edges into the shared graph, and returning the entities to explore next. The
+explorer in `backend/discovery/` runs them; see that README for how to run discovery.
 
-The discovery service (`backend/discovery/`) calls the adapters and assembles their output.
+```python
+class Adapter(Protocol):                       # base.py
+    name: str
+    def accepts(self, entity: Entity, ctx: Ctx) -> bool: ...
+    def discover(self, entity: Entity, ctx: Ctx) -> list[Entity]: ...   # follow-ups
+```
 
-Read: blueprint sections 6 (what "automatic" means), 11.2–11.3 (target output), 14 (risks), 16 P1.
+`Entity(kind, key)`: `token`, `pendle_market`, `morpho_market`, `aave_market`, `collateral_scan`.
+`Ctx` carries the clients, the registry, the graph builder, the pinned block and the shared outputs
+(market parameters and yields per position, facts, unresolved items, warnings). Any asset an adapter
+touches is queued for exploration, so an oracle reading USDT leads to USDT's issuer.
 
-## What to do, step by step
+| file | handles | reads |
+|------|---------|-------|
+| `ethena.py` | USDe, sUSDe | `minter()` vs Ethena's published minting contract, `asset()`, `convertToAssets`, cooldown, rewards vesting; backing from docs (documented) |
+| `pendle.py` | Pendle market, PT, SY | `readTokens`, `readState` (implied rate, reserves, scalar root, fee), `SY()`, `yieldToken()`, `exchangeRate()`, `assetInfo()`; Pendle API to cross-check ids, expiry, implied APY and read liquidity |
+| `morpho.py` | Morpho Blue market | `idToMarketParams`, `market`, IRM `borrowRateView`; Morpho API to cross-check and to list markets accepting a collateral |
+| `aave.py` | Aave v3 collateral/debt pair | provider → Pool/DataProvider/Oracle, reserve config and rates, eMode bitmaps (v3.2+), `getSourceOfAsset` |
+| `oracles.py` | any oracle address | recursive introspection (meta-oracle, Morpho ChainlinkOracleV2, Aave capped/ratio adapters, Pendle linear discount, Chainlink feeds, EIP-1167 proxies) → drivers → USDe pass-through |
+| `collateral.py` | layer-5 scan for PTs | Morpho markets with this exact collateral, Aave reserve lists (negative results recorded) |
+| `venues.py` | exit venues | joint and standalone executable quotes (Pendle router for PTs, KyberSwap otherwise) → depth for the proxy |
+| `tokens.py` | any ERC-4626 / ERC-20 | vault → underlying (verified); issuer only from the registry, otherwise unresolved |
+| `sources.py` | — | read-only JSON-RPC client (block pinning, Multicall3, retries, endpoint fallback) and HTTP client, both recorded/replayed through a cassette |
+| `registry/ethereum.json` | — | protocol entry points and canonical token addresses with their source URL (the only hand-entered addresses) |
 
-1. **Define a common interface.** For example `discover(position) -> nodes, edges, market_params, warnings`. All four adapters return the same shape.
-2. **Find and verify the real markets** (the first task at kickoff; nobody else can do it):
-   - Aave: a live market with USDe as collateral (check eMode).
-   - Morpho: a live sUSDe/USDC market. Write down the market ID, **oracle address and oracle type**, and the LLTV.
-   - Pendle: a live PT-sUSDe market. Write down the market address, PT token and maturity.
-   - Ethena: the USDe and sUSDe contracts and the sUSDe → USDe exchange rate.
-   Replace the `TO_VERIFY_...` placeholders in `portfolio.json` / `market_snapshot.json` with these values.
-3. **Write each adapter:**
-   - **Ethena:** read the sUSDe exchange rate on-chain. Add documented-only edges for the off-chain backing (custody, exchanges), marked `documented`.
-   - **Aave:** read the liquidation threshold, liquidation bonus, oracle address, and supply/borrow APYs.
-   - **Morpho:** read the market params (collateral, loan, oracle, IRM, LLTV) and the borrow APY. **Determine whether the oracle follows the USDe market price** (pass-through 1) or only the exchange rate (pass-through 0). This drives the demo story.
-   - **Pendle:** read the PT, SY, underlying, maturity, implied APY, and pool liquidity.
-4. **Attach evidence to every edge:** `method` (onchain_call, protocol_api, protocol_documentation), `reference` (contract address or URL), `observed_at`, `status`, and `confidence`.
-5. **Normalize units:** token decimals (USDC has 6, most others 18), shares vs. assets for sUSDe, USD prices.
+`market_id` per protocol: Pendle = market address, Morpho = market id (bytes32), Aave =
+`<PoolAddressesProvider>` or `<PoolAddressesProvider>#emode=<id>` (without it, the eligible eMode with
+the highest LT is chosen and flagged as inferred).
 
-## Definition of done
+## Evidence and confidence
 
-- Each adapter works on at least one verified market and has unit tests (a fixture mode with recorded responses works offline).
-- Two different market IDs produce two **different** graphs. Nothing is hardcoded as the final answer.
-- A missing field becomes a warning plus `null`, never an invented value.
+Every edge carries `method` (onchain_call, protocol_api, protocol_documentation, third_party_api,
+fixture), `reference` (contract address or URL), `observed_at`, `block_number` for on-chain reads,
+`call` (e.g. `PT.SY()`), `note` (why the edge exists) and a `confidence`:
 
-## Pitfalls
+- `verified`: read on-chain at the pinned block, or two sources agree (e.g. on-chain minter = documented minter);
+- `documented`: published by the protocol, not observable on-chain (Ethena custody/backing);
+- `inferred`: derived by a stated rule (feed description → asset by symbol, chosen eMode, exit route);
+- `assumed`: team assumption (only the venue fallback in `backend/discovery/assumptions.json`).
 
-- An oracle price is not the spot price. Record which oracle each market uses.
-- TVL is not exposure.
-- RPC endpoints are read-only. Never ask for private keys.
+## Rules kept
+
+- A missing field becomes a warning or an `unresolved` entry, never an invented value.
+- Two tokens are never merged on their symbol; identity is `(chain_id, address)`.
+- An oracle price is not the spot price: each market records which oracle it consumes and what that oracle reads.
+- TVL is not exposure; RPCs are read-only; no keys or secrets in outputs (`ETH_RPC_URL` is recorded as `env:ETH_RPC_URL`).
+
+## Adding a protocol
+
+1. Add its entry points to `registry/ethereum.json` (with the source URL).
+2. Write `<protocol>.py` with `accepts` / `discover`, writing nodes, edges with evidence, and (for a
+   position's market) `ctx.market_params[position_id]` in the matching `contracts/schemas/v1/markets/` shape.
+3. Register it in `default_adapters()` (`__init__.py`), record a cassette for an example, add a replay test.

@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "fixture_set_id": "live_ethena_01",
+  "description": "P1 live discovery of the blueprint portfolio on real Ethereum markets (block 26162114, 2026-10-10T12:44:23Z). Holdings are fictional; market ids, parameters, oracles, prices and exit quotes are discovered. Regenerate: python -m backend.discovery discover --portfolio backend/discovery/examples/live_ethena_01.json --mode replay --cassette backend/discovery/cassettes/live_ethena_01.json --out contracts/fixtures/live_ethena_01 --revalue",
+  "ids": {
+    "portfolio_id": "live_ethena_01",
+    "graph_id": "graph_live_ethena_01",
+    "snapshot_id": "snapshot_live_ethena_01"
+  },
+  "files": {
+    "portfolio": {
+      "path": "portfolio.json",
+      "schema": "../../schemas/v1/portfolio.schema.json"
+    },
+    "dependency_graph": {
+      "path": "dependency_graph.json",
+      "schema": "../../schemas/v1/dependency_graph.schema.json"
+    },
+    "market_snapshot": {
+      "path": "market_snapshot.json",
+      "schema": "../../schemas/v1/market_snapshot.schema.json"
+    },
+    "scenario_request": {
+      "path": "scenario_request.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_liquidity": {
+      "path": "scenario_request_liquidity.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    }
+  },
+  "golden": false
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "pendle_pt_susds",
+  "as_of": "2026-10-10T08:00:00Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "chain_id": 1,
+      "gross_value_usd": "0",
+      "debt_value_usd": "0",
+      "net_equity_usd": "0",
+      "data_origin": "fictional",
+      "position_id": "pt_susds_01",
+      "protocol": "pendle",
+      "position_type": "pt_holding",
+      "market_id": "0x9c560ebaf78e596cbcc27411d633a74d628dd7dc",
+      "asset_symbol": "PT-sUSDS-26NOV2026",
+      "quantity": "1000000",
+      "quantity_unit": "PT_tokens",
+      "exit_venue_id": "venue:pendle_pt_susds"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "0",
+    "debt_value_usd": "0",
+    "net_equity_usd": "0"
+  }
+}

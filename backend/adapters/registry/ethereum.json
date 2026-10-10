@@ -1,0 +1,110 @@
+{
+  "chain_id": 1,
+  "chain_node": "chain:ethereum",
+  "network": "Ethereum mainnet",
+  "_comment": "Protocol entry points and canonical token addresses, copied from each issuer's or protocol's published address list (source). Discovery re-checks every one on-chain at run time (code exists, symbol/decimals, cross-links such as sUSDe.asset() == USDe) and reports a conflict instead of trusting this file. Markets, oracles, PTs, SYs and venues are NOT listed here: they are discovered.",
+  "tokens": {
+    "USDe": {
+      "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+      "issuer": "ethena",
+      "source": "https://docs.ethena.fi/solution-design/key-addresses"
+    },
+    "sUSDe": {
+      "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+      "issuer": "ethena",
+      "source": "https://docs.ethena.fi/solution-design/key-addresses"
+    },
+    "USDC": {
+      "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "issuer": "circle",
+      "source": "https://www.circle.com/usdc"
+    },
+    "USDT": {
+      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "issuer": "tether",
+      "source": "https://tether.to/"
+    },
+    "PYUSD": {
+      "address": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+      "issuer": "paxos",
+      "source": "https://www.paypal.com/pyusd"
+    }
+  },
+  "issuers": {
+    "ethena": {
+      "node": "protocol:ethena",
+      "type": "protocol",
+      "label": "Ethena",
+      "source": "https://docs.ethena.fi/",
+      "minting_contract": "0xe3490297a08d6fc8da46edb7b6142e4f461b62d3",
+      "minting_source": "https://docs.ethena.fi/solution-design/key-addresses",
+      "backing": {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "source": "https://docs.ethena.fi/"
+      }
+    },
+    "circle": {
+      "node": "offchain:circle",
+      "type": "offchain_entity",
+      "label": "Circle (USDC issuer and reserves)",
+      "source": "https://www.circle.com/usdc"
+    },
+    "tether": {
+      "node": "offchain:tether",
+      "type": "offchain_entity",
+      "label": "Tether (USDT issuer and reserves)",
+      "source": "https://tether.to/"
+    },
+    "paxos": {
+      "node": "offchain:paxos",
+      "type": "offchain_entity",
+      "label": "Paxos (PYUSD issuer and reserves)",
+      "source": "https://www.paypal.com/pyusd"
+    }
+  },
+  "protocols": {
+    "aave": {
+      "node": "protocol:aave",
+      "label": "Aave v3",
+      "source": "https://aave.com/docs/resources/addresses",
+      "address_book": "https://github.com/bgd-labs/aave-address-book",
+      "pool_addresses_providers": {
+        "ethereum_core": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e"
+      }
+    },
+    "morpho": {
+      "node": "protocol:morpho",
+      "label": "Morpho Blue",
+      "source": "https://docs.morpho.org/get-started/resources/addresses",
+      "morpho_blue": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+      "api": "https://blue-api.morpho.org/graphql",
+      "api_docs": "https://docs.morpho.org/tools/offchain/api/morpho/"
+    },
+    "pendle": {
+      "node": "protocol:pendle",
+      "label": "Pendle",
+      "source": "https://docs.pendle.finance/",
+      "router": "0x888888888889758f76e7103c6cbf23abbf58f946",
+      "api": "https://api-v2.pendle.finance/core",
+      "api_docs": "https://api-v2.pendle.finance/core/docs",
+      "convert_api": "https://api-v2.pendle.finance/core/v2/sdk/{chain_id}/convert"
+    }
+  },
+  "reference_feeds": {
+    "_comment": "Chainlink market-price feeds used for snapshot prices and quote valuation. Their description() must match '<SYMBOL> / USD' on-chain or the price is dropped.",
+    "USDe": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+    "USDC": "0x8fffffd4afb6115b954bd326cbe7b4ba576818f6",
+    "USDT": "0x3e7d1eab13ad0104d2750b8863b489d65364e32d",
+    "PYUSD": "0x8f1df6d7f2db73eece86a18b4381f4707b918fb1",
+    "ETH": "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
+    "source": "https://docs.chain.link/data-feeds/price-feeds/addresses"
+  },
+  "aggregator": {
+    "name": "KyberSwap aggregator",
+    "routes_api": "https://aggregator-api.kyberswap.com/ethereum/api/v1/routes",
+    "source": "https://docs.kyberswap.com/",
+    "client_id": "defi-contagion",
+    "quote_receiver": "0x000000000000000000000000000000000000dead"
+  }
+}
