@@ -55,6 +55,8 @@ Dark mode:
 - Stagger repeated objects by a few milliseconds.
 - Respect `prefers-reduced-motion`.
 - Hover motion is small: 1 to 3px shifts, no bounce.
+- Selection changes use shared layout motion so objects feel re-composed, not swapped.
+- Numeric figures count when their value changes, unless reduced motion is requested.
 
 ## Data Visuals
 
@@ -62,3 +64,14 @@ Dark mode:
 - Confidence/risk color is semantic and consistent.
 - Tooltips should look like annotated captions, not default chart popovers.
 - Dependency graph nodes should feel like labels on a crafted network diagram, with custom strokes and restrained fill.
+
+## Portfolio Vertical Slice
+
+- The Portfolio Dashboard is the first fully art-directed slice.
+- The KPI strip behaves like a financial table: one shared four-row grid for label, figure, spacer and footnote.
+- The positions area is master-detail: one large selected position panel, three smaller peer cards, and temporary hover emphasis only on the card under interaction.
+- Selected state uses the single mineral-green accent through surface tint, a hairline accent rule and a restrained active shadow.
+- Figures use tabular numerals and animated count-up for legibility and polish.
+- The chosen font pairing remains:
+  - Display: `Canela`, then `Fraunces`, then system serif fallbacks for high-end editorial tension.
+  - UI/text: `Geist`, then `IBM Plex Sans`, then `Inter`/system for precise controls and dense financial labels.
