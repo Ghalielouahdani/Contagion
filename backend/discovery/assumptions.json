@@ -1,0 +1,8 @@
+{
+  "_comment": "Fallback ONLY: used when neither an executable quote nor pool reserves can be read for a venue. Values are the team's fixture assumptions (contracts/fixtures/demo_ethena_01/market_snapshot.json) and are always emitted with quote_method=proxy and source_type=assumed.",
+  "exit_venues": {
+    "venue:susde_usdc": {"effective_depth_usd": "200000000", "fee_rate": "0.001", "gas_usd": "40"},
+    "venue:usde_usdc": {"effective_depth_usd": "300000000", "fee_rate": "0.001", "gas_usd": "40"},
+    "venue:pendle_pt_susde": {"effective_depth_usd": "80000000", "fee_rate": "0.001", "gas_usd": "40"}
+  }
+}

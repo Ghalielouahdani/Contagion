@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/scenarios/carry_squeeze.schema.json",
+  "title": "Scenario D - carry squeeze",
+  "description": "No price shock: rates over horizon_days (simple interest). Loss vs today's net equity; a positive carry is a negative loss. comparison: same horizon at the snapshot's rates.",
+  "type": "object",
+  "properties": {
+    "scenario_id": {
+      "const": "carry_squeeze"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "susde_apy": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "sUSDe staking APY over the horizon, e.g. 0 when funding turns negative; negative = exchange rate falls (reserve fund spent)."
+        },
+        "borrow_apy_override": {
+          "$ref": "../common.schema.json#/$defs/nullable_decimal",
+          "description": "Borrow APY on all debt, e.g. 0.60 at a utilization kink; null = snapshot per position."
+        },
+        "collateral_supply_apy_override": {
+          "$ref": "../common.schema.json#/$defs/nullable_decimal",
+          "description": "Lending supply APY on all collateral; null = snapshot per position. sUSDe collateral also accrues through its exchange rate."
+        },
+        "pt_implied_apy_shock": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Additive change of PT implied APY at the horizon."
+        }
+      },
+      "required": [
+        "susde_apy",
+        "borrow_apy_override",
+        "collateral_supply_apy_override",
+        "pt_implied_apy_shock"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "scenario_id",
+    "horizon_days",
+    "parameters"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,781 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_vsim_carry_01",
+  "request_id": "vsim_carry_01",
+  "portfolio_id": "verified_ethena_01",
+  "scenario_id": "carry_squeeze",
+  "horizon_days": 30,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "ethena_susde_01",
+      "gross_value_before_usd": "2002942.89",
+      "gross_value_after_usd": "2002942.89",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "2002942.89",
+      "net_equity_after_usd": "2002942.89",
+      "conditional_loss_usd": "0.00",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:ethena_susde_01",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:7"
+            ],
+            "channels": [
+              "mark_to_market"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "2002942.89",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "2002942.89",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "aave_01",
+      "gross_value_before_usd": "2998791.00",
+      "gross_value_after_usd": "2999382.54",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "1888516.11",
+      "net_equity_before_usd": "1199030.22",
+      "net_equity_after_usd": "1110866.44",
+      "conditional_loss_usd": "88163.78",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "88163.78"
+      },
+      "risk_metric": {
+        "type": "health_factor",
+        "before": "1.5496",
+        "after": "1.4770",
+        "threshold": "1.0000",
+        "liquidatable": false,
+        "distance_to_liquidation_before_pct": "0.3547",
+        "distance_to_liquidation_after_pct": "0.3230"
+      },
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "At these rates the position becomes liquidatable after about 337 days."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "borrow_rate",
+            "root": "asset:USDC",
+            "nodes": [
+              "position:aave_01",
+              "market:aave_01",
+              "asset:USDC"
+            ],
+            "edges": [
+              "edge:9",
+              "edge:11"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "debt_cost"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "1199030.22",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "1110866.44",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "88163.78",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "88163.78",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "88163.78",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "morpho_01",
+      "gross_value_before_usd": "3004414.33",
+      "gross_value_after_usd": "3004414.33",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "2098770.75",
+      "net_equity_before_usd": "1004280.33",
+      "net_equity_after_usd": "905643.58",
+      "conditional_loss_usd": "98636.75",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "98636.75"
+      },
+      "risk_metric": {
+        "type": "ltv",
+        "before": "0.6657",
+        "after": "0.6986",
+        "threshold": "0.9150",
+        "liquidatable": false,
+        "distance_to_liquidation_before_pct": "0.2724",
+        "distance_to_liquidation_after_pct": "0.2365"
+      },
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "At these rates the position becomes liquidatable after about 228 days."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:morpho_01",
+              "market:morpho_01",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:16",
+              "edge:17"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "mark_to_market"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:morpho_01",
+              "market:morpho_01",
+              "oracle:morpho_01_susde",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:16",
+              "edge:19",
+              "edge:20"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "oracle_repricing",
+              "exchange_rate"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "borrow_rate",
+            "root": "asset:PYUSD",
+            "nodes": [
+              "position:morpho_01",
+              "market:morpho_01",
+              "asset:PYUSD"
+            ],
+            "edges": [
+              "edge:16",
+              "edge:18"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "debt_cost"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "borrow_rate",
+            "root": "asset:PYUSD",
+            "nodes": [
+              "position:morpho_01",
+              "market:morpho_01",
+              "oracle:morpho_01_susde",
+              "asset:PYUSD"
+            ],
+            "edges": [
+              "edge:16",
+              "edge:19",
+              "edge:22"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "oracle_repricing",
+              "oracle_repricing"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "1004280.33",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "905643.59",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "98636.75",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "98636.75",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "98636.75",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "pendle_01",
+      "gross_value_before_usd": "1996715.41",
+      "gross_value_after_usd": "2004754.30",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "1996715.41",
+      "net_equity_after_usd": "2004754.31",
+      "conditional_loss_usd": "-8038.90",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "-8038.90"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:pendle_01",
+              "asset:PT-sUSDe",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:25",
+              "edge:5"
+            ],
+            "channels": [
+              "mark_to_market",
+              "maturity_redemption"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "1996715.41",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "2004754.30",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-8038.90",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "-8038.90",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-8038.90",
+            "unit": "usd"
+          }
+        }
+      ]
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "6202968.85",
+    "net_equity_after_usd": "6024207.22",
+    "total_conditional_loss_usd": "178761.63",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_verified_20261010",
+    "input_graph_id": "graph_verified_20261010"
+  },
+  "warnings": [
+    "Rates applied as simple interest over 30 days; no price shock."
+  ],
+  "trace": [
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "ethena_susde_01",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "aave_01",
+          "value": "88163.78",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "morpho_01",
+          "value": "98636.75",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "pendle_01",
+          "value": "-8038.90",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "178761.63",
+        "unit": "usd"
+      },
+      "note": "2.88% of net equity (6202968.85 USD)."
+    }
+  ],
+  "comparison": {
+    "runs": [
+      {
+        "run_id": "carry_at_current_rates",
+        "description": "Same horizon at the snapshot's rates (sUSDe APY 4.85%).",
+        "total_conditional_loss_usd": "-14841.04"
+      }
+    ],
+    "excess_loss_usd": "193602.67",
+    "excess_meaning": "Cost of the squeeze: carry lost versus keeping today's rates over the horizon."
+  },
+  "contagion": {
+    "graph_id": "graph_verified_20261010",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10002863.63",
+        "net_equity_usd": "6202968.85"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10002863.63",
+        "net_equity_usd": "6202968.85"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10002863.63",
+        "net_equity_usd": "6202968.85"
+      },
+      {
+        "node": "asset:sUSDe",
+        "label": "sUSDe",
+        "node_type": "asset",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "7004072.63",
+        "net_equity_usd": "5003938.63"
+      },
+      {
+        "node": "venue:susde_usdc",
+        "label": "sUSDe -> stablecoin exit route",
+        "node_type": "venue",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "5007357.22",
+        "net_equity_usd": "3007223.22"
+      }
+    ],
+    "warnings": []
+  }
+}

@@ -12,21 +12,112 @@
       "gross_value_before_usd": "2000000.00",
       "gross_value_after_usd": "2000000.00",
       "executable_value_after_usd": "1904761.90",
-      "debt_after_usd": "0",
+      "debt_after_usd": "0.00",
       "net_equity_before_usd": "2000000.00",
       "net_equity_after_usd": "1904761.90",
       "conditional_loss_usd": "95238.10",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "95238.10"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "illustrative",
       "warnings": [
-        "Proxy depth; standalone exit."
+        "Proxy depth; standalone exit. Shares venue:susde_usdc with morpho_01."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:ethena_susde_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:8"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:8"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:susde_usdc",
+          "label": "Execution cost on venue:susde_usdc (proxy)",
+          "formula": "proxy: cost(x) = x^2 / (k x depth + x)",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "2000000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            },
+            {
+              "name": "effective depth",
+              "value": "200000000.00",
+              "unit": "usd",
+              "source": "assumed"
+            }
+          ],
+          "result": {
+            "value": "95238.10",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "95238.10",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "95238.10",
+            "unit": "usd"
+          }
+        }
       ]
     },
     {
@@ -39,9 +130,9 @@
       "net_equity_after_usd": "1057142.86",
       "conditional_loss_usd": "142857.14",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "142857.14"
       },
       "risk_metric": null,
@@ -49,6 +140,97 @@
       "calculation_status": "illustrative",
       "warnings": [
         "Proxy depth; standalone exit."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:usde_usdc",
+            "nodes": [
+              "position:aave_01",
+              "venue:usde_usdc"
+            ],
+            "edges": [
+              "edge:15"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:15"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:usde_usdc",
+          "label": "Execution cost on venue:usde_usdc (proxy)",
+          "formula": "proxy: cost(x) = x^2 / (k x depth + x)",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "3000000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            },
+            {
+              "name": "effective depth",
+              "value": "300000000.00",
+              "unit": "usd",
+              "source": "assumed"
+            }
+          ],
+          "result": {
+            "value": "142857.14",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "142857.14",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "142857.14",
+            "unit": "usd"
+          }
+        }
       ]
     },
     {
@@ -61,9 +243,9 @@
       "net_equity_after_usd": "790697.67",
       "conditional_loss_usd": "209302.33",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "209302.33"
       },
       "risk_metric": null,
@@ -71,6 +253,97 @@
       "calculation_status": "illustrative",
       "warnings": [
         "Proxy depth; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:morpho_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:22"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:22"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:susde_usdc",
+          "label": "Execution cost on venue:susde_usdc (proxy)",
+          "formula": "proxy: cost(x) = x^2 / (k x depth + x)",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "3000000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            },
+            {
+              "name": "effective depth",
+              "value": "200000000.00",
+              "unit": "usd",
+              "source": "assumed"
+            }
+          ],
+          "result": {
+            "value": "209302.33",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "209302.33",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "209302.33",
+            "unit": "usd"
+          }
+        }
       ]
     },
     {
@@ -78,14 +351,14 @@
       "gross_value_before_usd": "2000055.14",
       "gross_value_after_usd": "2000055.14",
       "executable_value_after_usd": "1777821.35",
-      "debt_after_usd": "0",
+      "debt_after_usd": "0.00",
       "net_equity_before_usd": "2000055.14",
       "net_equity_after_usd": "1777821.35",
       "conditional_loss_usd": "222233.79",
       "loss_components": {
-        "market_repricing": "0",
-        "backing_impairment": "0",
-        "liquidation_penalty": "0",
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
         "execution_haircut": "222233.79"
       },
       "risk_metric": null,
@@ -93,6 +366,97 @@
       "calculation_status": "illustrative",
       "warnings": [
         "Proxy depth; standalone exit."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:pendle_pt_susde",
+            "nodes": [
+              "position:pendle_01",
+              "venue:pendle_pt_susde"
+            ],
+            "edges": [
+              "edge:26"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:26"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:pendle_pt_susde",
+          "label": "Execution cost on venue:pendle_pt_susde (proxy)",
+          "formula": "proxy: cost(x) = x^2 / (k x depth + x)",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "2000055.14",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            },
+            {
+              "name": "effective depth",
+              "value": "80000000.00",
+              "unit": "usd",
+              "source": "assumed"
+            }
+          ],
+          "result": {
+            "value": "222233.79",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "222233.79",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "222233.79",
+            "unit": "usd"
+          }
+        }
       ]
     }
   ],
@@ -109,6 +473,154 @@
     "input_graph_id": "graph_demo_01"
   },
   "warnings": [
-    "Portfolio total uses joint exit per shared venue; it exceeds the sum of position losses (669,631.36) by shared_liquidity_penalty_usd."
-  ]
+    "Portfolio total uses a joint exit per shared venue; it exceeds the sum of position losses by shared_liquidity_penalty_usd.",
+    "Computed from unverified market parameters; illustrative, never a real-market result."
+  ],
+  "trace": [
+    {
+      "id": "shared_liquidity_penalty",
+      "label": "Shared exit venues: selling together costs more",
+      "formula": "sum over venues of cost(sum of sizes) - sum of each position's standalone cost",
+      "inputs": [
+        {
+          "name": "joint cost",
+          "value": "920646.49",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "standalone costs",
+          "value": "669631.36",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "251015.13",
+        "unit": "usd"
+      },
+      "note": "Exists only at portfolio level: no single position carries it."
+    },
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "ethena_susde_01",
+          "value": "95238.10",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "aave_01",
+          "value": "142857.14",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "morpho_01",
+          "value": "209302.33",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "pendle_01",
+          "value": "222233.79",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "251015.13",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "920646.49",
+        "unit": "usd"
+      },
+      "note": "14.85% of net equity (6200055.14 USD)."
+    }
+  ],
+  "contagion": {
+    "graph_id": "graph_demo_01",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10000055.14",
+        "net_equity_usd": "6200055.14"
+      },
+      {
+        "node": "asset:sUSDe",
+        "label": "sUSDe",
+        "node_type": "asset",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "7000055.14",
+        "net_equity_usd": "5000055.14"
+      },
+      {
+        "node": "venue:susde_usdc",
+        "label": "sUSDe/USDC exit route",
+        "node_type": "venue",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "5000000.00",
+        "net_equity_usd": "3000000.00"
+      },
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "6000000.00",
+        "net_equity_usd": "2200000.00"
+      }
+    ],
+    "warnings": []
+  }
 }

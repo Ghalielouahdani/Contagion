@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "request_id": "vsim_node_shock_01",
+  "portfolio_id": "verified_ethena_01",
+  "graph_id": "graph_verified_20261010",
+  "snapshot_id": "snapshot_verified_20261010",
+  "scenario": {
+    "scenario_id": "node_shock",
+    "horizon_days": 7,
+    "parameters": {
+      "node_id": "offchain:ethena_backing",
+      "loss_pct": "0.10",
+      "oracle_pass_through_override": null
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

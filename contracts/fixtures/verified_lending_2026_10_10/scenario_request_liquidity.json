@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "request_id": "verified_lending_2026_10_10_liquidity",
+  "portfolio_id": "verified_lending_2026_10_10_portfolio",
+  "graph_id": "graph_verified_lending_2026_10_10",
+  "snapshot_id": "snapshot_verified_lending_2026_10_10",
+  "scenario": {
+    "scenario_id": "liquidity_crisis",
+    "horizon_days": 7,
+    "parameters": {
+      "exit_liquidity_reduction_pct": "0.80",
+      "fundamental_value_shock_pct": "0.00",
+      "quote_method": "proxy_only"
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

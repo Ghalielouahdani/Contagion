@@ -1,0 +1,484 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_sim_lending_carry_01",
+  "request_id": "sim_lending_carry_01",
+  "portfolio_id": "demo_lending_01",
+  "scenario_id": "carry_squeeze",
+  "horizon_days": 30,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_usde_01",
+      "gross_value_before_usd": "5000000.00",
+      "gross_value_after_usd": "5205479.45",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000000.00",
+      "net_equity_after_usd": "5205479.45",
+      "conditional_loss_usd": "-205479.45",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "-205479.45",
+        "bad_debt": "0.00",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Borrowers drift: 15% of the market's debt becomes liquidatable over the horizon (collateral/debt -4.70%)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "borrow_rate",
+            "root": "asset:USDC",
+            "nodes": [
+              "position:lend_usde_01",
+              "market:lend_usde_01",
+              "asset:USDC"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:7"
+            ],
+            "channels": [
+              "borrower_default",
+              "debt_cost"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:5",
+              "edge:7"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "5000000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "5205479.45",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-205479.45",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "-205479.45",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "bad debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "undercollateralized debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-205479.45",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "lend_susde_01",
+      "gross_value_before_usd": "5000000.00",
+      "gross_value_after_usd": "5205479.45",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000000.00",
+      "net_equity_after_usd": "5205479.45",
+      "conditional_loss_usd": "-205479.45",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "-205479.45",
+        "bad_debt": "0.00",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Borrowers drift: 15% of the market's debt becomes liquidatable over the horizon (collateral/debt -4.70%).",
+        "Linked to asset:sUSDe (susde_yield) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:12",
+              "edge:13"
+            ],
+            "channels": [
+              "borrower_default",
+              "mark_to_market"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:12",
+              "edge:13"
+            ]
+          },
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "oracle:lend_susde_01_susde",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:12",
+              "edge:15",
+              "edge:16"
+            ],
+            "channels": [
+              "borrower_default",
+              "oracle_repricing",
+              "exchange_rate"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:12",
+              "edge:15",
+              "edge:16"
+            ]
+          },
+          {
+            "factor": "borrow_rate",
+            "root": "asset:USDC",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "asset:USDC"
+            ],
+            "edges": [
+              "edge:12",
+              "edge:14"
+            ],
+            "channels": [
+              "borrower_default",
+              "debt_cost"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:12",
+              "edge:14"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "5000000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "5205479.45",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-205479.45",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "-205479.45",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "bad debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "undercollateralized debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-205479.45",
+            "unit": "usd"
+          }
+        }
+      ]
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "10000000.00",
+    "net_equity_after_usd": "10410958.90",
+    "total_conditional_loss_usd": "-410958.90",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_lending_01",
+    "input_graph_id": "graph_lending_01"
+  },
+  "warnings": [
+    "No current sUSDe APY in the snapshot yields: carry at current rates not reported.",
+    "Rates applied as simple interest over 30 days; no price shock.",
+    "Computed from unverified market parameters; illustrative, never a real-market result."
+  ],
+  "trace": [
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "lend_usde_01",
+          "value": "-205479.45",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "lend_susde_01",
+          "value": "-205479.45",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "-410958.90",
+        "unit": "usd"
+      },
+      "note": "-4.11% of net equity (10000000.00 USD)."
+    }
+  ],
+  "contagion": {
+    "graph_id": "graph_lending_01",
+    "hubs": [
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "protocol:morpho",
+        "label": "Morpho",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      }
+    ],
+    "warnings": []
+  }
+}

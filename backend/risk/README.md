@@ -43,3 +43,36 @@ No shock → no change. A bigger shock → a bigger loss (monotonic). Pass-throu
 ## Definition of done
 
 Both scenarios run on the same portfolio, results are reproducible, and every loss and liquidation flag is explained. Never call a scenario loss an "expected loss": there is no probability at this stage.
+
+## Run it
+
+```bash
+python3.13 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # once, from the repo root
+.venv/bin/python -m pytest backend/risk                          # golden + property tests
+```
+
+```python
+from backend.risk import simulate
+result = simulate(portfolio, market_snapshot, scenario_request, dependency_graph)  # contract dicts in, risk_result dict out
+```
+
+```python
+from backend.risk.analytics import analyze
+value = analyze(portfolio, market_snapshot, scenario_request)  # risk_analytics dict: money value for the fund
+```
+
+`analyze` returns a headline (NAV, scenario loss, USDe effective leverage, de-risking savings, liquidation protection, break-even probability) plus factor exposure, breaking points, targeted vs uniform de-risking and liquidation protection. See blueprint section 7.5 and `docs/risk_engine_plan.md`.
+
+Code map: `model.py` (contract views) · `pricing.py` (market state, PT, oracle) · `metrics.py` (HF/LTV registry per market_kind) · `liquidity.py` (haircuts, joint exits) · `scenarios/` (one file per scenario + registry) · `report.py` (rounding that reconciles to the cent) · `engine.py` (entry point) · `graph.py` + `contagion.py` (contagion paths from the dependency graph, graph/valuation cross-check, hubs) · `analytics/` (exposure, breaking points, de-risking, liquidation protection, sensitivity tornado + grids, `analyze`). For a custom heatmap: `sensitivity.grid(portfolio, snapshot, request, x_param, xs, y_param, ys)` on model objects.
+
+Scenarios: `usde_depeg` (A), `liquidity_crisis` (B), `combined_crisis` (C: A then exits queued behind liquidators' selling), `carry_squeeze` (D: rates over the horizon, days to liquidation), `governance_change` (E: threshold cut / oracle switch, then A), `node_shock` (F: shock any graph node). C–F return a `comparison` block (reference runs + `excess_loss_usd`). See `docs/risk_engine_plan.md`.
+
+Position types: `token_holding`, `collateralized_borrow`, `pt_holding`, `lending_supply` (USDC supplied to a lending market: loss = share of bad debt and of debt underwater at market prices, from the market's borrower LTV distribution; see `lending.py`).
+
+Exit costs: `liquidity.exit_cost(venue, size, depth_factor)` prices on the venue's executable quotes when the snapshot has them (linear in loss fraction between quoted sizes, constant-product extrapolation beyond the largest, flagged), else on the constant-product proxy depth. A crisis keeping a share k of depth prices cost_k(size) = k x cost(size / k).
+
+Add a scenario: new file in `scenarios/` decorated with `@scenario("<id>")`, plus its import in `scenarios/__init__.py` and its schema in `contracts/`. Add a lending protocol: one compute function + one `register(...)` line in `metrics.py`.
+
+## Roadmap
+
+Full plan, differentiators and progress checklist: [docs/risk_engine_plan.md](../../docs/risk_engine_plan.md).

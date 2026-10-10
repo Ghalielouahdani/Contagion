@@ -1,0 +1,674 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_sim_live_002",
+  "request_id": "sim_live_002",
+  "portfolio_id": "live_ethena_01",
+  "scenario_id": "liquidity_crisis",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "ethena_susde_01",
+      "gross_value_before_usd": "2002952.69",
+      "gross_value_after_usd": "2002952.69",
+      "executable_value_after_usd": "1545531.75",
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "2002952.69",
+      "net_equity_after_usd": "1545531.75",
+      "conditional_loss_usd": "457420.94",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "457420.94"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "venue:susde_usdc: selling 2,002,953 USD with 20% of normal depth left (like 10,014,763 USD in today's book) is beyond the largest executable quote (5,007,382 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit. Shares venue:susde_usdc with morpho_01."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:ethena_susde_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:exits_via.4aaf19de51"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:susde_usdc",
+          "label": "Execution cost on venue:susde_usdc (extrapolated)",
+          "formula": "executable quotes: cost(x) = k x (x / k) x loss(x / k), loss interpolated between quoted sizes; beyond the largest quote, constant product through it",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "2002952.69",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "457420.94",
+            "unit": "usd"
+          },
+          "rows": [
+            {
+              "size_usd": "2002952.69",
+              "loss_pct": "0.091300"
+            },
+            {
+              "size_usd": "3004429.03",
+              "loss_pct": "0.157000"
+            },
+            {
+              "size_usd": "5007381.72",
+              "loss_pct": "12.890600"
+            }
+          ]
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "457420.94",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "457420.94",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "aave_01",
+      "gross_value_before_usd": "2998790.46",
+      "gross_value_after_usd": "2998790.46",
+      "executable_value_after_usd": "2992384.02",
+      "debt_after_usd": "1799757.18",
+      "net_equity_before_usd": "1199033.28",
+      "net_equity_after_usd": "1192626.84",
+      "conditional_loss_usd": "6406.44",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "6406.44"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "venue:usde_usdc: selling 2,998,790 USD with 20% of normal depth left (like 14,993,952 USD in today's book) is beyond the largest executable quote (2,998,790 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:usde_usdc",
+            "nodes": [
+              "position:aave_01",
+              "venue:usde_usdc"
+            ],
+            "edges": [
+              "edge:exits_via.a291103881"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:usde_usdc",
+          "label": "Execution cost on venue:usde_usdc (extrapolated)",
+          "formula": "executable quotes: cost(x) = k x (x / k) x loss(x / k), loss interpolated between quoted sizes; beyond the largest quote, constant product through it",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "2998790.46",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "6406.44",
+            "unit": "usd"
+          },
+          "rows": [
+            {
+              "size_usd": "2998790.46",
+              "loss_pct": "0.042800"
+            }
+          ]
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "6406.44",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "6406.44",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "morpho_01",
+      "gross_value_before_usd": "3004429.03",
+      "gross_value_after_usd": "3004429.03",
+      "executable_value_after_usd": "2080708.48",
+      "debt_after_usd": "1999730.20",
+      "net_equity_before_usd": "1004698.83",
+      "net_equity_after_usd": "80978.28",
+      "conditional_loss_usd": "923720.55",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "923720.55"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "venue:susde_usdc: selling 3,004,429 USD with 20% of normal depth left (like 15,022,145 USD in today's book) is beyond the largest executable quote (5,007,382 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:susde_usdc",
+            "nodes": [
+              "position:morpho_01",
+              "venue:susde_usdc"
+            ],
+            "edges": [
+              "edge:exits_via.ad80c03f99"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:susde_usdc",
+          "label": "Execution cost on venue:susde_usdc (extrapolated)",
+          "formula": "executable quotes: cost(x) = k x (x / k) x loss(x / k), loss interpolated between quoted sizes; beyond the largest quote, constant product through it",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "3004429.03",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "923720.55",
+            "unit": "usd"
+          },
+          "rows": [
+            {
+              "size_usd": "2002952.69",
+              "loss_pct": "0.091300"
+            },
+            {
+              "size_usd": "3004429.03",
+              "loss_pct": "0.157000"
+            },
+            {
+              "size_usd": "5007381.72",
+              "loss_pct": "12.890600"
+            }
+          ]
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "923720.55",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "923720.55",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "pendle_01",
+      "gross_value_before_usd": "2066258.90",
+      "gross_value_after_usd": "2066258.90",
+      "executable_value_after_usd": "2050425.70",
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "2066258.90",
+      "net_equity_after_usd": "2050425.70",
+      "conditional_loss_usd": "15833.20",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "15833.20"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "venue:pendle_pt_susde: selling 2,066,259 USD with 20% of normal depth left (like 10,331,295 USD in today's book) is beyond the largest executable quote (2,066,259 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:pendle_pt_susde",
+            "nodes": [
+              "position:pendle_01",
+              "venue:pendle_pt_susde"
+            ],
+            "edges": [
+              "edge:exits_via.292a089ce9"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "inferred",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "exit:venue:pendle_pt_susde",
+          "label": "Execution cost on venue:pendle_pt_susde (extrapolated)",
+          "formula": "executable quotes: cost(x) = k x (x / k) x loss(x / k), loss interpolated between quoted sizes; beyond the largest quote, constant product through it",
+          "inputs": [
+            {
+              "name": "size sold",
+              "value": "2066258.90",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "depth left (k)",
+              "value": "0.200000",
+              "unit": "ratio",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "15833.20",
+            "unit": "usd"
+          },
+          "rows": [
+            {
+              "size_usd": "2066258.85",
+              "loss_pct": "0.154200"
+            }
+          ]
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "15833.20",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "15833.20",
+            "unit": "usd"
+          }
+        }
+      ]
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "6272943.70",
+    "net_equity_after_usd": "4121278.98",
+    "total_conditional_loss_usd": "2151664.72",
+    "shared_liquidity_penalty_usd": "748283.59",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_live_ethena_01",
+    "input_graph_id": "graph_live_ethena_01"
+  },
+  "warnings": [
+    "Portfolio total uses a joint exit per shared venue; it exceeds the sum of position losses by shared_liquidity_penalty_usd."
+  ],
+  "trace": [
+    {
+      "id": "shared_liquidity_penalty",
+      "label": "Shared exit venues: selling together costs more",
+      "formula": "sum over venues of cost(sum of sizes) - sum of each position's standalone cost",
+      "inputs": [
+        {
+          "name": "joint cost",
+          "value": "2151664.71",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "standalone costs",
+          "value": "1403381.12",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "748283.59",
+        "unit": "usd"
+      },
+      "note": "Exists only at portfolio level: no single position carries it."
+    },
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "ethena_susde_01",
+          "value": "457420.94",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "aave_01",
+          "value": "6406.44",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "morpho_01",
+          "value": "923720.55",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "pendle_01",
+          "value": "15833.20",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "748283.59",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "2151664.72",
+        "unit": "usd"
+      },
+      "note": "34.30% of net equity (6272943.70 USD)."
+    }
+  ],
+  "contagion": {
+    "graph_id": "graph_live_ethena_01",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "chain:ethereum",
+        "label": "Ethereum mainnet",
+        "node_type": "chain",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "contract:ethena_minting.e3490297",
+        "label": "Ethena minting contract",
+        "node_type": "contract",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "aave_01",
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "10072431.03",
+        "net_equity_usd": "6272943.65"
+      },
+      {
+        "node": "asset:sUSDe",
+        "label": "sUSDe",
+        "node_type": "asset",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01",
+          "pendle_01"
+        ],
+        "gross_exposure_usd": "7073640.57",
+        "net_equity_usd": "5073910.37"
+      },
+      {
+        "node": "venue:susde_usdc",
+        "label": "sUSDe -> USDC exit route",
+        "node_type": "venue",
+        "positions": [
+          "ethena_susde_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "5007381.72",
+        "net_equity_usd": "3007651.52"
+      },
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "aave_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "6003219.49",
+        "net_equity_usd": "2203732.11"
+      },
+      {
+        "node": "offchain:circle",
+        "label": "Circle (USDC issuer and reserves)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_01",
+          "morpho_01"
+        ],
+        "gross_exposure_usd": "6003219.49",
+        "net_equity_usd": "2203732.11"
+      }
+    ],
+    "warnings": []
+  }
+}

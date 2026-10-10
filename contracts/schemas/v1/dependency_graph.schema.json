@@ -31,6 +31,37 @@
     },
     "warnings": {
       "$ref": "common.schema.json#/$defs/warnings"
+    },
+    "chain_id": {
+      "$ref": "common.schema.json#/$defs/chain_id"
+    },
+    "block_number": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Block every on-chain read of a live discovery was pinned to; null for fixtures."
+    },
+    "coverage": {
+      "type": "object",
+      "description": "Per position_id: which dependency layers were found, and how firmly. A missing layer is unresolved or not_applicable, never silently absent.",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/position_id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/position_coverage"
+      }
+    },
+    "unresolved": {
+      "type": "array",
+      "description": "Dependencies discovery looked for and could not establish. Absence of data is not absence of risk.",
+      "items": {
+        "$ref": "#/$defs/unresolved_item"
+      }
+    },
+    "discovery": {
+      "type": "object",
+      "description": "Run metadata (mode, limits, data sources). Informational."
     }
   },
   "required": [
@@ -89,6 +120,14 @@
             "integer",
             "null"
           ]
+        },
+        "call": {
+          "type": "string",
+          "description": "Contract function, API query or document section that produced the evidence, e.g. PT.SY()."
+        },
+        "note": {
+          "type": "string",
+          "description": "Why the edge exists, in one sentence."
         }
       },
       "required": [
@@ -133,6 +172,102 @@
         "risk_channel",
         "evidence",
         "confidence"
+      ],
+      "additionalProperties": false
+    },
+    "layer_coverage": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "verified",
+            "documented",
+            "inferred",
+            "assumed",
+            "unresolved",
+            "not_applicable"
+          ]
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/node_id"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "context_nodes": {
+          "type": "array",
+          "description": "Related components found off the position's own dependency path (e.g. lending markets accepting a held PT).",
+          "items": {
+            "$ref": "common.schema.json#/$defs/node_id"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "nodes",
+        "edges",
+        "note"
+      ],
+      "additionalProperties": false
+    },
+    "position_coverage": {
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": "object",
+          "properties": {
+            "settlement_chain": {
+              "$ref": "#/$defs/layer_coverage"
+            },
+            "yield_source_and_issuer": {
+              "$ref": "#/$defs/layer_coverage"
+            },
+            "oracle": {
+              "$ref": "#/$defs/layer_coverage"
+            },
+            "market_and_liquidity": {
+              "$ref": "#/$defs/layer_coverage"
+            },
+            "lending_collateral_market": {
+              "$ref": "#/$defs/layer_coverage"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "layers"
+      ],
+      "additionalProperties": false
+    },
+    "unresolved_item": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "position_id": {
+          "$ref": "common.schema.json#/$defs/position_id"
+        }
+      },
+      "required": [
+        "subject",
+        "reason"
       ],
       "additionalProperties": false
     }

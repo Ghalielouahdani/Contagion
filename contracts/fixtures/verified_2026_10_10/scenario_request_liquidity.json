@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "request_id": "vsim_002",
+  "portfolio_id": "verified_ethena_01",
+  "graph_id": "graph_verified_20261010",
+  "snapshot_id": "snapshot_verified_20261010",
+  "scenario": {
+    "scenario_id": "liquidity_crisis",
+    "horizon_days": 7,
+    "parameters": {
+      "exit_liquidity_reduction_pct": "0.80",
+      "fundamental_value_shock_pct": "0.00",
+      "quote_method": "pool_quote_or_flagged_proxy"
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

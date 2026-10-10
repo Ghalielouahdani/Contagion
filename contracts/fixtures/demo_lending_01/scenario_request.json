@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "request_id": "sim_lending_depeg_01",
+  "portfolio_id": "demo_lending_01",
+  "graph_id": "graph_lending_01",
+  "snapshot_id": "snapshot_lending_01",
+  "scenario": {
+    "scenario_id": "usde_depeg",
+    "horizon_days": 7,
+    "parameters": {
+      "usde_spot_shock_pct": "-0.20",
+      "susde_market_beta": "1.0",
+      "backing_impairment_pct": "0.00",
+      "oracle_pass_through_override": null,
+      "oracle_lag_hours": "0",
+      "pt_pricing_mode": "implied_apy_discount",
+      "pt_implied_apy_shock": "0.00"
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

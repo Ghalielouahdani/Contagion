@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/scenarios/combined_crisis.schema.json",
+  "title": "Scenario C - depeg and liquidity crisis together",
+  "description": "Scenario A shock, then exits at crisis depth queued behind the liquidators' forced selling. comparison: same crisis without liquidation selling ahead.",
+  "type": "object",
+  "properties": {
+    "scenario_id": {
+      "const": "combined_crisis"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "usde_spot_shock_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Signed move of the USDe market price, e.g. -0.05."
+        },
+        "susde_market_beta": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "sUSDe market move = beta x USDe move."
+        },
+        "backing_impairment_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "USDe backing loss, repriced by the market for USDe and sUSDe. Signed, 0 = none. An exchange-rate oracle with USDe hardcoded at 1 USD does not see it."
+        },
+        "susde_rate_cut_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Optional. Loss socialised to sUSDe stakers: the sUSDe exchange rate falls. Every sUSDe oracle sees it. Signed, default 0."
+        },
+        "oracle_pass_through_override": {
+          "$ref": "../common.schema.json#/$defs/nullable_decimal",
+          "description": "null = use each market's oracle_pass_through from the snapshot."
+        },
+        "oracle_lag_hours": {
+          "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+          "description": "Reported for timing; final metrics use the fully passed-through oracle."
+        },
+        "pt_pricing_mode": {
+          "enum": [
+            "implied_apy_discount",
+            "amm_quote"
+          ]
+        },
+        "pt_implied_apy_shock": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Additive change of PT implied APY."
+        },
+        "exit_liquidity_reduction_pct": {
+          "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+          "description": "Fraction of venue depth lost, e.g. 0.80."
+        }
+      },
+      "required": [
+        "usde_spot_shock_pct",
+        "susde_market_beta",
+        "backing_impairment_pct",
+        "oracle_pass_through_override",
+        "oracle_lag_hours",
+        "pt_pricing_mode",
+        "pt_implied_apy_shock",
+        "exit_liquidity_reduction_pct"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "scenario_id",
+    "horizon_days",
+    "parameters"
+  ],
+  "additionalProperties": false
+}

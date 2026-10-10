@@ -17,19 +17,30 @@ contracts/
 │   ├── market_snapshot.schema.json     │ one schema per contract file
 │   ├── scenario_request.schema.json    │ (they assemble the plug-ins below)
 │   ├── risk_result.schema.json         │
-│   ├── decision_result.schema.json     ┘
+│   ├── decision_result.schema.json     │
+│   ├── risk_analytics.schema.json      ┘
 │   ├── fixture_set.schema.json         manifest of a fixture set
-│   ├── positions/      token_holding · collateralized_borrow · pt_holding
+│   ├── positions/      token_holding · collateralized_borrow · pt_holding · lending_supply
 │   ├── markets/        aave_v3_reserve · morpho_blue_market · pendle_pt_market
-│   ├── scenarios/      usde_depeg · liquidity_crisis
+│   ├── scenarios/      usde_depeg · liquidity_crisis · combined_crisis · carry_squeeze · governance_change · node_shock
 │   └── risk_metrics/   health_factor · ltv
 └── fixtures/
     └── demo_ethena_01/                 one self-consistent data set
         ├── manifest.json               ids + which file uses which schema
         ├── portfolio.json · dependency_graph.json · market_snapshot.json
         ├── scenario_request.json · scenario_request_liquidity.json
-        └── risk_result.json · risk_result_liquidity.json · decision_result.json
+        ├── scenario_request_severe.json    demo preset: −30% depeg, 6h oracle lag
+        ├── scenario_request_{combined,carry,governance,node_shock}.json + risk_result_<same>.json   scenarios C–F
+        ├── risk_result.json · risk_result_liquidity.json · decision_result.json
+        └── risk_analytics.json · risk_analytics_severe.json   money value for the fund (P2)
+    live_ethena_01/                    P1 discovery snapshot, graph and risk outputs
+    demo_lending_01/                    lender positions: two Morpho markets differing only by their oracle (golden)
+    verified_2026_10_10/                fictional holdings on real markets verified on-chain (see docs/verified_markets.md)
 ```
+
+P1's live discovery adds optional fields (additive, still `1.0`): graph `chain_id`, `block_number`,
+`coverage` (five dependency layers per position), `unresolved`, `discovery`; evidence `call` and `note`;
+snapshot `exit_venues.*.quotes` and `markets.*.details`. See `backend/discovery/README.md`.
 
 ## Why it is modular
 

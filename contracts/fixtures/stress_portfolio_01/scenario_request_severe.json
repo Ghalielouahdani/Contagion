@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "request_id": "stress_portfolio_01_scenario_request_severe",
+  "portfolio_id": "stress_portfolio_01",
+  "graph_id": "graph_stress_portfolio_01",
+  "snapshot_id": "snapshot_stress_portfolio_01",
+  "scenario": {
+    "scenario_id": "usde_depeg",
+    "horizon_days": 7,
+    "parameters": {
+      "usde_spot_shock_pct": "-0.30",
+      "susde_market_beta": "1.0",
+      "backing_impairment_pct": "0.00",
+      "susde_rate_cut_pct": "0.00",
+      "oracle_pass_through_override": null,
+      "oracle_lag_hours": "6",
+      "pt_pricing_mode": "implied_apy_discount",
+      "pt_implied_apy_shock": "0.03"
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

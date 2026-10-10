@@ -1,0 +1,2415 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Bar,
+  BarChart,
+  Brush,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import ReactFlow, {
+  Background,
+  Controls,
+  Edge,
+  MiniMap,
+  Node,
+  Panel,
+  ReactFlowProvider,
+  useReactFlow,
+} from "reactflow";
+import {
+  AlertTriangle,
+  ArrowRight,
+  ArrowUpDown,
+  BadgeCheck,
+  BarChart3,
+  Calculator,
+  ChevronDown,
+  Command,
+  Database,
+  Mic,
+  MicOff,
+  GitBranch,
+  Moon,
+  Play,
+  RefreshCw,
+  Search,
+  Send,
+  SlidersHorizontal,
+  Sparkles,
+  Sun,
+  Volume2,
+  VolumeX,
+  WalletCards,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { createActionRegistry } from "./actions/registry";
+import { RiskEngine } from "./RiskEngine";
+import { GeneratedScenarioCard } from "./RiskScenarioAgent";
+import { Term } from "./Term";
+import {
+  availableScenarios,
+  compareRiskLevels,
+  defaultDataMode,
+  defaultFixtureSet,
+  fixtureSets,
+  loadAppData,
+  loadPortfolioData,
+  loadRiskAssistantStatus,
+  loadRiskNews,
+  inputsFromRequest,
+  type PortfolioData,
+  postAssistantMessage,
+  presetInputs,
+} from "./data/api";
+import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
+import type {
+  AppData,
+  EngineScenarioRequest,
+  RiskAgentBatch,
+  RiskScenarioProposal,
+  AssistantMessage,
+  DashboardAction,
+  DataMode,
+  DependencyGraph,
+  GraphEdge,
+  GraphNode,
+  Portfolio,
+  PortfolioPosition,
+  RiskPosition,
+  ScenarioInputs,
+  ScenarioKind,
+  View,
+} from "./lib/types";
+
+type Theme = "light" | "dark";
+type SortKey = "protocol" | "gross_value_usd" | "debt_value_usd" | "net_equity_usd";
+type AssistantState = "idle" | "listening" | "thinking" | "speaking";
+type AssistantInputMode = "text" | "voice";
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  }
+}
+
+const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string }> = {
+  portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore" },
+  graph: { label: "Dependency Graph", icon: GitBranch, section: "Explore" },
+  scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run" },
+  engine: { label: "Risk Engine", icon: Calculator, section: "Run" },
+  decision: { label: "Decision Engine", icon: BarChart3, section: "Run" },
+};
+
+const scenarioCopy: Record<ScenarioKind, { title: string; preset: string; summary: string }> = {
+  usde_depeg: {
+    title: "USDe depeg",
+    preset: "A · -5% spot shock",
+    summary: "USDe market price falls. sUSDe and PT reprice; lending positions move toward liquidation only if their oracle follows the market.",
+  },
+  liquidity_crisis: {
+    title: "Liquidity crisis",
+    preset: "B · -80% exit depth",
+    summary: "Reference marks can remain stable while executable exits degrade through thin shared venues.",
+  },
+  combined_crisis: {
+    title: "Depeg + liquidity crisis",
+    preset: "C · -30% and -80% depth",
+    summary: "The depeg triggers liquidations whose forced selling hits the same thin venues before the fund can exit.",
+  },
+  governance_change: {
+    title: "Governance or oracle change",
+    preset: "E · LT -5 pts, then -27%",
+    summary: "A protocol lowers liquidation thresholds or switches oracle, then the depeg hits on the new parameters.",
+  },
+  carry_squeeze: {
+    title: "Carry squeeze",
+    preset: "D · sUSDe 0%, borrow 60%",
+    summary: "No price shock: funding turns, the staking yield vanishes and borrow rates spike at the utilization kink.",
+  },
+  liquidation_cascade: {
+    title: "Liquidation cascade",
+    preset: "G · -5%, half the depth",
+    summary: "Liquidators dump seized collateral into thin venues; the price drop liquidates the next borrowers, round after round.",
+  },
+  node_shock: {
+    title: "Dependency node failure",
+    preset: "F · Ethena backing -10%",
+    summary: "One node of the dependency graph fails (custodian, protocol, stablecoin) and the loss follows every path to it.",
+  },
+};
+
+function presetLabel(kind: ScenarioKind, set: string) {
+  const p = presetInputs(kind, set);
+  switch (kind) {
+    case "usde_depeg": return `A · -${p.shockPct}% spot shock`;
+    case "liquidity_crisis": return `B · -${p.liquidityLossPct}% exit depth`;
+    case "combined_crisis": return `C · -${p.shockPct}% and -${p.liquidityLossPct}% depth`;
+    case "carry_squeeze": return `D · sUSDe ${p.susdeApyPct}%, borrow ${p.borrowApyPct}%`;
+    case "governance_change": return `E · LT ${p.ltShiftPct} pts, then -${p.shockPct}%`;
+    case "node_shock": return `F · ${labelize(p.nodeId ?? "node")} -${p.nodeLossPct}%`;
+    case "liquidation_cascade": return `G · -${p.shockPct}%, -${p.liquidityLossPct}% depth`;
+  }
+}
+
+// "verified_lending_2026_10_10" -> "Verified · lending · 2026-10-10"
+function fixtureSetLabel(id: string) {
+  if (id === "stress_portfolio_01") return "Stress portfolio · Ethereum";
+  const date = id.match(/(\d{4})_(\d{2})_(\d{2})$/);
+  const words = id.replace(/_?\d{4}_\d{2}_\d{2}$/, "").replace(/_\d+$/, "").split("_");
+  const label = words.map((word, i) => (i === 0 ? word[0].toUpperCase() + word.slice(1) : word)).join(" · ");
+  return date ? `${label} · ${date[1]}-${date[2]}-${date[3]}` : label;
+}
+
+const scenarioOrder: ScenarioKind[] = [
+  "usde_depeg",
+  "liquidity_crisis",
+  "carry_squeeze",
+  "liquidation_cascade",
+];
+
+// Controls shown per scenario (the horizon is always shown).
+const scenarioControls: Record<ScenarioKind, Array<"shock" | "liquidity" | "ltShift" | "carry" | "node">> = {
+  usde_depeg: ["shock"],
+  liquidity_crisis: ["liquidity"],
+  combined_crisis: ["shock", "liquidity"],
+  governance_change: ["shock", "ltShift"],
+  carry_squeeze: ["carry"],
+  node_shock: ["node"],
+  liquidation_cascade: ["shock", "liquidity"],
+};
+
+// Starting values of the scenario-specific controls, matching the fixture presets.
+const defaultExtraInputs = { ltShiftPct: -5, susdeApyPct: 0, borrowApyPct: 60, nodeId: "offchain:ethena_backing", nodeLossPct: 10 };
+type ExtraInputs = typeof defaultExtraInputs;
+
+// Left to right follows the direction of dependency: position -> market / exit venue -> oracle -> asset -> protocol.
+const graphColumn: Record<string, number> = {
+  position: 0,
+  market: 1,
+  venue: 1,
+  oracle: 2,
+  contract: 2,
+  asset: 3,
+  protocol: 4,
+  offchain_entity: 4,
+  chain: 4,
+};
+const typeOrder = ["position", "market", "venue", "oracle", "contract", "asset", "protocol", "offchain_entity", "chain"];
+
+function layoutGraph(nodes: GraphNode[]): Record<string, { x: number; y: number }> {
+  const columns = new Map<number, GraphNode[]>();
+  for (const node of nodes) {
+    const column = graphColumn[node.type] ?? 4;
+    columns.set(column, [...(columns.get(column) ?? []), node]);
+  }
+  const positions: Record<string, { x: number; y: number }> = {};
+  columns.forEach((items, column) => {
+    items
+      .sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type) || a.id.localeCompare(b.id))
+      .forEach((node, row) => {
+        positions[node.id] = { x: 40 + column * 270, y: 30 + row * 96 };
+      });
+  });
+  return positions;
+}
+
+const confidenceTone: Record<string, string> = {
+  verified: "good",
+  documented: "info",
+  inferred: "warn",
+  assumed: "warn",
+};
+
+const nodeTypeColor: Record<string, string> = {
+  asset: "var(--np-accent-blue)",
+  protocol: "var(--np-accent-coral)",
+  market: "var(--np-accent-gold)",
+  oracle: "var(--np-accent-periwinkle)",
+  position: "var(--np-strong)",
+  venue: "var(--np-accent-lilac)",
+  offchain_entity: "var(--np-accent-coral)",
+};
+
+const sections = [
+  { label: "Explore", items: ["portfolio", "graph"] as View[] },
+  { label: "Run", items: ["scenario", "engine", "decision"] as View[] },
+];
+
+function App() {
+  const [view, setView] = useState<View>("portfolio");
+  const [scenario, setScenario] = useState<ScenarioKind>("usde_depeg");
+  const [mode, setMode] = useState<DataMode>(defaultDataMode);
+  const [fixtureSet, setFixtureSet] = useState(defaultFixtureSet);
+  const [theme, setTheme] = useState<Theme>("light");
+  const [selectedPosition, setSelectedPosition] = useState("aave_01");
+  const [baselinePosition, setBaselinePosition] = useState("aave_01");
+  const [baselineEdge, setBaselineEdge] = useState<GraphEdge | null>(null);
+  const [baselineHover, setBaselineHover] = useState<string | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
+  const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
+  const [inspectedExitFraction, setInspectedExitFraction] = useState<string | null>(null);
+  const [shockPct, setShockPct] = useState(() => presetInputs("usde_depeg", defaultFixtureSet).shockPct ?? 5);
+  const [horizonDays, setHorizonDays] = useState(() => presetInputs("usde_depeg", defaultFixtureSet).horizonDays ?? 7);
+  const [liquidityLossPct, setLiquidityLossPct] = useState(80);
+  const [extraInputs, setExtraInputs] = useState<ExtraInputs>(defaultExtraInputs);
+  const setExtraInput = <K extends keyof ExtraInputs>(key: K, value: ExtraInputs[K]) =>
+    setExtraInputs((current) => ({ ...current, [key]: value }));
+
+  const generatedDraft = useRef<EngineScenarioRequest | null>(null);
+
+  // Picking a scenario loads its preset values, so the screen shows the preset the card announces.
+  function selectScenario(kind: ScenarioKind, set = fixtureSet) {
+    if (!availableScenarios(set).includes(kind)) return; // no preset in this data set: never show mock numbers
+    generatedDraft.current = null;
+    const preset = presetInputs(kind, set);
+    draft.current = { scenario: kind, inputs: { ...draft.current.inputs, ...preset } };
+    setScenario(kind);
+    if (preset.shockPct !== undefined) setShockPct(preset.shockPct);
+    if (preset.liquidityLossPct !== undefined) setLiquidityLossPct(preset.liquidityLossPct);
+    if (preset.horizonDays !== undefined) setHorizonDays(preset.horizonDays);
+    const { ltShiftPct, susdeApyPct, borrowApyPct, nodeId, nodeLossPct } = preset;
+    setExtraInputs((current) => ({
+      ltShiftPct: ltShiftPct ?? current.ltShiftPct,
+      susdeApyPct: susdeApyPct ?? current.susdeApyPct,
+      borrowApyPct: borrowApyPct ?? current.borrowApyPct,
+      nodeId: nodeId ?? current.nodeId,
+      nodeLossPct: nodeLossPct ?? current.nodeLossPct,
+    }));
+  }
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [hasRun, setHasRun] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [riskBatches, setRiskBatches] = useState<RiskAgentBatch[]>([]);
+  useEffect(() => { setRiskBatches([]); }, [fixtureSet]);
+
+  const scenarioInputs: ScenarioInputs = { shockPct, horizonDays, liquidityLossPct, ...extraInputs };
+  const draft = useRef({ scenario, inputs: scenarioInputs });
+  draft.current = { scenario, inputs: scenarioInputs };
+  const [submitted, setSubmitted] = useState<{ scenario: ScenarioKind; inputs: ScenarioInputs; run: number; customRequest?: EngineScenarioRequest; customTitle?: string }>(() => ({
+    scenario: "usde_depeg" as ScenarioKind,
+    inputs: { shockPct: 5, horizonDays: 7, liquidityLossPct: 80, ...defaultExtraInputs,
+      ...presetInputs("usde_depeg", defaultFixtureSet) } as ScenarioInputs,
+    run: 0,
+  }));
+  const hasPendingChanges = scenario !== submitted.scenario ||
+    JSON.stringify(scenarioInputs) !== JSON.stringify(submitted.inputs);
+  const appQuery = useQuery({
+    queryKey: ["app-data", mode, fixtureSet, submitted],
+    queryFn: () => loadAppData(mode, submitted.scenario, submitted.inputs, fixtureSet, submitted.customRequest),
+    enabled: hasRun,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+  const baselineQuery = useQuery({
+    queryKey: ["portfolio-baseline", mode, fixtureSet],
+    queryFn: () => loadPortfolioData(mode, fixtureSet),
+    staleTime: Infinity,
+  });
+  const baseline = baselineQuery.data;
+  const isBaselineView = view === "portfolio" || view === "graph";
+  const visibleQuery = isBaselineView || !hasRun ? baselineQuery : appQuery;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+      if (event.key === "Escape") setCommandOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const rawData = hasRun ? appQuery.data : undefined;
+  useEffect(() => {
+    const positions = rawData?.portfolio.positions;
+    if (positions?.length && !positions.some((position) => position.position_id === selectedPosition)) {
+      setSelectedPosition(positions[0].position_id);
+    }
+  }, [rawData, selectedPosition]);
+  // Show the decision of the selected position (the engine computes one per position).
+  const data = rawData ? { ...rawData, decision: rawData.decisions[selectedPosition] ?? rawData.decision } : undefined;
+  useEffect(() => {
+    if (view === "engine" && data && submitted.customTitle && !appQuery.isFetching)
+      document.getElementById("generated-stress-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [data?.risk.simulation_id, submitted.run]);
+  const selectedRisk = data?.risk.positions.find((position) => position.position_id === selectedPosition) ?? data?.risk.positions[0];
+  const selectedPortfolio =
+    data?.portfolio.positions.find((position) => position.position_id === selectedPosition) ?? data?.portfolio.positions[0];
+
+  function runScenario() {
+    const next = draft.current;
+    if (!availableScenarios(fixtureSet).includes(next.scenario)) return;
+    const preserveGenerated = !hasPendingChanges && generatedDraft.current === submitted.customRequest;
+    if (!preserveGenerated) generatedDraft.current = null;
+    setSubmitted((current) => ({ scenario: next.scenario, inputs: { ...next.inputs }, run: current.run + 1,
+      ...(preserveGenerated && current.customRequest ? { customRequest: current.customRequest, customTitle: current.customTitle } : {}) }));
+    setInspectedExitFraction(null);
+    setHasRun(true);
+    setSelectedEdge(null);
+    setView("scenario");
+  }
+
+  function runRiskProposal(proposal: RiskScenarioProposal) {
+    if (mode !== "api" || proposal.request.portfolio_id !== baseline?.portfolio.portfolio_id) return;
+    generatedDraft.current = proposal.request;
+    const kind = proposal.request.scenario.scenario_id;
+    const inputs = inputsFromRequest(proposal.request, { ...scenarioInputs, ...presetInputs(kind, fixtureSet) });
+    draft.current = { scenario: kind, inputs };
+    setScenario(kind); setShockPct(inputs.shockPct); setHorizonDays(inputs.horizonDays); setLiquidityLossPct(inputs.liquidityLossPct);
+    setExtraInputs({ ltShiftPct: inputs.ltShiftPct, susdeApyPct: inputs.susdeApyPct, borrowApyPct: inputs.borrowApyPct, nodeId: inputs.nodeId, nodeLossPct: inputs.nodeLossPct });
+    setSubmitted(current => ({ scenario: kind, inputs, run: current.run + 1, customRequest: proposal.request, customTitle: proposal.title }));
+    setInspectedExitFraction(null); setSelectedEdge(null); setHasRun(true); setView("scenario"); setAssistantOpen(false);
+  }
+
+  function executeAction(action: DashboardAction) {
+    if (action.type === "prepare_scenario") {
+      if (!availableScenarios(fixtureSet).includes(action.scenario)) return;
+      const inputs = { ...action.inputs };
+      draft.current = { scenario: action.scenario, inputs };
+      setScenario(action.scenario);
+      setShockPct(inputs.shockPct);
+      setHorizonDays(inputs.horizonDays);
+      setLiquidityLossPct(inputs.liquidityLossPct);
+      setExtraInputs({ ltShiftPct: inputs.ltShiftPct, susdeApyPct: inputs.susdeApyPct, borrowApyPct: inputs.borrowApyPct, nodeId: inputs.nodeId, nodeLossPct: inputs.nodeLossPct });
+      setView("scenario");
+    }
+    if (action.type === "navigate_view") setView(action.view);
+    if (action.type === "select_position") {
+      setSelectedPosition(action.positionId);
+      if (action.view) setView(action.view);
+    }
+    if (action.type === "set_scenario") {
+      selectScenario(action.scenario);
+    }
+    if (action.type === "set_shock") {
+      draft.current.inputs = { ...draft.current.inputs, shockPct: action.shockPct };
+      setShockPct(action.shockPct);
+      setView("scenario");
+    }
+    if (action.type === "set_horizon") {
+      draft.current.inputs = { ...draft.current.inputs, horizonDays: action.days };
+      setHorizonDays(action.days);
+      setView("scenario");
+    }
+    if (action.type === "set_liquidity_loss") {
+      draft.current.inputs = { ...draft.current.inputs, liquidityLossPct: action.percent };
+      setLiquidityLossPct(action.percent);
+      setView("scenario");
+    }
+    if (action.type === "run_simulation") {
+      if (action.scenario && action.scenario !== draft.current.scenario) selectScenario(action.scenario);
+      runScenario();
+    }
+    if (action.type === "open_graph_for_position") {
+      setSelectedPosition(action.positionId);
+      setView("graph");
+    }
+    if (action.type === "set_exit_fraction") {
+      setInspectedExitFraction(action.fraction);
+      setView("decision");
+    }
+    if (action.type === "toggle_data_mode") changeMode(mode === "fixture" ? "api" : "fixture");
+    if (action.type === "toggle_theme") setTheme((current) => (current === "light" ? "dark" : "light"));
+  }
+
+  function changeMode(next: DataMode) {
+    setHasRun(false);
+    setMode(next);
+  }
+
+  function changeFixtureSet(set: string) {
+    setRiskBatches([]);
+    setFixtureSet(set);
+    setHasRun(false);
+    setSelectedEdge(null);
+    setInspectedExitFraction(null);
+    const kinds = availableScenarios(set);
+    const next = kinds.includes(scenario) ? scenario : kinds[0];
+    if (next) {
+      selectScenario(next, set);
+      const inputs = { ...scenarioInputs, ...presetInputs(next, set) };
+      setSubmitted((current) => ({ scenario: next, inputs, run: current.run }));
+    }
+  }
+
+  function reset() {
+    selectScenario("usde_depeg");
+    setSubmitted((current) => ({ scenario: "usde_depeg", inputs: {
+      shockPct: 5, horizonDays: 7, liquidityLossPct: 80, ...defaultExtraInputs,
+      ...presetInputs("usde_depeg", fixtureSet),
+    }, run: current.run }));
+    setSelectedPosition("aave_01");
+    setSelectedEdge(null);
+    const preset = presetInputs("usde_depeg", fixtureSet);
+    setShockPct(preset.shockPct ?? 5);
+    setHorizonDays(preset.horizonDays ?? 7);
+    setLiquidityLossPct(80);
+    setExtraInputs(defaultExtraInputs);
+    setInspectedExitFraction(null);
+    setHasRun(false);
+    setView("portfolio");
+  }
+
+  return (
+    <main className="app-shell">
+      <Sidebar
+        view={view}
+        setView={setView}
+        mode={mode}
+        setMode={changeMode}
+        fixtureSet={fixtureSet}
+        setFixtureSet={changeFixtureSet}
+        theme={theme}
+        setTheme={setTheme}
+        health={data?.health}
+      />
+
+      <section className="content-pane">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">DeFi Contagion Explorer</p>
+            <h1>{viewMeta[view].label}</h1>
+            <p className="lead">{isBaselineView ? (view === "portfolio" ? "Original holdings, debt and equity at the recorded market snapshot." : "Original dependencies between positions, assets, protocols, oracles and exit venues.") : scenarioCopy[scenario].summary}</p>
+            <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.{fixtureSet === "stress_portfolio_01" ? " Synthetic allocations on real markets · recorded market observations." : ""}</p>
+            {!isBaselineView && data && hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {submitted.customTitle ?? scenarioCopy[submitted.scenario].title}.</p> : null}
+          </div>
+          <div className="topbar-actions">
+            <button className="icon-button text-button" onClick={() => setCommandOpen(true)}>
+              <Command size={15} />
+              Cmd K
+            </button>
+            <button className="icon-button text-button" onClick={reset}>
+              <RefreshCw size={15} />
+              Reset
+            </button>
+            <button className="run-button" onClick={isBaselineView ? () => setView("scenario") : runScenario} disabled={!isBaselineView && appQuery.isFetching}>
+              <Play size={15} />
+              {isBaselineView ? "Stress test" : appQuery.isFetching ? "Running…" : "Run scenario"}
+            </button>
+          </div>
+        </header>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${view}-${mode}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {visibleQuery.isLoading && view !== "scenario" ? <SkeletonView /> : null}
+            {visibleQuery.isError ? <ErrorView mode={mode} /> : null}
+            {baseline && view === "portfolio" ? <PortfolioDashboard data={baseline}
+              selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition} setView={setView}
+              hoveredPosition={baselineHover} setHoveredPosition={setBaselineHover} /> : null}
+            {baseline && view === "graph" ? <ReactFlowProvider><DependencyGraphView graph={baseline.graph}
+              selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition}
+              selectedEdge={baselineEdge} setSelectedEdge={setBaselineEdge}
+              hoveredPosition={baselineHover} setHoveredPosition={setBaselineHover} /></ReactFlowProvider> : null}
+                {baseline && view === "scenario" ? (
+                  <div className="page-stack">
+                  <ScenarioLab
+                    data={data}
+                    baseline={baseline}
+                    fixtureSet={fixtureSet}
+                    batches={riskBatches.filter(batch => batch.context.portfolioId === baseline.portfolio.portfolio_id)}
+                    onRunGenerated={runRiskProposal}
+                    canRunGenerated={mode === "api" && !appQuery.isFetching}
+                    onOpenChat={() => setAssistantOpen(true)}
+                    customTitle={submitted.customTitle}
+                    selectedGeneratedId={generatedDraft.current?.request_id}
+                    isRunning={appQuery.isFetching}
+                    onAnalyze={() => setView("engine")}
+                    scenario={scenario}
+                    setScenario={selectScenario}
+                    selectedPosition={selectedPosition}
+                    setSelectedPosition={setSelectedPosition}
+                    hoveredPosition={hoveredPosition}
+                    setHoveredPosition={setHoveredPosition}
+                    shockPct={shockPct}
+                    setShockPct={setShockPct}
+                    horizonDays={horizonDays}
+                    setHorizonDays={setHorizonDays}
+                    liquidityLossPct={liquidityLossPct}
+                    setLiquidityLossPct={setLiquidityLossPct}
+                    extraInputs={extraInputs}
+                    setExtraInput={setExtraInput}
+                    runScenario={runScenario}
+                  />
+                  {data ? <ReactFlowProvider>
+                    <DependencyGraphView graph={data.graph} risk={data.risk} scenario={data.risk.scenario_id as ScenarioKind}
+                      selectedPosition={selectedPosition} setSelectedPosition={setSelectedPosition}
+                      selectedEdge={selectedEdge} setSelectedEdge={setSelectedEdge}
+                      hoveredPosition={hoveredPosition} setHoveredPosition={setHoveredPosition} />
+                  </ReactFlowProvider> : null}
+                  {data ? <StressComparison mode={mode} data={data} inputs={submitted.inputs} /> : null}
+                  </div>
+                ) : null}
+            {view === "engine" && submitted.customTitle && hasRun ? <section id="generated-stress-results" className="visual-panel">
+              <p className="eyebrow">Submitted generated stress case</p><h2>{submitted.customTitle}</h2>
+              <p className="microcopy">{appQuery.isFetching ? "Computing this case…" : appQuery.isError ? "This run failed; no result is available for this case." : "The results below come from the risk engine using the exact submitted parameters."}</p>
+            </section> : null}
+            {view === "engine" && !hasRun ? <section className="visual-panel">
+              <p className="eyebrow">Prepare → Run → Understand the impact</p>
+              <h2>No stress test has been run</h2>
+              <p className="microcopy">Review your portfolio and dependencies, choose a scenario, then run it. Its losses, contagion and calculation trace will appear here.</p>
+              <button className="run-card" onClick={() => setView("scenario")}>Prepare a scenario <ArrowRight size={16} /></button>
+            </section> : null}
+            {data && !isBaselineView ? (
+              <>
+                {view === "engine" ? <RiskEngine data={data} onExecute={() => setView("decision")} /> : null}
+                {view === "decision" ? (
+                  <DecisionEngine
+                    data={data}
+                    scenario={submitted.scenario}
+                    scenarioInputs={submitted.inputs}
+                    hasRun={hasRun}
+                    selectedRisk={selectedRisk}
+                    selectedPortfolio={selectedPortfolio}
+                    selectedPosition={selectedPosition}
+                    setSelectedPosition={setSelectedPosition}
+                    hoveredPosition={hoveredPosition}
+                    setHoveredPosition={setHoveredPosition}
+                    inspectedExitFraction={inspectedExitFraction}
+                    setInspectedExitFraction={setInspectedExitFraction}
+                    setView={setView}
+                  />
+                ) : null}
+              </>
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
+      </section>
+
+      <CommandPalette
+        open={commandOpen}
+        query={query}
+        setQuery={setQuery}
+        setOpen={setCommandOpen}
+        data={data}
+        executeAction={executeAction}
+      />
+      {baseline ? (
+        <AssistantDock
+          key={fixtureSet}
+          fixtureSet={fixtureSet}
+          graph={baseline.graph}
+          open={assistantOpen}
+          setOpen={setAssistantOpen}
+          stateData={data}
+          onRiskBatch={batch => setRiskBatches(current => [batch, ...current].slice(0, 5))}
+          onApiMode={() => changeMode("api")}
+          mode={mode}
+          view={view}
+          scenario={scenario}
+          selectedPosition={selectedPosition}
+          inspectedExitFraction={inspectedExitFraction}
+          scenarioInputs={scenarioInputs}
+          executeAction={executeAction}
+        />
+      ) : null}
+    </main>
+  );
+}
+
+function Sidebar({
+  view,
+  setView,
+  mode,
+  setMode,
+  fixtureSet,
+  setFixtureSet,
+  theme,
+  setTheme,
+  health,
+}: {
+  view: View;
+  setView: (view: View) => void;
+  mode: DataMode;
+  setMode: (mode: DataMode) => void;
+  fixtureSet: string;
+  setFixtureSet: (set: string) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  health?: AppData["health"];
+}) {
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Explore: true, Run: true });
+
+  return (
+    <aside className="sidebar">
+      <div className="brand-mark" aria-hidden="true">
+        <span />
+        <span />
+      </div>
+
+      <nav className="sidebar-nav" aria-label="Dashboard navigation">
+        {sections.map((section) => (
+          <div className="nav-section" key={section.label}>
+            <button
+              className="section-trigger"
+              aria-expanded={openSections[section.label]}
+              onClick={() => setOpenSections((current) => ({ ...current, [section.label]: !current[section.label] }))}
+            >
+              {section.label}
+              <ChevronDown size={14} />
+            </button>
+            <AnimatePresence initial={false}>
+              {openSections[section.label] ? (
+                <motion.div
+                  className="section-menu"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {section.items.map((item) => {
+                    const Icon = viewMeta[item].icon;
+                    return (
+                      <button key={item} className="nav-item" data-selected={view === item} onClick={() => setView(item)}>
+                        <Icon size={15} />
+                        {viewMeta[item].label}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        ))}
+      </nav>
+
+      <div className="sidebar-controls">
+        <button className="mode-toggle" onClick={() => setMode(mode === "fixture" ? "api" : "fixture")} aria-pressed={mode === "fixture"}>
+          <Database size={14} />
+          {mode === "fixture" ? "Recorded results" : "Engine API"}
+        </button>
+        <select
+          className="mode-toggle set-select"
+          value={fixtureSet}
+          onChange={(event) => setFixtureSet(event.target.value)}
+          aria-label="Data set"
+          title={fixtureSets.find((set) => set.id === fixtureSet)?.description}
+        >
+          {fixtureSets.filter((set) => set.id === fixtureSet).map((set) => (
+            <option key={set.id} value={set.id}>
+              {fixtureSetLabel(set.id)}
+            </option>
+          ))}
+        </select>
+        <button className="mode-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+          {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
+          {theme}
+        </button>
+        {health?.mockedFixtures.length ? <span className="status-line">{health.mockedFixtures.length} mock</span> : null}
+      </div>
+    </aside>
+  );
+}
+
+/** "12 dependencies · 83% verified": what the position rests on, from the discovered graph. */
+function dependencySummary(graph: DependencyGraph, positionId: string) {
+  const start = `position:${positionId}`;
+  const seen = new Set([start]);
+  const queue = [start];
+  const edges: GraphEdge[] = [];
+  while (queue.length) {
+    const node = queue.shift()!;
+    for (const edge of graph.edges.filter((item) => item.source === node)) {
+      edges.push(edge);
+      if (!seen.has(edge.target)) {
+        seen.add(edge.target);
+        queue.push(edge.target);
+      }
+    }
+  }
+  if (!edges.length) return "No dependency recorded";
+  const verified = edges.filter((edge) => edge.confidence === "verified").length;
+  return `${seen.size - 1} dependencies · ${percent(verified / edges.length, 0)} verified`;
+}
+
+function PortfolioDashboard({
+  data,
+  selectedPosition,
+  setSelectedPosition,
+  setView,
+  hoveredPosition,
+  setHoveredPosition,
+}: {
+  data: PortfolioData;
+  selectedPosition: string;
+  setSelectedPosition: (id: string) => void;
+  setView: (view: View) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
+}) {
+  const [filter, setFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("net_equity_usd");
+  const filtered = useMemo(() => {
+    return [...data.portfolio.positions]
+      .filter((position) => filter === "all" || position.protocol === filter)
+      .sort((a, b) => {
+        if (sortKey === "protocol") return a.protocol.localeCompare(b.protocol);
+        return Number(b[sortKey]) - Number(a[sortKey]);
+      });
+  }, [data.portfolio.positions, filter, sortKey]);
+
+  return (
+    <div className="page-stack">
+      <section className="summary-strip">
+        <Stat label="Gross exposure" value={money(data.portfolio.totals.gross_value_usd)} detail="Original portfolio" />
+        <Stat label="Debt" value={money(data.portfolio.totals.debt_value_usd)} detail="Borrow liabilities" />
+        <Stat label="Net equity" value={money(data.portfolio.totals.net_equity_usd)} detail="Before stress" />
+        <Stat label="Positions" value={String(data.portfolio.positions.length)} detail="Same holdings across stress tests" />
+      </section>
+      <section className="position-grid">
+        {data.portfolio.positions.map((position) => {
+          const source = position.data_origin;
+          return (
+            <button
+              key={position.position_id}
+              className="position-card"
+              data-selected={selectedPosition === position.position_id}
+              data-highlighted={hoveredPosition === position.position_id}
+              onMouseEnter={() => setHoveredPosition(position.position_id)}
+              onMouseLeave={() => setHoveredPosition(null)}
+              onClick={() => {
+                setSelectedPosition(position.position_id);
+                setView("graph");
+              }}
+            >
+              <div className="card-topline">
+                <span className="node-chip" data-type="position" />
+                <strong>{position.protocol}</strong>
+                <Badge tone={sourceTone(source)}>{source}</Badge>
+              </div>
+              <h2>{compactId(position.position_id)}</h2>
+              <p>{labelize(position.position_type)}</p>
+              <MetricPair label="Gross" value={money(position.gross_value_usd)} />
+              <MetricPair label="Debt" value={money(position.debt_value_usd)} />
+              <MetricPair label="Net equity" value={money(position.net_equity_usd)} />
+              <div className="loss-strip">
+                <span>{dependencySummary(data.graph, position.position_id)}</span>
+                <strong>Inspect dependencies →</strong>
+              </div>
+            </button>
+          );
+        })}
+      </section>
+
+      <section className="table-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Sortable portfolio table</p>
+            <h2>Gross exposure and net equity stay separate</h2>
+          </div>
+          <div className="toolbar-row">
+            <select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter protocol">
+              <option value="all">All protocols</option>
+              <option value="ethena">Ethena</option>
+              <option value="aave">Aave</option>
+              <option value="morpho">Morpho</option>
+              <option value="pendle">Pendle</option>
+            </select>
+            <button className="icon-button text-button" onClick={() => setSortKey(sortKey === "net_equity_usd" ? "gross_value_usd" : "net_equity_usd")}>
+              <ArrowUpDown size={14} />
+              Sort
+            </button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th><Term>Position</Term></th>
+              <th><Term>Protocol</Term></th>
+              <th><Term>Gross</Term></th>
+              <th><Term>Debt</Term></th>
+              <th><Term>Net equity</Term></th>
+              <th><Term>Exit venue</Term></th>
+              <th><Term>Data</Term></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((position) => (
+              <tr
+                key={position.position_id}
+                data-selected={position.position_id === selectedPosition}
+                data-highlighted={hoveredPosition === position.position_id}
+                onMouseEnter={() => setHoveredPosition(position.position_id)}
+                onMouseLeave={() => setHoveredPosition(null)}
+                onClick={() => setSelectedPosition(position.position_id)}
+              >
+                <td>{compactId(position.position_id)}</td>
+                <td>{position.protocol}</td>
+                <td>{money(position.gross_value_usd)}</td>
+                <td>{money(position.debt_value_usd)}</td>
+                <td>{money(position.net_equity_usd)}</td>
+                <td>{position.exit_venue_id}</td>
+                <td>
+                  <Badge tone="warn">{position.data_origin}</Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <WarningList warnings={data.marketSnapshot.warnings} />
+      </section>
+    </div>
+  );
+}
+
+function factorLabel(factor: string) {
+  return ({ usde_price: "USDe price decline", usde_backing: "Ethena backing impairment",
+    susde_exchange_rate: "sUSDe exchange-rate decline", pt_implied_yield: "PT yield repricing",
+    exit_liquidity: "Exit liquidity shortage", susde_yield: "sUSDe yield change",
+    borrow_rate: "Borrowing-rate change", node_shock: "Dependency failure" } as Record<string, string>)[factor] ?? labelize(factor);
+}
+
+function edgeLabel(relation: string) {
+  return ({ collateral_asset: "Collateral exposure", debt_asset: "Debt exposure", redeemable_for: "Redeemable into",
+    priced_by: "Oracle valuation", prices_with: "Oracle valuation", prices_collateral_with: "Values collateral through oracle",
+    prices_debt_with: "Values debt through oracle", holds: "Holding exposure", position_in: "Position in market", reads_price_of: "Reads asset price",
+    exits_via: "Shared exit route", backed_by: "Backing exposure", issued_by: "Issuer exposure",
+    deposited_in: "Lending-market exposure", supplied_to: "Lending-market exposure",
+    uses_feed: "Price-feed dependency", part_of_protocol: "Protocol dependency",
+    deployed_on: "Chain dependency" } as Record<string, string>)[relation] ?? labelize(relation);
+}
+
+function DependencyGraphView({
+  graph,
+  risk,
+  scenario = "usde_depeg",
+  selectedPosition,
+  setSelectedPosition,
+  selectedEdge,
+  setSelectedEdge,
+  hoveredPosition,
+  setHoveredPosition,
+}: {
+  graph: DependencyGraph;
+  risk?: AppData["risk"];
+  scenario?: ScenarioKind;
+  selectedPosition: string;
+  setSelectedPosition: (id: string) => void;
+  selectedEdge: GraphEdge | null;
+  setSelectedEdge: (edge: GraphEdge | null) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
+}) {
+  const isStress = Boolean(risk);
+  const positions = risk?.positions ?? [];
+  const [search, setSearch] = useState("");
+  const [enabledTypes, setEnabledTypes] = useState<Record<string, boolean>>({
+    asset: true,
+    protocol: true,
+    market: true,
+    oracle: true,
+    position: true,
+    venue: true,
+  });
+  const flow = useReactFlow();
+  const [pathScope, setPathScope] = useState<"all" | "selected">("all");
+  // Paths come from the engine; position amounts are never allocated to individual edges.
+  const selectedContagion = positions.find((position) => position.position_id === selectedPosition)?.contagion;
+  const [factorFilter, setFactorFilter] = useState("all");
+  const factors = [...new Set(positions.flatMap(position => position.contagion?.paths.map(path => path.factor) ?? []))];
+  const activeFactor = factors.includes(factorFilter) ? factorFilter : "all";
+  const displayedPaths = useMemo(() => (pathScope === "all" ? positions :
+    positions.filter((position) => position.position_id === selectedPosition))
+    .flatMap((position) => position.contagion?.paths ?? []).filter(path => activeFactor === "all" || path.factor === activeFactor), [pathScope, positions, selectedPosition, activeFactor]);
+  const criticalEdges = useMemo(() => new Set(displayedPaths.flatMap((path) => path.edges)), [displayedPaths]);
+  const criticalNodes = useMemo(() => new Set(displayedPaths.flatMap((path) => path.nodes)), [displayedPaths]);
+  const roots = useMemo(() => new Set(displayedPaths.map((path) => path.root)), [displayedPaths]);
+  const positionRisks = useMemo(() => new Map(positions.map((position) => [`position:${position.position_id}`, position])), [positions]);
+  const layout = useMemo(() => layoutGraph(graph.nodes), [graph.nodes]);
+  const nodeLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
+  const visibleNodeIds = useMemo(() => {
+    return new Set(
+      graph.nodes
+        .filter((node) => enabledTypes[node.type] !== false)
+        .filter((node) => `${node.id} ${node.label}`.toLowerCase().includes(search.toLowerCase()))
+        .map((node) => node.id),
+    );
+  }, [enabledTypes, graph.nodes, search]);
+
+  const flowNodes = useMemo<Node[]>(() => {
+    return graph.nodes
+      .filter((node) => visibleNodeIds.has(node.id))
+      .map((node) => ({
+        id: node.id,
+        position: layout[node.id] ?? { x: 160, y: 160 },
+        data: {
+          label: (
+            <div
+              className="flow-node"
+              data-type={node.type}
+              data-exposed={criticalNodes.has(node.id)}
+              data-shock-root={roots.has(node.id)}
+              data-selected={node.id === `position:${selectedPosition}`}
+              data-highlighted={node.id === `position:${hoveredPosition}`}
+              onClick={() => {
+                if (node.id.startsWith("position:")) setSelectedPosition(node.id.replace("position:", ""));
+              }}
+            >
+              <span>{node.type}</span>
+              <strong>{node.label}</strong>
+              {roots.has(node.id) ? <small>Scenario factor</small> : null}
+              {positionRisks.has(node.id) ? <small>
+                {Number(positionRisks.get(node.id)!.conditional_loss_usd) > 0 ? "Loss" :
+                  Number(positionRisks.get(node.id)!.conditional_loss_usd) < 0 ? "Gain" : "No modeled loss"}
+                {Number(positionRisks.get(node.id)!.conditional_loss_usd) !== 0 ? ` ${money(Math.abs(Number(positionRisks.get(node.id)!.conditional_loss_usd)))}` : ""}
+                {positionRisks.get(node.id)!.risk_metric?.liquidatable ? " · liquidatable" : ""}
+              </small> : null}
+            </div>
+          ),
+        },
+        draggable: true,
+      }));
+  }, [graph.nodes, layout, selectedPosition, hoveredPosition, setSelectedPosition, visibleNodeIds, criticalNodes, roots, positionRisks]);
+
+  const flowEdges = useMemo<Edge[]>(() => {
+    return graph.edges
+      .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target))
+      .map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        label: edgeLabel(edge.relation),
+        animated: criticalEdges.has(edge.id),
+        className: `edge-${edge.confidence} ${criticalEdges.has(edge.id) ? "edge-critical" : ""}`,
+        data: edge,
+        style: { opacity: criticalEdges.size && !criticalEdges.has(edge.id) ? 0.2 : 1 },
+      }));
+  }, [criticalEdges, graph.edges, visibleNodeIds]);
+
+  const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
+  const flowKey = `${activeFactor}-${risk?.simulation_id ?? graph.graph_id}-${risk?.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
+
+  return (
+    <div className="page-stack">
+      {isStress ? <section className="visual-panel contagion-summary">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Scenario → dependencies → portfolio impact</p>
+            <h2>{scenarioCopy[scenario].title}</h2>
+            <p className="microcopy">Highlighted paths show how scenario factors reach positions. Graph edges point toward dependencies; read the propagation from the factor back to the position.</p>
+          </div>
+          <div className="toolbar-row">
+            <select aria-label="Propagation factor" value={activeFactor} onChange={event => setFactorFilter(event.target.value)}>
+              <option value="all">All propagation channels</option>
+              {factors.map(factor => <option key={factor} value={factor}>{factorLabel(factor)}</option>)}
+            </select>
+            <button className="filter-chip" data-active={pathScope === "all"} onClick={() => setPathScope("all")}>Whole portfolio</button>
+            <button className="filter-chip" data-active={pathScope === "selected"} onClick={() => setPathScope("selected")}>Selected position</button>
+          </div>
+        </div>
+        <div className="filter-chips">
+          {[...roots].map((root) => <Badge key={root} tone="risk">{nodeLabel(root)}</Badge>)}
+        </div>
+        <div className="contagion-positions">
+          {positions.map((position) => (
+            <button key={position.position_id} className="position-card" data-selected={position.position_id === selectedPosition}
+              onClick={() => { setSelectedPosition(position.position_id); setSelectedEdge(null); }}>
+              <strong>{compactId(position.position_id)}</strong>
+              <MetricPair label="Scenario loss / gain" value={money(position.conditional_loss_usd)} />
+              <MetricPair label="Equity after" value={money(position.net_equity_after_usd)} />
+              <Badge tone={position.risk_metric?.liquidatable ? "risk" : "info"}>
+                {position.risk_metric ? (position.risk_metric.liquidatable ? "Liquidatable" : "Below liquidation threshold") :
+                  Number(position.conditional_loss_usd) === 0 ? "No modeled loss at this shock" : "Scenario impact"}
+              </Badge>
+            </button>
+          ))}
+        </div>
+        <Definition label="Portfolio conditional loss" value={money(risk?.portfolio.total_conditional_loss_usd)} />
+        {Number(risk?.portfolio.shared_liquidity_penalty_usd) > 0 ? <Definition label="Additional cost of shared exit venues" value={money(risk?.portfolio.shared_liquidity_penalty_usd)} /> : null}
+        {scenario === "combined_crisis" && risk?.comparison ? <>
+          <Definition label="Extra exit cost from liquidation selling" value={money(risk?.comparison.excess_loss_usd)} />
+          <p className="microcopy">Depeg → liquidations → selling into shared venues → more expensive fund exits. One round is modeled.</p>
+        </> : null}
+      </section> : <section className="visual-panel">
+        <p className="eyebrow">Original dependency graph</p>
+        <h2>Portfolio dependencies before stress</h2>
+        <p className="microcopy">Relations and their evidence at the recorded snapshot. Run a scenario in Scenario Lab to see shock propagation and losses.</p>
+      </section>}
+      <div className="graph-layout">
+      <section className="graph-stage">
+        <ReactFlow
+          key={flowKey}
+          defaultNodes={flowNodes}
+          defaultEdges={flowEdges}
+          onEdgeClick={(_, edge) => setSelectedEdge(edge.data as GraphEdge)}
+          onNodeClick={(_, node) => {
+            if (node.id.startsWith("position:")) setSelectedPosition(node.id.replace("position:", ""));
+          }}
+          onNodeMouseEnter={(_, node) => {
+            if (node.id.startsWith("position:")) setHoveredPosition(node.id.replace("position:", ""));
+          }}
+          onNodeMouseLeave={() => setHoveredPosition(null)}
+          fitView
+          minZoom={0.35}
+          maxZoom={1.35}
+        >
+          <Background gap={28} size={1} color="var(--np-line-strong)" />
+          <MiniMap pannable zoomable nodeColor={(node) => nodeTypeColor[(graph.nodes.find((item) => item.id === node.id) as GraphNode)?.type] ?? "var(--np-soft)"} />
+          <Controls />
+          <Panel position="top-left" className="flow-panel">
+            <label className="search-field">
+              <Search size={14} />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search node" />
+            </label>
+            <button className="icon-button text-button" onClick={() => flow.fitView({ duration: 420 })}>
+              Fit view
+            </button>
+          </Panel>
+        </ReactFlow>
+      </section>
+
+      <aside className="inspector-panel">
+        <p className="eyebrow">Node filters</p>
+        <div className="filter-chips">
+          {types.map((type) => (
+            <button
+              key={type}
+              className="filter-chip"
+              data-active={enabledTypes[type] !== false}
+              onClick={() => setEnabledTypes((current) => ({ ...current, [type]: current[type] === false }))}
+            >
+              <span className="node-chip" data-type={type} />
+              <Term>{labelize(type)}</Term>
+            </button>
+          ))}
+        </div>
+
+        <div className="divider" />
+        <p className="eyebrow">Edge evidence</p>
+        {selectedEdge ? (
+          <div className="evidence-card">
+            <h2>{edgeLabel(selectedEdge.relation)}</h2>
+            <Definition label="Risk channel" value={labelize(selectedEdge.risk_channel)} />
+            <Definition label="Confidence" value={<Badge tone={confidenceTone[selectedEdge.confidence]}>{selectedEdge.confidence}</Badge>} />
+            <Definition label="Method" value={labelize(selectedEdge.evidence.method)} />
+            <Definition label="Reference" value={selectedEdge.evidence.reference} />
+            <Definition label="Observed" value={selectedEdge.evidence.observed_at} />
+          </div>
+        ) : (
+          <p className="muted">Click an edge to inspect relation, source and confidence.</p>
+        )}
+
+        {isStress ? <>
+        <div className="divider" />
+        <p className="eyebrow">Shock propagation · {compactId(selectedPosition)}</p>
+        <p className="microcopy">Paths explain exposure. The position loss is counted once even when several paths reach it.</p>
+        {selectedContagion?.paths.length ? (
+          <div className="evidence-card">
+            {selectedContagion.paths.filter(path => activeFactor === "all" || path.factor === activeFactor).map((path) => (
+              <Definition
+                key={`${path.factor}-${path.edges.join("-")}`}
+                label={factorLabel(path.factor)}
+                value={
+                  <>
+                    {[...path.nodes].reverse().map(nodeLabel).join(" → ")} <Badge tone={confidenceTone[path.confidence]}>{path.confidence}</Badge>
+                  </>
+                }
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="muted">No contagion path for this position in the current result.</p>
+        )}
+        <WarningList warnings={positions.find((position) => position.position_id === selectedPosition)?.warnings ?? []} />
+        <WarningList warnings={[...(selectedContagion?.graph_gaps ?? []), ...(selectedContagion?.unmodeled_exposures ?? [])]} />
+
+        </> : null}
+        {risk?.contagion?.hubs.length ? (
+          <>
+            <div className="divider" />
+            <p className="eyebrow">Contagion hubs</p>
+            <div className="evidence-card">
+              {risk?.contagion.hubs.slice(0, 5).map((hub) => (
+                <Definition
+                  key={hub.node}
+                  label={hub.label}
+                  value={`${hub.positions.length} positions · ${money(hub.net_equity_usd)} net equity`}
+                />
+              ))}
+            </div>
+          </>
+        ) : null}
+        <WarningList warnings={graph.warnings ?? []} />
+      </aside>
+      </div>
+    </div>
+  );
+}
+
+function ScenarioLab({
+  batches, onRunGenerated, canRunGenerated, onOpenChat, customTitle, selectedGeneratedId,
+  data,
+  baseline,
+  fixtureSet,
+  isRunning,
+  onAnalyze,
+  scenario,
+  setScenario,
+  selectedPosition,
+  setSelectedPosition,
+  hoveredPosition,
+  setHoveredPosition,
+  shockPct,
+  setShockPct,
+  horizonDays,
+  setHorizonDays,
+  liquidityLossPct,
+  setLiquidityLossPct,
+  extraInputs,
+  setExtraInput,
+  runScenario,
+}: {
+  batches: RiskAgentBatch[];
+  onRunGenerated: (proposal: RiskScenarioProposal) => void;
+  canRunGenerated: boolean;
+  onOpenChat: () => void;
+  customTitle?: string;
+  selectedGeneratedId?: string;
+  data?: AppData;
+  baseline: PortfolioData;
+  fixtureSet: string;
+  isRunning: boolean;
+  onAnalyze: () => void;
+  scenario: ScenarioKind;
+  setScenario: (scenario: ScenarioKind) => void;
+  selectedPosition: string;
+  setSelectedPosition: (id: string) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
+  shockPct: number;
+  setShockPct: (value: number) => void;
+  horizonDays: number;
+  setHorizonDays: (value: number) => void;
+  liquidityLossPct: number;
+  setLiquidityLossPct: (value: number) => void;
+  extraInputs: ExtraInputs;
+  setExtraInput: <K extends keyof ExtraInputs>(key: K, value: ExtraInputs[K]) => void;
+  runScenario: () => void;
+}) {
+  const selectedRisk = data?.risk.positions.find((position) => position.position_id === selectedPosition) ?? data?.risk.positions[0];
+  // Real engine results for the current sliders (API: live; offline: precomputed surface).
+  const valuationData = (data?.risk.positions ?? []).map((position) => ({
+    id: position.position_id,
+    name: compactId(position.position_id),
+    before: Number(position.net_equity_before_usd),
+    after: Number(position.net_equity_after_usd),
+  }));
+  const controls = scenarioControls[scenario];
+  // node_shock prices these node kinds; oracles and venues belong to other scenarios.
+  const shockableNodes = baseline.graph.nodes.filter((node) => ["asset", "protocol", "market", "offchain_entity"].includes(node.type));
+  const nodeLabel = (id: string) => baseline.graph.nodes.find((node) => node.id === id)?.label ?? id;
+  const sourceCopy = {
+    engine: "Live risk engine result for the last submitted run.",
+    surface: "Risk engine results precomputed for the main slider (offline mode).",
+    fixture: "Static fixture result: inputs are not applied.",
+  }[data?.riskSource ?? "engine"];
+  const ignoredCopy = data?.ignoredInputs.length
+    ? ` Offline, ${data.ignoredInputs.map(labelize).join(", ")} stay at the preset; switch to Live API to apply them.`
+    : "";
+
+  return (
+    <div className="scenario-layout">
+      <section className="preset-grid">
+        {scenarioOrder.filter((kind) => availableScenarios(fixtureSet).includes(kind)).map((kind) => (
+          <button key={kind} className="preset-card" data-selected={!selectedGeneratedId && scenario === kind} onClick={() => setScenario(kind)}>
+            <span>{presetLabel(kind, fixtureSet)}</span>
+            <strong>{scenarioCopy[kind].title}</strong>
+            <p>{scenarioCopy[kind].summary}</p>
+          </button>
+        ))}
+        {batches.flatMap(batch => batch.proposals.map(proposal => <GeneratedScenarioCard key={proposal.id} batch={batch} proposal={proposal} selected={selectedGeneratedId === proposal.request.request_id} onRun={onRunGenerated} canRun={canRunGenerated} />))}
+        <button className="preset-card" onClick={onOpenChat}><span>Global chatbot · Gemini</span><strong>Create a new scenario</strong><p>Describe a market event in the chatbot. Its scenarios will appear here with the other stress cases.</p></button>
+      </section>
+
+      <section className="control-panel">
+        {controls.includes("shock") ? (
+          <Control label="USDe shock magnitude" value={signedPercent(-shockPct)}>
+            <input type="range" min="1" max="40" value={shockPct} onChange={(event) => setShockPct(Number(event.target.value))} />
+          </Control>
+        ) : null}
+        {controls.includes("liquidity") ? (
+          <Control label="Liquidity depth reduction" value={`${liquidityLossPct}%`}>
+            <input type="range" min="0" max="95" value={liquidityLossPct} onChange={(event) => setLiquidityLossPct(Number(event.target.value))} />
+          </Control>
+        ) : null}
+        {controls.includes("ltShift") ? (
+          <Control label="Liquidation threshold shift" value={`${extraInputs.ltShiftPct > 0 ? "+" : ""}${extraInputs.ltShiftPct} pts`}>
+            <input
+              type="range"
+              min="-15"
+              max="5"
+              value={extraInputs.ltShiftPct}
+              onChange={(event) => setExtraInput("ltShiftPct", Number(event.target.value))}
+            />
+          </Control>
+        ) : null}
+        {controls.includes("carry") ? (
+          <>
+            <Control label="Borrow APY on all debt" value={`${extraInputs.borrowApyPct}%`}>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={extraInputs.borrowApyPct}
+                onChange={(event) => setExtraInput("borrowApyPct", Number(event.target.value))}
+              />
+            </Control>
+            <Control label="sUSDe staking APY" value={`${extraInputs.susdeApyPct}%`}>
+              <input
+                type="range"
+                min="-10"
+                max="15"
+                value={extraInputs.susdeApyPct}
+                onChange={(event) => setExtraInput("susdeApyPct", Number(event.target.value))}
+              />
+            </Control>
+          </>
+        ) : null}
+        {controls.includes("node") ? (
+          <>
+            <Control label="Failing node" value={nodeLabel(extraInputs.nodeId)}>
+              <select value={extraInputs.nodeId} onChange={(event) => setExtraInput("nodeId", event.target.value)} aria-label="Failing node">
+                {shockableNodes.map((node) => (
+                  <option key={node.id} value={node.id}>
+                    {node.label}
+                  </option>
+                ))}
+              </select>
+            </Control>
+            <Control label="Value lost at the node" value={`${extraInputs.nodeLossPct}%`}>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="5"
+                value={extraInputs.nodeLossPct}
+                onChange={(event) => setExtraInput("nodeLossPct", Number(event.target.value))}
+              />
+            </Control>
+          </>
+        ) : null}
+        <Control label="Decision horizon" value={`${horizonDays} days`}>
+          <input type="range" min="1" max="30" value={horizonDays} onChange={(event) => setHorizonDays(Number(event.target.value))} />
+        </Control>
+        <button className="run-card" onClick={runScenario} disabled={isRunning}>
+          <Play size={16} />
+          {isRunning ? "Running risk engine…" : "Run risk engine"}
+        </button>
+      </section>
+
+      {!data && !isRunning ? <section className="visual-panel" aria-label="Scenario not run">
+        <p className="eyebrow">Ready to simulate</p>
+        <h2>Choose your stress, then run the engine</h2>
+        <p className="microcopy">The same {baseline.portfolio.positions.length} positions will be tested. No losses, liquidations or propagation have been calculated yet.</p>
+      </section> : null}
+      {isRunning ? <section className="visual-panel" role="status"><h2>Computing this stress test…</h2><p className="microcopy">Results will appear when this run finishes.</p></section> : null}
+      {data && selectedRisk ? <>
+      <section className="impact-strip scenario-results" aria-label="Latest run results">
+        <Stat label="Portfolio equity before" value={money(data.risk.positions.reduce((sum, position) => sum + Number(position.net_equity_before_usd), 0))} detail="Same selected portfolio" />
+        <Stat label="Portfolio equity after" value={money(data.risk.portfolio.net_equity_after_usd as string | null)} detail="Last submitted run" />
+        <Stat label="Conditional loss / gain" value={money(data.risk.portfolio.total_conditional_loss_usd)} detail={data.risk.portfolio.aggregation_status} />
+      </section>
+      <section className="visual-panel">
+        <p className="eyebrow">Next · Understand the result</p>
+        <p className="microcopy">Risk Engine explains the cause-and-effect chain, calculation inputs and uncertainty for this run.</p>
+        <button className="run-card" onClick={onAnalyze}>Open Risk Engine <ArrowRight size={16} /></button>
+      </section>
+      <section className="visual-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Animated before / after</p>
+            <h2>Net equity under stress</h2>
+            <p className="microcopy">All portfolio positions · USD. Select a position to inspect its liquidation metric and loss breakdown.</p>
+            <p className="microcopy">Last run: {customTitle ?? scenarioCopy[data.risk.scenario_id as ScenarioKind]?.title ?? data.risk.scenario_id}</p>
+            <p className="microcopy">
+              {sourceCopy}
+              {ignoredCopy}
+            </p>
+          </div>
+          <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} aria-label="Select position">
+            {data.portfolio.positions.map((position) => (
+              <option key={position.position_id} value={position.position_id}>
+                {compactId(position.position_id)} · {position.protocol}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="chart-frame">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart
+              data={valuationData}
+              margin={{ top: 8, right: 12, bottom: 8, left: 12 }}
+              onMouseMove={(state) => {
+                const active = (state as { activePayload?: Array<{ payload?: { id?: string } }> }).activePayload?.[0]?.payload;
+                if (active?.id) setHoveredPosition(active.id);
+              }}
+              onMouseLeave={() => setHoveredPosition(null)}
+              onClick={(state) => {
+                const active = (state as { activePayload?: Array<{ payload?: { id?: string } }> })?.activePayload?.[0]?.payload;
+                if (active?.id) setSelectedPosition(active.id);
+              }}
+            >
+              <CartesianGrid stroke="var(--np-line)" vertical={false} />
+              <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" height={70} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <YAxis width={90} tickFormatter={(value) => money(value).replace(".00", "")} tickLine={false} axisLine={false} />
+              <Tooltip content={<ChartTooltip />} />
+              <Legend />
+              <Bar name="Before stress" dataKey="before" fill="var(--np-soft)" radius={[4, 4, 0, 0]}>
+                {valuationData.map((entry) => (
+                  <Cell key={`before-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
+                ))}
+              </Bar>
+              <Bar name="After stress" dataKey="after" fill="var(--np-strong)" radius={[4, 4, 0, 0]}>
+                {valuationData.map((entry) => (
+                  <Cell key={`after-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="microcopy">Each pair of bars represents one position. Negative equity means the modeled loss exceeds that position's initial equity.</p>
+      </section>
+
+      <section className="gauge-panel">
+        <div>
+          <p className="eyebrow">Liquidation metric</p>
+          <h2>{selectedRisk.risk_metric ? labelize(selectedRisk.risk_metric.type) : "No lending metric"}</h2>
+          <p className="microcopy">Selected position: <strong>{compactId(selectedRisk.position_id)}</strong> · {data.portfolio.positions.find(position => position.position_id === selectedRisk.position_id)?.protocol}</p>
+          {selectedRisk.risk_metric ? <p>{selectedRisk.risk_metric.type === "health_factor"
+            ? "Health factor = oracle collateral value × liquidation threshold ÷ debt value. Below 1, this position is liquidatable."
+            : "LTV = debt value ÷ oracle collateral value. Above the market's LLTV, this position is liquidatable."}</p> : null}
+          <p>Liquidatable does not mean fully liquidated; it means the protocol threshold has been breached.</p>
+        </div>
+        {selectedRisk.risk_metric ? <RiskGauge metric={selectedRisk.risk_metric} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
+      </section>
+
+      <section className="visual-panel scenario-results">
+        <p className="eyebrow">What caused the impact · {compactId(selectedPosition)}</p>
+        <h2>Loss breakdown</h2>
+        {Object.entries(selectedRisk.loss_components).map(([key, value]) => <Definition key={key} label={labelize(key)} value={money(value)} />)}
+        <WarningList warnings={selectedRisk.warnings} />
+      </section>
+      <section className="visual-panel scenario-results">
+        <p className="eyebrow">Execution decision · {compactId(selectedPosition)}</p>
+        <h2>Cost of acting before this scenario</h2>
+        <p className="microcopy">Exit options use this run's risk loss, snapshot liquidity and horizon.</p>
+        <table><thead><tr><th><Term>Exit</Term></th><th><Term>Exit cost</Term></th><th><Term>Residual loss / gain</Term></th><th><Term>Break-even probability</Term></th></tr></thead>
+          <tbody>{data.decision.exit_options.map(option => <tr key={option.exit_fraction}>
+            <td>{percent(option.exit_fraction, 0)}</td><td>{money(option.estimated_exit_cost_usd)}</td>
+            <td>{money(option.residual_stress_loss_usd)}</td><td>{percent(option.break_even_probability)}</td>
+          </tr>)}</tbody>
+        </table>
+        <p>{data.decision.reason}</p>
+        <WarningList warnings={data.decision.warnings} />
+      </section>
+      {data.risk.cascade ? <CascadePanel cascade={data.risk.cascade} /> : null}
+      {data.risk.comparison ? (
+        <section className="gauge-panel">
+          <div>
+            <p className="eyebrow">What this scenario adds</p>
+            <h2>{data.risk.comparison.excess_loss_usd !== null ? money(data.risk.comparison.excess_loss_usd) : "n/a"}</h2>
+            <p>{data.risk.comparison.excess_meaning}</p>
+          </div>
+          <div className="evidence-card">
+            <Definition label="This scenario" value={money(data.risk.portfolio.total_conditional_loss_usd)} />
+            {data.risk.comparison.runs.map((run) => (
+              <Definition key={run.run_id} label={run.description} value={money(run.total_conditional_loss_usd)} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+      </> : null}
+    </div>
+  );
+}
+
+function CascadePanel({ cascade }: { cascade: NonNullable<AppData["risk"]["cascade"]> }) {
+  const moves = (record: Record<string, string>) =>
+    Object.entries(record)
+      .map(([asset, move]) => `${asset} ${percent(move)}`)
+      .join(" · ");
+  const rounds = cascade.rounds.filter((round) => Number(round.liquidated_debt_usd) > 0);
+  return (
+    <section className="gauge-panel">
+      <div>
+        <p className="eyebrow">Liquidation cascade</p>
+        <h2>{cascade.amplification ? `${Number(cascade.amplification).toFixed(1)}× amplification` : "No feedback"}</h2>
+        <p>
+          {moves(cascade.initial_moves)} initially, {moves(cascade.final_moves)} once forced selling has played out
+          {cascade.converged ? "" : " (not converged: capped number of rounds)"}.
+        </p>
+      </div>
+      <div className="evidence-card">
+        <Definition label="Debt liquidated" value={money(cascade.liquidated_debt_usd)} />
+        <Definition label="Bad debt (all lenders)" value={money(cascade.bad_debt_usd)} />
+        <Definition label="Stuck (unprofitable to liquidate)" value={money(cascade.stuck_debt_usd)} />
+        {rounds.map((round) => (
+          <Definition
+            key={round.round}
+            label={`Round ${round.round}`}
+            value={`${money(round.liquidated_debt_usd)} liquidated · ${money(round.collateral_sold_usd)} sold · ${moves(round.moves)}`}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StressComparison({ mode, data, inputs }: { mode: DataMode; data: AppData; inputs: ScenarioInputs }) {
+  const scenario = data.risk.scenario_id as ScenarioKind;
+  const comparison = useQuery({
+    queryKey: ["stress-comparison", mode, data.health.fixtureSet, scenario, inputs],
+    queryFn: () => compareRiskLevels(mode, scenario, inputs, data.health.fixtureSet),
+  });
+  const rows = comparison.data?.map(({ value, risk }) => ({
+    magnitude: Math.abs(value) * 100,
+    total: risk.portfolio.total_conditional_loss_usd == null ? null : Number(risk.portfolio.total_conditional_loss_usd),
+    ...Object.fromEntries(risk.positions.map(position => [position.position_id, Number(position.conditional_loss_usd)])),
+    liquidatable: risk.positions.filter(position => position.risk_metric?.liquidatable).map(position => compactId(position.position_id)).join(", ") || "None",
+  }));
+  const parameter = comparison.data?.[0]?.param ?? "";
+  return <section className="visual-panel">
+    <div className="panel-heading"><div>
+      <p className="eyebrow">Compare propagation at different stress levels</p>
+      <h2>Where does the impact accelerate?</h2>
+      <p className="microcopy">Each point is a risk-engine calculation on the same portfolio. Varying {labelize(parameter)}; other assumptions stay fixed.
+        {mode === "fixture" ? " Offline comparisons use the scenario preset assumptions and horizon." : " Using the submitted assumptions and horizon."}</p>
+    </div></div>
+    {comparison.isLoading ? <p>Calculating stress levels…</p> : null}
+    {comparison.isError ? <p>Stress comparison unavailable. The main run result remains above.</p> : null}
+    {rows ? <>
+      <div className="chart-frame"><ResponsiveContainer width="100%" height={280}>
+        <LineChart data={rows}>
+          <CartesianGrid stroke="var(--np-line)" />
+          <XAxis dataKey="magnitude" tickFormatter={value => `${value}%`} />
+          <YAxis tickFormatter={value => money(value)} />
+          <Tooltip formatter={value => value == null ? "n/a" : money(Number(value))} labelFormatter={value => `${value}% stress`} />
+          <Line type="linear" dataKey="total" name="Portfolio loss" stroke="var(--np-strong)" strokeWidth={3} dot />
+          {data.risk.positions.map((position, index) => <Line key={position.position_id} type="linear" dataKey={position.position_id}
+            name={compactId(position.position_id)} stroke={["var(--np-accent-blue)", "var(--np-accent-coral)", "var(--np-accent-gold)", "var(--np-accent-periwinkle)"][index % 4]} dot />)}
+        </LineChart>
+      </ResponsiveContainer></div>
+      <table><thead><tr><th><Term>Stress magnitude</Term></th><th><Term>Portfolio loss / gain</Term></th><th><Term>Liquidatable fund borrows</Term></th></tr></thead>
+        <tbody>{rows.map(row => <tr key={row.magnitude}><td>{row.magnitude}%</td><td>{money(row.total)}</td><td>{row.liquidatable}</td></tr>)}</tbody></table>
+      <p className="microcopy">These are conditional stress tests, not probabilities. Connected paths show exposure; their losses are counted once per position.</p>
+    </> : null}
+  </section>;
+}
+
+function DecisionEngine({
+  data,
+  scenario,
+  scenarioInputs,
+  hasRun,
+  selectedRisk,
+  selectedPortfolio,
+  selectedPosition,
+  setSelectedPosition,
+  hoveredPosition,
+  setHoveredPosition,
+  inspectedExitFraction,
+  setInspectedExitFraction,
+  setView,
+}: {
+  data: AppData;
+  scenario: ScenarioKind;
+  scenarioInputs: ScenarioInputs;
+  hasRun: boolean;
+  selectedRisk?: RiskPosition;
+  selectedPortfolio?: PortfolioPosition;
+  selectedPosition: string;
+  setSelectedPosition: (id: string) => void;
+  hoveredPosition: string | null;
+  setHoveredPosition: (id: string | null) => void;
+  inspectedExitFraction: string | null;
+  setInspectedExitFraction: (fraction: string | null) => void;
+  setView: (view: View) => void;
+}) {
+  if (!hasRun || !selectedRisk || !selectedPortfolio) {
+    return <EmptyState title="No scenario result yet" detail="Run the scenario lab to populate the decision engine." />;
+  }
+
+  const costData = data.decision.exit_options.map((option) => ({
+    fraction: option.exit_fraction,
+    exit: percent(option.exit_fraction, 0),
+    cost: Number(option.estimated_exit_cost_usd),
+    residual: Number(option.residual_stress_loss_usd),
+    breakEven: option.break_even_probability ? Number(option.break_even_probability) * 100 : null,
+  }));
+
+  return (
+    <div className="decision-layout">
+      <section className="decision-main">
+        <div className="selector-row">
+          {data.portfolio.positions.map((position) => (
+            <button
+              key={position.position_id}
+              className="mini-tab"
+              data-selected={position.position_id === selectedPosition}
+              onClick={() => setSelectedPosition(position.position_id)}
+            >
+              {position.protocol}
+            </button>
+          ))}
+        </div>
+
+        <section className="impact-strip">
+          <Stat label="Before" value={money(selectedRisk.net_equity_before_usd)} detail={labelize(selectedPortfolio.position_type)} />
+          <Stat label="After" value={money(selectedRisk.net_equity_after_usd)} detail={scenarioCopy[scenario].title} />
+          <Stat label="Conditional loss" value={money(selectedRisk.conditional_loss_usd)} detail={selectedRisk.calculation_status} />
+        </section>
+
+        <section className="visual-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Exit cost curve</p>
+              <h2>Cost vs residual stress loss</h2>
+            </div>
+            <Badge tone="warn">assumption-driven</Badge>
+          </div>
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart
+                data={costData}
+                onClick={(state) => {
+                  const active = (state as { activePayload?: Array<{ payload?: { fraction?: string } }> })?.activePayload?.[0]?.payload;
+                  if (active?.fraction) setInspectedExitFraction(active.fraction);
+                }}
+              >
+                <CartesianGrid stroke="var(--np-line)" vertical={false} />
+                <XAxis dataKey="exit" tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={(value) => money(value)} tickLine={false} axisLine={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="cost"
+                  stroke="var(--np-accent-coral)"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="residual"
+                  stroke="var(--np-strong)"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Brush dataKey="exit" height={18} stroke="var(--np-strong)" travellerWidth={8} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="table-panel">
+          <table>
+            <thead>
+              <tr>
+                <th><Term>Exit</Term></th>
+                <th><Term>Cost</Term></th>
+                <th><Term>Residual loss</Term></th>
+                <th><Term>Foregone yield</Term></th>
+                <th><Term>Break-even</Term></th>
+                <th><Term>Quote</Term></th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.decision.exit_options.map((option) => (
+                <tr
+                  key={option.exit_fraction}
+                  data-selected={inspectedExitFraction === option.exit_fraction}
+                  onMouseEnter={() => setInspectedExitFraction(option.exit_fraction)}
+                  onMouseLeave={() => setInspectedExitFraction(null)}
+                  onClick={() => setInspectedExitFraction(option.exit_fraction)}
+                >
+                  <td>{percent(option.exit_fraction, 0)}</td>
+                  <td>{money(option.estimated_exit_cost_usd)}</td>
+                  <td>{money(option.residual_stress_loss_usd)}</td>
+                  <td>{money(option.foregone_yield_usd)}</td>
+                  <td>{option.break_even_probability ? percent(option.break_even_probability, 2) : "stay"}</td>
+                  <td>
+                    <Badge tone="warn">{option.quote_status}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <aside className="decision-inspector">
+        <div className="verdict">
+          <BadgeCheck size={18} />
+          <div>
+            <span>Verdict</span>
+            <strong>{data.decision.recommendation}</strong>
+          </div>
+        </div>
+        <p>{data.decision.reason}</p>
+        <div className="scenario-receipt" aria-label="Scenario inputs used for the latest run">
+          <MetricPair label="Scenario" value={scenarioCopy[scenario].title} />
+          {/* Only the inputs this scenario actually uses. */}
+          {scenarioControls[scenario].includes("shock") ? <MetricPair label="USDe shock" value={signedPercent(-scenarioInputs.shockPct)} /> : null}
+          {scenarioControls[scenario].includes("liquidity") ? <MetricPair label="Liquidity loss" value={`${scenarioInputs.liquidityLossPct}%`} /> : null}
+          {scenarioControls[scenario].includes("ltShift") ? <MetricPair label="LT shift" value={`${scenarioInputs.ltShiftPct} pts`} /> : null}
+          {scenarioControls[scenario].includes("carry") ? (
+            <>
+              <MetricPair label="Borrow APY" value={`${scenarioInputs.borrowApyPct}%`} />
+              <MetricPair label="sUSDe APY" value={`${scenarioInputs.susdeApyPct}%`} />
+            </>
+          ) : null}
+          {scenarioControls[scenario].includes("node") ? (
+            <MetricPair label="Node shock" value={`${labelize(scenarioInputs.nodeId)} -${scenarioInputs.nodeLossPct}%`} />
+          ) : null}
+          <MetricPair label="Horizon" value={`${scenarioInputs.horizonDays} days`} />
+        </div>
+        <button className="icon-button text-button" onClick={() => setView("graph")}>
+          <GitBranch size={14} />
+          Inspect causal path
+        </button>
+        <div className="divider" />
+        {inspectedExitFraction ? (
+          <div className="inspect-callout">
+            <p className="eyebrow">Inspected exit</p>
+            <h2>{percent(inspectedExitFraction, 0)}</h2>
+            <p>
+              {(() => {
+                const option = data.decision.exit_options.find((item) => item.exit_fraction === inspectedExitFraction);
+                return option
+                  ? `${money(option.estimated_exit_cost_usd)} immediate cost, ${money(option.residual_stress_loss_usd)} residual stress loss.`
+                  : "No fixture row for this exit fraction.";
+              })()}
+            </p>
+          </div>
+        ) : null}
+        <p className="eyebrow">Loss breakdown</p>
+        {Object.entries(selectedRisk.loss_components).map(([key, value]) => (
+          <MetricPair key={key} label={labelize(key)} value={money(value)} />
+        ))}
+        <WarningList warnings={[...selectedRisk.warnings, ...data.decision.warnings]} />
+      </aside>
+    </div>
+  );
+}
+
+function CommandPalette({
+  open,
+  query,
+  setQuery,
+  setOpen,
+  data,
+  executeAction,
+}: {
+  open: boolean;
+  query: string;
+  setQuery: (query: string) => void;
+  setOpen: (open: boolean) => void;
+  data?: AppData;
+  executeAction: (action: DashboardAction) => void;
+}) {
+  const commands = createActionRegistry(data).filter((command) => command.label.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div className="command-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="command-panel"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="command-search">
+              <Search size={15} />
+              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Jump to page or position" />
+              <button onClick={() => setOpen(false)} aria-label="Close command palette">
+                <X size={15} />
+              </button>
+            </div>
+            <div className="command-list">
+              {commands.map((command) => (
+                <button
+                  key={`${command.type}-${command.label}`}
+                  onClick={() => {
+                    command.actions.forEach(executeAction);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                >
+                  <span>{command.type}</span>
+                  {command.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+function AssistantDock({
+  onRiskBatch,
+  onApiMode,
+  fixtureSet,
+  graph,
+  open,
+  setOpen,
+  stateData,
+  mode,
+  view,
+  scenario,
+  selectedPosition,
+  inspectedExitFraction,
+  scenarioInputs,
+  executeAction,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  stateData?: AppData;
+  onRiskBatch: (batch: RiskAgentBatch) => void;
+  onApiMode: () => void;
+  fixtureSet: string;
+  graph: AppData["graph"];
+  mode: DataMode;
+  view: View;
+  scenario: ScenarioKind;
+  selectedPosition: string;
+  inspectedExitFraction: string | null;
+  scenarioInputs: ScenarioInputs;
+  executeAction: (action: DashboardAction) => void;
+}) {
+  const isRiskAssistant = view !== "decision";
+  const [scenarioCount, setScenarioCount] = useState(3);
+  const assistantStatus = useQuery({ queryKey: ["risk-assistant-status"], queryFn: loadRiskAssistantStatus, enabled: open && isRiskAssistant && mode === "api", staleTime: 30000 });
+  const news = useQuery({ queryKey: ["risk-market-news"], queryFn: loadRiskNews, enabled: open && isRiskAssistant && mode === "api", staleTime: 60000 });
+  const [messages, setMessages] = useState<AssistantMessage[]>([
+    {
+      id: "assistant-welcome",
+      role: "assistant",
+      content: "Describe a stress in French or English. I prepare an editable scenario for the risk engine. Example: USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours. Nothing runs until you click Run scenario. After a run, I can explain visible results.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [assistantState, setAssistantState] = useState<AssistantState>("idle");
+  const [listening, setListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
+  const [amplitude, setAmplitude] = useState(0.12);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const recognitionFinalRef = useRef(false);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const speechRunRef = useRef(0);
+  const activeSpeechMessageRef = useRef<string | null>(null);
+  const preferredVoice = useMemo(() => pickPreferredVoice(voices), [voices]);
+  const selectedSpeechVoice = voices.find((voice) => voice.voiceURI === selectedVoiceURI) ?? preferredVoice;
+
+  useEffect(() => {
+    if (!open) return;
+    const first = panelRef.current?.querySelector<HTMLElement>("input, button");
+    first?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusables = Array.from(panelRef.current.querySelectorAll<HTMLElement>("button, input, textarea, select, summary, [tabindex]:not([tabindex='-1'])")).filter(
+        (element) => !element.hasAttribute("disabled"),
+      );
+      const firstFocusable = focusables[0];
+      const lastFocusable = focusables[focusables.length - 1];
+      if (!firstFocusable || !lastFocusable) return;
+      if (event.shiftKey && document.activeElement === firstFocusable) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, setOpen]);
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
+      setSelectedVoiceURI((current) => current || pickPreferredVoice(availableVoices)?.voiceURI || "");
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopListening();
+      cancelSpeech();
+    };
+  }, []);
+
+  async function submitMessage(raw: string, inputMode: AssistantInputMode = "text", count = scenarioCount) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    cancelSpeech();
+    setInput("");
+    const userMessage: AssistantMessage = { id: crypto.randomUUID(), role: "user", content: trimmed, inputMode };
+    setMessages((current) => [...current, userMessage]);
+    setAssistantState("thinking");
+    try {
+      const response = await postAssistantMessage(
+        {
+          message: trimmed,
+          view,
+          scenario,
+          selectedPosition,
+          inspectedExitFraction,
+          scenarioInputs,
+          data: stateData,
+          fixtureSet,
+          graph,
+          count,
+        },
+        mode,
+      );
+      const riskBatch: RiskAgentBatch | undefined = response.proposals && response.context && response.generatedAt && response.model ? {
+        proposals: response.proposals, context: response.context, generatedAt: response.generatedAt,
+        model: response.model, limitations: response.limitations ?? [],
+      } : undefined;
+      if (riskBatch) onRiskBatch(riskBatch);
+      const assistantMessage: AssistantMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.message,
+        proposal: response.proposal,
+        riskBatch,
+        inputMode,
+      };
+      setMessages((current) => [...current, assistantMessage]);
+      if (response.actions?.length) {
+        for (const action of response.actions) {
+          executeAction(action);
+          await new Promise((resolve) => window.setTimeout(resolve, action.type === "run_simulation" ? 520 : 300));
+        }
+      }
+      if (inputMode === "voice" && !audioMuted) {
+        speak(response.message, assistantMessage.id);
+      } else {
+        setAssistantState("idle");
+      }
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: error instanceof Error ? error.message : "The assistant could not answer. No scenario was generated or applied.",
+        },
+      ]);
+      setAssistantState("idle");
+    }
+  }
+
+  function cancelSpeech() {
+    speechRunRef.current += 1;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    if (activeSpeechMessageRef.current) {
+      const messageId = activeSpeechMessageRef.current;
+      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+      activeSpeechMessageRef.current = null;
+    }
+    setAssistantState((current) => (current === "speaking" ? "idle" : current));
+  }
+
+  function speak(text: string, messageId: string) {
+    if (!("speechSynthesis" in window)) {
+      setAssistantState("idle");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const chunks = splitSpeechChunks(text);
+    if (!chunks.length) {
+      setAssistantState("idle");
+      return;
+    }
+    const runId = speechRunRef.current + 1;
+    speechRunRef.current = runId;
+    activeSpeechMessageRef.current = messageId;
+    setAssistantState("speaking");
+
+    const speakChunk = (index: number) => {
+      if (speechRunRef.current !== runId) return;
+      const chunk = chunks[index];
+      if (!chunk) {
+        setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+        activeSpeechMessageRef.current = null;
+        setAssistantState("idle");
+        return;
+      }
+      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: chunk } : message)));
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      if (selectedSpeechVoice) utterance.voice = selectedSpeechVoice;
+      utterance.rate = 0.98;
+      utterance.pitch = 1;
+      utterance.onend = () => speakChunk(index + 1);
+      utterance.onerror = () => {
+        activeSpeechMessageRef.current = null;
+        setAssistantState("idle");
+      };
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakChunk(0);
+  }
+
+  async function startListening() {
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setVoiceSupported(false);
+      return;
+    }
+    setVoiceSupported(true);
+    cancelSpeech();
+    setListening(true);
+    setAssistantState("listening");
+    recognitionFinalRef.current = false;
+    try {
+      const stream = await navigator.mediaDevices?.getUserMedia({ audio: true });
+      if (stream) {
+        const context = new AudioContext();
+        const source = context.createMediaStreamSource(stream);
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 128;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+        const values = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          analyser.getByteFrequencyData(values);
+          const avg = values.reduce((sum, value) => sum + value, 0) / values.length / 255;
+          setAmplitude(Math.max(0.08, Math.min(1, avg * 1.8)));
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      }
+    } catch {
+      setAmplitude(0.28);
+    }
+
+    const recognition = new Recognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join(" ");
+      setInput(transcript);
+      const last = event.results[event.results.length - 1];
+      if (last?.isFinal) {
+        recognitionFinalRef.current = true;
+        submitMessage(transcript, "voice");
+      }
+    };
+    recognition.onend = () => {
+      setListening(false);
+      if (!recognitionFinalRef.current) setAssistantState("idle");
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    recognition.onerror = () => {
+      setListening(false);
+      setAssistantState("idle");
+      setVoiceSupported(false);
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setListening(false);
+    setAssistantState("idle");
+    setAmplitude(0.12);
+  }
+
+  return (
+    <>
+      <button className="assistant-orb-button" onClick={() => setOpen(!open)} aria-label={open ? "Close assistant" : "Open assistant"}>
+        <AssistantOrb state={assistantState} amplitude={amplitude} />
+      </button>
+      <AnimatePresence>
+        {open ? (
+          <motion.aside
+            className="assistant-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="DeFi Contagion assistant"
+            ref={panelRef}
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <header className="assistant-header">
+              <div>
+                <p className="eyebrow">Assistant</p>
+                <h2>{isRiskAssistant ? "Market event → portfolio stress" : "Describe your stress"}</h2>
+                {isRiskAssistant ? <small>Gemini API · event and portfolio exposure context · no automatic simulation</small> : null}
+              </div>
+              <button className="icon-button" onClick={() => setOpen(false)} aria-label="Close assistant">
+                <X size={15} />
+              </button>
+            </header>
+            <div className="assistant-messages" aria-live="polite">
+              {isRiskAssistant && mode !== "api" ? <div className="assistant-message" data-role="assistant"><p>Scenario generation requires Engine API mode.</p><button className="primary-button" onClick={onApiMode}>Switch to Engine API</button></div> : null}
+              {isRiskAssistant ? <label className="assistant-case-count">Scenarios to generate <select value={scenarioCount} onChange={event => setScenarioCount(Number(event.target.value))}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option></select></label> : null}
+              {isRiskAssistant && mode === "api" ? <div className="microcopy">
+                {assistantStatus.data && !assistantStatus.data.configured ? <p role="alert">Set GEMINI_API_KEY on the backend to enable scenario generation.</p> : null}
+                <p>News: {news.isError ? "unavailable" : news.data?.status ?? "loading"}. {news.data?.status === "not_configured" ? "Typed events are hypothetical." : ""}</p>
+                {news.data?.articles.length ? <><details><summary>Supplied market news</summary>{news.data.articles.map(article => <p key={article.id}><a href={article.url} target="_blank" rel="noreferrer">{article.title}</a> · {article.source} · {new Date(article.published_at).toLocaleString()}</p>)}</details><button onClick={() => setInput("Analyse les news fournies et propose des scénarios qui challengent les positions de mon portefeuille. Cite les articles utilisés et sépare faits rapportés et hypothèses.")}>Use supplied news</button></> : null}
+              </div> : null}
+              <div className="assistant-examples" aria-label="Scenario prompt examples">
+                {(isRiskAssistant ? [
+                  ["US rate cut", "USD INTEREST RATE FALLS BY 3 PTN"],
+                  ["Weaker dollar", "Si le dollar se déprécie face à l’euro, comment mon portefeuille est-il exposé ?"],
+                  ["Challenge portfolio", "Propose trois scénarios adverses adaptés aux positions de mon portefeuille."],
+                ] : [
+                  ["Depeg + liquidity", "USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours"],
+                  ["Cascade", "Crée une cascade avec USDe -8 %, liquidité -60 %, sur 7 jours"],
+                  ["Carry squeeze", "Rendement sUSDe 0 %, emprunt 60 % sur 30 jours"],
+                ]).map(([label, prompt]) => <button key={label} onClick={() => setInput(prompt)}>{label}</button>)}
+              </div>
+              {messages.map((message) => (
+                <div className="assistant-message" data-role={message.role} key={message.id}>
+                  <p>{message.id === "assistant-welcome" && isRiskAssistant ? "Describe a market event in French or English, such as a US interest-rate cut or a weaker dollar. Gemini connects it to this portfolio and proposes named scenarios with explicit assumptions. New scenarios appear in Scenario Lab. Open Details to review them, then Run this stress case to calculate their impact." : message.content}</p>
+                  {message.riskBatch ? <div className="assistant-scenario-proposal"><p>{message.riskBatch.proposals.length} new scenarios added to Scenario Lab.</p><ul>{message.riskBatch.proposals.map(proposal => <li key={proposal.id}>{proposal.title}</li>)}</ul><button className="primary-button" onClick={() => { executeAction({ type: "navigate_view", view: "scenario" }); setOpen(false); }}>View scenarios in Scenario Lab</button></div> : null}
+                  {message.proposal ? (
+                    <div className="assistant-scenario-proposal">
+                      <strong>{labelize(message.proposal.scenario)}</strong>
+                      <table><thead><tr><th>Parameter</th><th>Value</th><th>Source</th></tr></thead>
+                        <tbody>{message.proposal.parameters.map(parameter => <tr key={parameter.label}><td>{parameter.label}</td><td>{parameter.value}</td><td>{parameter.source}</td></tr>)}</tbody>
+                      </table>
+                      <small>Other engine inputs retain the portfolio preset. Local text interpreter; no language model connected.</small>
+                      <details><summary>Exact scenario sent to the engine</summary><pre>{JSON.stringify(message.proposal.engineScenario, null, 2)}</pre></details>
+                      <button className="primary-button" onClick={() => {
+                        const proposal = message.proposal!;
+                        executeAction({ type: "prepare_scenario", scenario: proposal.scenario, inputs: proposal.inputs });
+                        setOpen(false);
+                      }}>Use in Scenario Lab</button>
+                    </div>
+                  ) : null}
+                  {message.caption && message.role === "assistant" ? <small>{message.caption}</small> : null}
+                </div>
+              ))}
+              {assistantState === "thinking" ? <p role="status" className="microcopy">{isRiskAssistant ? "Gemini is designing scenarios for this portfolio…" : "Preparing your response…"}</p> : null}
+              {!voiceSupported ? <p className="speech-fallback">Voice is not available in this browser; typing still works.</p> : null}
+            </div>
+            <div className="assistant-voice-settings" aria-label="Speech settings">
+              <label>
+                <span>Voice</span>
+                <select value={selectedSpeechVoice?.voiceURI ?? ""} onChange={(event) => setSelectedVoiceURI(event.target.value)} disabled={!voices.length || audioMuted}>
+                  {!voices.length ? <option value="">Browser default</option> : null}
+                  {voices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name} · {voice.lang}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <form
+              className="assistant-input"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitMessage(input, "text");
+              }}
+            >
+              <button type="button" className="icon-button" onClick={listening ? stopListening : startListening} aria-label={listening ? "Stop listening" : "Start voice input"}>
+                {listening ? <MicOff size={15} /> : <Mic size={15} />}
+              </button>
+              <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="USDe −10%, liquidity −80%, 7 days" />
+              <button type="submit" className="icon-button" aria-label="Send message" disabled={assistantState === "thinking"}>
+                <Send size={15} />
+              </button>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => {
+                  setAudioMuted((muted) => {
+                    if (!muted) cancelSpeech();
+                    return !muted;
+                  });
+                }}
+                aria-label={audioMuted ? "Unmute spoken replies" : "Mute spoken replies"}
+                aria-pressed={audioMuted}
+              >
+                {audioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+              </button>
+            </form>
+          </motion.aside>
+        ) : null}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function pickPreferredVoice(voices: SpeechSynthesisVoice[]) {
+  return [...voices].sort((a, b) => voiceScore(b) - voiceScore(a))[0] ?? null;
+}
+
+function voiceScore(voice: SpeechSynthesisVoice) {
+  const name = voice.name.toLowerCase();
+  const lang = voice.lang.toLowerCase();
+  let score = 0;
+  if (lang.startsWith("en-us")) score += 70;
+  if (lang.startsWith("en-gb")) score += 62;
+  if (lang.startsWith("en")) score += 45;
+  if (/(google|microsoft|neural|online|premium|natural|samantha|ava|jenny|aria|sonia|daniel)/.test(name)) score += 28;
+  if (voice.localService) score += 4;
+  if (/compact|robot|basic/.test(name)) score -= 12;
+  return score;
+}
+
+function splitSpeechChunks(text: string) {
+  return text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?])\s+|;\s+/)
+    .flatMap((sentence) => {
+      const clean = sentence.trim();
+      if (clean.length <= 150) return clean;
+      return clean.split(/,\s+/).reduce<string[]>((chunks, clause) => {
+        const last = chunks[chunks.length - 1];
+        if (!last || `${last}, ${clause}`.length > 145) chunks.push(clause);
+        else chunks[chunks.length - 1] = `${last}, ${clause}`;
+        return chunks;
+      }, []);
+    })
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+}
+
+function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: number }) {
+  const scale = 1 + amplitude * 0.12;
+  const shimmer = state === "thinking" ? 1 : state === "speaking" ? 0.74 : state === "listening" ? 0.52 : 0.22;
+  return (
+    <svg className="assistant-orb" viewBox="0 0 120 120" aria-hidden="true" style={{ ["--orb-scale" as string]: scale, ["--orb-shimmer" as string]: shimmer }}>
+      <defs>
+        <filter id="orb-soften">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" />
+        </filter>
+        <linearGradient id="orb-ink" x1="20%" x2="85%" y1="10%" y2="90%">
+          <stop offset="0%" stopColor="var(--np-accent-periwinkle)" />
+          <stop offset="36%" stopColor="var(--np-accent-lilac)" />
+          <stop offset="70%" stopColor="var(--np-accent-coral)" />
+          <stop offset="100%" stopColor="var(--np-accent-gold)" />
+        </linearGradient>
+      </defs>
+      <motion.path
+        filter="url(#orb-soften)"
+        fill="url(#orb-ink)"
+        animate={{
+          d: [
+            "M60 8C82 7 109 26 110 56C111 86 88 112 58 112C28 112 9 88 10 59C11 30 38 9 60 8Z",
+            "M58 9C88 7 109 32 106 62C103 92 82 110 55 111C28 112 8 84 13 55C18 27 35 11 58 9Z",
+            "M60 8C82 7 109 26 110 56C111 86 88 112 58 112C28 112 9 88 10 59C11 30 38 9 60 8Z",
+          ],
+          scale,
+        }}
+        transition={{ duration: state === "listening" ? 0.7 : 5.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle cx="72" cy="36" r="13" fill="rgba(255,255,255,0.52)" animate={{ opacity: [0.28, 0.62, 0.28], x: [0, -8, 0] }} transition={{ duration: 3.6, repeat: Infinity }} />
+      <motion.path
+        d="M35 67C48 76 72 75 88 61"
+        fill="none"
+        stroke="rgba(255,255,255,0.72)"
+        strokeLinecap="round"
+        strokeWidth="3"
+        animate={{ pathLength: [0.25, 1, 0.25], opacity: [0.2, shimmer, 0.2] }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <Sparkles className="orb-icon" size={18} />
+    </svg>
+  );
+}
+
+function Control({ label, value, children }: { label: string; value: string; children: React.ReactNode }) {
+  return (
+    <label className="control-row">
+      <span>
+        <Term>{label}</Term>
+      </span>
+      <strong>{value}</strong>
+      {children}
+    </label>
+  );
+}
+
+function RiskGauge({ metric }: { metric: NonNullable<RiskPosition["risk_metric"]> }) {
+  const distance = Number(metric.distance_to_liquidation_after_pct);
+  const before = Number(metric.before);
+  const after = Number(metric.after);
+  const threshold = Number(metric.threshold);
+  const maximum = Math.max(before, after, threshold, 1) * 1.2;
+  const formatMetric = (value: number) => metric.type === "ltv" ? percent(value, 2) : value.toFixed(4);
+  return (
+    <div className="risk-gauge">
+      <div className="gauge-track">
+        <span className="threshold" style={{ left: `${threshold / maximum * 100}%` }} />
+        <span className="gauge-fill" style={{ width: `${Math.max(0, Math.min(100, after / maximum * 100))}%`, background: metric.liquidatable ? "var(--np-accent-coral)" : "var(--np-accent-blue)" }} />
+      </div>
+      <div className="metric-row">
+        <span>
+          Before {formatMetric(before)} → After {formatMetric(after)}
+        </span>
+        <Badge tone={metric.liquidatable ? "risk" : "good"}>{metric.liquidatable ? "liquidatable" : "not liquidatable"}</Badge>
+      </div>
+      <p className="muted">Liquidation threshold: {formatMetric(threshold)} · vertical marker. Scale: 0–{formatMetric(maximum)}.</p>
+      <p className="muted">{distance < 0 ? `Oracle collateral price must recover ${percent(-distance, 1)} to return to the threshold, with debt fixed.` : `Oracle collateral price can fall another ${percent(distance, 1)} before reaching the threshold, with debt fixed.`}</p>
+    </div>
+  );
+}
+
+function Stat({ label, value, detail }: { label: string; value: string; detail?: string }) {
+  return (
+    <div className="stat">
+      <span>
+        <Term>{label}</Term>
+      </span>
+      <strong>{value}</strong>
+      {detail ? <small>{detail}</small> : null}
+    </div>
+  );
+}
+
+function MetricPair({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="metric-pair">
+      <span>
+        <Term>{label}</Term>
+      </span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function Badge({ children, tone = "neutral" }: { children: string; tone?: string }) {
+  return (
+    <span className="badge" data-tone={tone}>
+      <Term>{children}</Term>
+    </span>
+  );
+}
+
+function Definition({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="definition">
+      <dt>
+        <Term>{label}</Term>
+      </dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+function WarningList({ warnings }: { warnings: string[] }) {
+  if (!warnings.length) return null;
+  return (
+    <div className="warning-list">
+      <AlertTriangle size={15} />
+      <div>
+        {warnings.map((warning) => (
+          <p key={warning}>{warning}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="empty-state">
+      <h2>{title}</h2>
+      <p>{detail}</p>
+    </div>
+  );
+}
+
+function SkeletonView() {
+  return (
+    <div className="skeleton-grid" aria-label="Loading">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <span key={index} />
+      ))}
+    </div>
+  );
+}
+
+function ErrorView({ mode }: { mode: DataMode }) {
+  return <EmptyState title="Data unavailable" detail={`The ${mode} data source did not respond. Switch back to fixture mode for the offline demo.`} />;
+}
+
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="chart-tooltip">
+      <strong>{label}</strong>
+      {payload.map((item) => (
+        <span key={item.name}>
+          {item.name}: {money(item.value)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function sourceTone(source: string) {
+  if (source === "observed" || source === "derived") return "good";
+  if (source === "assumed" || source === "fictional" || source === "mock") return "warn";
+  return "neutral";
+}
+
+export { App };

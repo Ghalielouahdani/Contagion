@@ -1,0 +1,61 @@
+:root {
+  color-scheme: light;
+  --np-page: #ffffff;
+  --np-text: #666666;
+  --np-muted: rgba(0, 0, 0, 0.6);
+  --np-soft: #b7b7b7;
+  --np-strong: #000000;
+  --np-surface: #f7f7f7;
+  --np-line: #f0f0f0;
+  --np-line-strong: #e5e5e5;
+  --np-rule: #eeeeee;
+  --np-border-soft: #ededed;
+  --np-accent-lilac: #c69bc4;
+  --np-accent-coral: #ed705a;
+  --np-accent-gold: #efb94f;
+  --np-accent-periwinkle: #b9c8e8;
+  --np-accent-blue: #5f8fe0;
+  --np-font:
+    Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --np-size-0: 12.5px;
+  --np-size-1: 14px;
+  --np-size-2: 16px;
+  --np-size-3: 20px;
+  --np-size-4: 28px;
+  --np-size-5: 42px;
+  --np-weight-regular: 400;
+  --np-weight-medium: 450;
+  --np-weight-strong: 560;
+  --np-sidebar-left: 48px;
+  --np-sidebar-width: 248px;
+  --np-sidebar-inset-y: 48px;
+  --np-content-gap: clamp(32px, 3vw, 48px);
+  --np-page-gutter: clamp(48px, 4.8vw, 80px);
+  --np-divider-left: calc(var(--np-sidebar-left) + var(--np-sidebar-width) + 40px);
+  --np-content-left: calc(var(--np-divider-left) + var(--np-content-gap));
+  --np-radius: 8px;
+  --np-radius-pill: 999px;
+  --np-shadow: inset 0 0 0 1px var(--np-line);
+  --np-shadow-hover: 0 14px 42px rgba(0, 0, 0, 0.06);
+  --np-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --np-fast: 180ms;
+  --np-medium: 260ms;
+  --np-slow: 480ms;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --np-page: #000000;
+  --np-text: #b7b7b7;
+  --np-muted: rgba(255, 255, 255, 0.6);
+  --np-soft: #666666;
+  --np-strong: #ffffff;
+  --np-surface: #121212;
+  --np-line: rgba(255, 255, 255, 0.14);
+  --np-line-strong: rgba(255, 255, 255, 0.22);
+  --np-rule: rgba(255, 255, 255, 0.18);
+  --np-border-soft: rgba(255, 255, 255, 0.12);
+  --np-shadow: inset 0 0 0 1px var(--np-line);
+  --np-shadow-hover: 0 14px 42px rgba(0, 0, 0, 0.36);
+}

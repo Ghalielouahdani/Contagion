@@ -1,75 +1,8 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.defi-contagion.local/v1/market_snapshot.schema.json",
   "title": "Market snapshot",
-  "description": "Market facts at one point in time. Owner: P1. Add a market kind: create markets/<kind>.schema.json and add it to $defs.market.oneOf.",
+  "$id": "https://schemas.defi-contagion.local/v1/market_snapshot.schema.json",
   "type": "object",
-  "properties": {
-    "schema_version": {
-      "$ref": "common.schema.json#/$defs/schema_version"
-    },
-    "snapshot_id": {
-      "$ref": "common.schema.json#/$defs/slug"
-    },
-    "as_of": {
-      "$ref": "common.schema.json#/$defs/timestamp"
-    },
-    "chain_id": {
-      "$ref": "common.schema.json#/$defs/chain_id"
-    },
-    "block_number": {
-      "type": [
-        "integer",
-        "null"
-      ]
-    },
-    "prices_usd": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "common.schema.json#/$defs/sourced_value"
-      }
-    },
-    "exchange_rates": {
-      "type": "object",
-      "description": "Keyed <from>_<to>, e.g. sUSDe_USDe.",
-      "additionalProperties": {
-        "$ref": "common.schema.json#/$defs/sourced_value"
-      }
-    },
-    "markets": {
-      "type": "object",
-      "description": "Keyed by position_id.",
-      "propertyNames": {
-        "$ref": "common.schema.json#/$defs/position_id"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/market"
-      }
-    },
-    "yields": {
-      "type": "object",
-      "description": "Keyed by position_id.",
-      "propertyNames": {
-        "$ref": "common.schema.json#/$defs/position_id"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/yield"
-      }
-    },
-    "exit_venues": {
-      "type": "object",
-      "description": "Keyed by venue id; shared by positions.",
-      "propertyNames": {
-        "$ref": "common.schema.json#/$defs/venue_id"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/exit_venue"
-      }
-    },
-    "warnings": {
-      "$ref": "common.schema.json#/$defs/warnings"
-    }
-  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "required": [
     "schema_version",
     "snapshot_id",
@@ -84,6 +17,73 @@
     "warnings"
   ],
   "additionalProperties": false,
+  "description": "Market facts at one point in time. Owner: P1. Add a market kind: create markets/<kind>.schema.json and add it to $defs.market.oneOf.",
+  "properties": {
+    "chain_id": {
+      "$ref": "common.schema.json#/$defs/chain_id"
+    },
+    "warnings": {
+      "$ref": "common.schema.json#/$defs/warnings"
+    },
+    "block_number": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "exit_venues": {
+      "description": "Keyed by venue id; shared by positions.",
+      "additionalProperties": {
+        "$ref": "#/$defs/exit_venue"
+      },
+      "type": "object",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/venue_id"
+      }
+    },
+    "snapshot_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "yields": {
+      "description": "Keyed by position_id.",
+      "additionalProperties": {
+        "$ref": "#/$defs/yield"
+      },
+      "type": "object",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/position_id"
+      }
+    },
+    "prices_usd": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/sourced_value"
+      }
+    },
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "as_of": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "markets": {
+      "description": "Keyed by position_id.",
+      "additionalProperties": {
+        "$ref": "#/$defs/market"
+      },
+      "type": "object",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/position_id"
+      }
+    },
+    "exchange_rates": {
+      "description": "Keyed <from>_<to>, e.g. sUSDe_USDe.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/sourced_value"
+      }
+    }
+  },
   "$defs": {
     "market": {
       "oneOf": [
@@ -98,61 +98,9 @@
         }
       ]
     },
-    "yield": {
-      "type": "object",
-      "properties": {
-        "token_apy": {
-          "$ref": "common.schema.json#/$defs/decimal"
-        },
-        "collateral_supply_apy": {
-          "$ref": "common.schema.json#/$defs/decimal"
-        },
-        "debt_borrow_apy": {
-          "$ref": "common.schema.json#/$defs/decimal"
-        },
-        "source_type": {
-          "$ref": "common.schema.json#/$defs/source_type"
-        },
-        "field_sources": {
-          "$ref": "common.schema.json#/$defs/field_sources"
-        }
-      },
-      "required": [
-        "source_type"
-      ],
-      "additionalProperties": false
-    },
     "exit_venue": {
+      "additionalProperties": false,
       "type": "object",
-      "properties": {
-        "asset": {
-          "type": "string"
-        },
-        "quote_method": {
-          "$ref": "common.schema.json#/$defs/quote_method"
-        },
-        "effective_depth_usd": {
-          "$ref": "common.schema.json#/$defs/non_negative_decimal"
-        },
-        "fee_rate": {
-          "$ref": "common.schema.json#/$defs/non_negative_decimal"
-        },
-        "gas_usd": {
-          "$ref": "common.schema.json#/$defs/non_negative_decimal"
-        },
-        "venue_address": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "source_type": {
-          "$ref": "common.schema.json#/$defs/source_type"
-        },
-        "field_sources": {
-          "$ref": "common.schema.json#/$defs/field_sources"
-        }
-      },
       "required": [
         "asset",
         "quote_method",
@@ -161,7 +109,98 @@
         "gas_usd",
         "source_type"
       ],
-      "additionalProperties": false
+      "properties": {
+        "fee_rate": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "quote_method": {
+          "$ref": "common.schema.json#/$defs/quote_method"
+        },
+        "quotes": {
+          "type": "array",
+          "description": "Executable quotes behind effective_depth_usd, one per size (each position alone and the venue's joint size). Sizes marked at snapshot prices.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "size_tokens": {
+                "$ref": "common.schema.json#/$defs/non_negative_decimal"
+              },
+              "size_usd": {
+                "$ref": "common.schema.json#/$defs/non_negative_decimal"
+              },
+              "proceeds_usd": {
+                "$ref": "common.schema.json#/$defs/non_negative_decimal"
+              },
+              "loss_pct": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "positions": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/position_id"
+                }
+              }
+            },
+            "required": [
+              "size_tokens",
+              "size_usd",
+              "proceeds_usd",
+              "loss_pct",
+              "positions"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "effective_depth_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        },
+        "field_sources": {
+          "$ref": "common.schema.json#/$defs/field_sources"
+        },
+        "venue_address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observed_liquidity_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal",
+          "description": "Optional. Total pool liquidity observed on the venue (USD)."
+        },
+        "source_type": {
+          "$ref": "common.schema.json#/$defs/source_type"
+        },
+        "asset": {
+          "type": "string"
+        },
+        "gas_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal"
+        }
+      }
+    },
+    "yield": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "source_type"
+      ],
+      "properties": {
+        "token_apy": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "field_sources": {
+          "$ref": "common.schema.json#/$defs/field_sources"
+        },
+        "debt_borrow_apy": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "collateral_supply_apy": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "source_type": {
+          "$ref": "common.schema.json#/$defs/source_type"
+        }
+      }
     }
   }
 }

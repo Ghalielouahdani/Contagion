@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "demo_lending_01",
+  "as_of": "2026-10-10T08:00:00Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_usde_01",
+      "protocol": "morpho",
+      "chain_id": 1,
+      "position_type": "lending_supply",
+      "market_id": "TO_VERIFY_MORPHO_USDE_USDC",
+      "asset_symbol": "USDC",
+      "quantity": "5000000",
+      "quantity_unit": "USDC",
+      "gross_value_usd": "5000000.00",
+      "debt_value_usd": "0",
+      "net_equity_usd": "5000000.00",
+      "exit_venue_id": "venue:morpho_usde_usdc_supply",
+      "data_origin": "fictional"
+    },
+    {
+      "position_id": "lend_susde_01",
+      "protocol": "morpho",
+      "chain_id": 1,
+      "position_type": "lending_supply",
+      "market_id": "TO_VERIFY_MORPHO_SUSDE_USDC",
+      "asset_symbol": "USDC",
+      "quantity": "5000000",
+      "quantity_unit": "USDC",
+      "gross_value_usd": "5000000.00",
+      "debt_value_usd": "0",
+      "net_equity_usd": "5000000.00",
+      "exit_venue_id": "venue:morpho_susde_usdc_supply",
+      "data_origin": "fictional"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "10000000.00",
+    "debt_value_usd": "0",
+    "net_equity_usd": "10000000.00"
+  }
+}

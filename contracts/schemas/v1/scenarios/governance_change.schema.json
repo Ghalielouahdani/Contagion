@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/scenarios/governance_change.schema.json",
+  "title": "Scenario E - governance or oracle change, then a depeg",
+  "description": "Market parameters change first (liquidation threshold shift, oracle switch), then the scenario A shock. comparison: same depeg on today's parameters.",
+  "type": "object",
+  "properties": {
+    "scenario_id": {
+      "const": "governance_change"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "usde_spot_shock_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Signed move of the USDe market price, e.g. -0.05."
+        },
+        "susde_market_beta": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "sUSDe market move = beta x USDe move."
+        },
+        "backing_impairment_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "USDe backing loss, repriced by the market for USDe and sUSDe. Signed, 0 = none. An exchange-rate oracle with USDe hardcoded at 1 USD does not see it."
+        },
+        "susde_rate_cut_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Optional. Loss socialised to sUSDe stakers: the sUSDe exchange rate falls. Every sUSDe oracle sees it. Signed, default 0."
+        },
+        "oracle_lag_hours": {
+          "$ref": "../common.schema.json#/$defs/non_negative_decimal",
+          "description": "Reported for timing; final metrics use the fully passed-through oracle."
+        },
+        "pt_pricing_mode": {
+          "enum": [
+            "implied_apy_discount",
+            "amm_quote"
+          ]
+        },
+        "pt_implied_apy_shock": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Additive change of PT implied APY."
+        },
+        "liquidation_threshold_shift": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Signed shift of the liquidation threshold (Aave LT, Morpho LLTV), e.g. -0.05."
+        },
+        "oracle_switch_pass_through": {
+          "$ref": "../common.schema.json#/$defs/nullable_decimal",
+          "description": "New oracle pass-through after the switch (1 = market price feed); null = no switch."
+        },
+        "target_markets": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "../common.schema.json#/$defs/position_id"
+              },
+              "minItems": 1
+            }
+          ],
+          "description": "Position ids whose market changes; null = every lending market."
+        }
+      },
+      "required": [
+        "usde_spot_shock_pct",
+        "susde_market_beta",
+        "backing_impairment_pct",
+        "oracle_lag_hours",
+        "pt_pricing_mode",
+        "pt_implied_apy_shock",
+        "liquidation_threshold_shift",
+        "oracle_switch_pass_through",
+        "target_markets"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "scenario_id",
+    "horizon_days",
+    "parameters"
+  ],
+  "additionalProperties": false
+}

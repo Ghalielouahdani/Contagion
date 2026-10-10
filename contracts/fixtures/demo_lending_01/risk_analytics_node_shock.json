@@ -1,0 +1,608 @@
+{
+  "schema_version": "1.0",
+  "analytics_id": "analytics_lending_sim_node_shock_01",
+  "request_id": "lending_sim_node_shock_01",
+  "portfolio_id": "demo_lending_01",
+  "scenario_id": "node_shock",
+  "horizon_days": 7,
+  "currency": "USD",
+  "headline": {
+    "nav_usd": "10000000.00",
+    "scenario_loss_usd": "15838.21",
+    "scenario_loss_pct_nav": "0.0016",
+    "usde_exposure_usd": "0.00",
+    "usde_effective_leverage": "0.0000",
+    "derisking_savings_usd": "4794.52",
+    "derisking_savings_bps_nav": "4.7945",
+    "liquidation_protection_net_benefit_usd": "0.00",
+    "targeted_plan_break_even_probability": null,
+    "top_risk_driver": "Loss at the shocked node"
+  },
+  "factor_exposure": [
+    {
+      "factor": "usde_price",
+      "loss_usd": "0.00",
+      "unit": "per 1% USDe price drop",
+      "exposure_usd": "0.00",
+      "effective_leverage": "0.0000",
+      "positions_exposed": [],
+      "loss_by_position_usd": {
+        "lend_usde_01": "0.00",
+        "lend_susde_01": "0.00"
+      }
+    },
+    {
+      "factor": "usde_backing",
+      "loss_usd": "0.00",
+      "unit": "per 1% USDe backing loss",
+      "exposure_usd": "0.00",
+      "effective_leverage": "0.0000",
+      "positions_exposed": [],
+      "loss_by_position_usd": {
+        "lend_usde_01": "0.00",
+        "lend_susde_01": "0.00"
+      }
+    },
+    {
+      "factor": "susde_exchange_rate",
+      "loss_usd": "0.00",
+      "unit": "per 1% sUSDe rate cut",
+      "exposure_usd": "0.00",
+      "effective_leverage": "0.0000",
+      "positions_exposed": [],
+      "loss_by_position_usd": {
+        "lend_usde_01": "0.00",
+        "lend_susde_01": "0.00"
+      }
+    },
+    {
+      "factor": "pt_implied_yield",
+      "loss_usd": "0.00",
+      "unit": "per +100bp PT implied yield",
+      "exposure_usd": "0.00",
+      "effective_leverage": "0.0000",
+      "positions_exposed": [],
+      "loss_by_position_usd": {
+        "lend_usde_01": "0.00",
+        "lend_susde_01": "0.00"
+      }
+    }
+  ],
+  "breaking_points": {
+    "liquidation": [],
+    "nav_drawdown": [
+      {
+        "nav_drawdown_pct": "0.1000",
+        "usde_depeg_pct": "-0.3083",
+        "usde_price": "0.6917"
+      },
+      {
+        "nav_drawdown_pct": "0.2000",
+        "usde_depeg_pct": "-0.4220",
+        "usde_price": "0.5780"
+      },
+      {
+        "nav_drawdown_pct": "0.5000",
+        "usde_depeg_pct": "-0.7040",
+        "usde_price": "0.2960"
+      }
+    ]
+  },
+  "derisking": {
+    "target_loss_reduction_pct": "0.5000",
+    "stress_loss_usd": "15838.21",
+    "uniform": {
+      "plan": "uniform",
+      "fractions": {
+        "lend_usde_01": "0.5000",
+        "lend_susde_01": "0.5000"
+      },
+      "loss_reduction_usd": "7919.10",
+      "trading_cost_usd": "0.00",
+      "foregone_yield_usd": "4794.52",
+      "total_cost_usd": "4794.52",
+      "break_even_probability": "0.6054"
+    },
+    "targeted": {
+      "plan": "targeted",
+      "fractions": {
+        "lend_usde_01": "0.0000",
+        "lend_susde_01": "0.0000"
+      },
+      "loss_reduction_usd": "0.00",
+      "trading_cost_usd": "0.00",
+      "foregone_yield_usd": "0.00",
+      "total_cost_usd": "0.00",
+      "break_even_probability": null
+    },
+    "full_exit": {
+      "plan": "full_exit",
+      "fractions": {
+        "lend_usde_01": "1.0000",
+        "lend_susde_01": "1.0000"
+      },
+      "loss_reduction_usd": "15838.21",
+      "trading_cost_usd": "0.00",
+      "foregone_yield_usd": "9589.04",
+      "total_cost_usd": "9589.04",
+      "break_even_probability": "0.6054"
+    },
+    "savings_usd": "4794.52",
+    "savings_pct_of_uniform_cost": "1.0000",
+    "savings_bps_nav": "4.7945",
+    "cost_per_usd_protected": {
+      "lend_usde_01": "0.3027",
+      "lend_susde_01": null
+    }
+  },
+  "liquidation_protection": [],
+  "sensitivity": {
+    "tornado": [
+      {
+        "assumption": "Loss at the shocked node",
+        "target": "loss_pct",
+        "low_value": "0.0500",
+        "high_value": "0.2000",
+        "loss_at_low_usd": "0.00",
+        "loss_at_high_usd": "315287.66",
+        "swing_usd": "315287.66",
+        "base_loss_usd": "15838.21"
+      },
+      {
+        "assumption": "Oracle pass-through (all markets)",
+        "target": "oracle_pass_through_override",
+        "low_value": "0.0000",
+        "high_value": "1.0000",
+        "loss_at_low_usd": "0.00",
+        "loss_at_high_usd": "31676.41",
+        "swing_usd": "31676.41",
+        "base_loss_usd": "15838.21"
+      },
+      {
+        "assumption": "lend_usde_01 LLTV",
+        "target": "lend_usde_01.lltv",
+        "low_value": "0.8650",
+        "high_value": "0.9450",
+        "loss_at_low_usd": "15838.21",
+        "loss_at_high_usd": "15838.21",
+        "swing_usd": "0.00",
+        "base_loss_usd": "15838.21"
+      },
+      {
+        "assumption": "lend_susde_01 LLTV",
+        "target": "lend_susde_01.lltv",
+        "low_value": "0.8650",
+        "high_value": "0.9450",
+        "loss_at_low_usd": "15838.21",
+        "loss_at_high_usd": "15838.21",
+        "swing_usd": "0.00",
+        "base_loss_usd": "15838.21"
+      }
+    ],
+    "grid": {
+      "x_param": "loss_pct",
+      "x_values": [
+        "0.0000",
+        "0.0500",
+        "0.1000",
+        "0.1500",
+        "0.2000",
+        "0.2500",
+        "0.3000",
+        "0.3500",
+        "0.4000",
+        "0.4500",
+        "0.5000",
+        "0.5500",
+        "0.6000",
+        "0.6500",
+        "0.7000",
+        "0.7500",
+        "0.8000",
+        "0.8500",
+        "0.9000",
+        "0.9500"
+      ],
+      "y_param": "oracle_pass_through_override",
+      "y_values": [
+        "0.0000",
+        "0.5000",
+        "1.0000"
+      ],
+      "loss_usd": [
+        [
+          "0.00",
+          "0.00",
+          "0.00",
+          "88824.29",
+          "255167.96",
+          "551719.96",
+          "848271.96",
+          "1293633.49",
+          "1738995.02",
+          "2184356.54",
+          "2629718.07",
+          "3200079.60",
+          "3770441.12",
+          "4340802.65",
+          "4911164.17",
+          "5481525.70",
+          "6051887.23",
+          "6622248.75",
+          "7192610.28",
+          "7762971.81"
+        ],
+        [
+          "0.00",
+          "0.00",
+          "0.00",
+          "0.00",
+          "31676.41",
+          "209629.18",
+          "160485.01",
+          "390358.70",
+          "673026.41",
+          "966354.46",
+          "664444.41",
+          "933962.93",
+          "1256275.47",
+          "1598313.25",
+          "1940351.03",
+          "2282388.81",
+          "2624426.59",
+          "2966464.37",
+          "3308502.15",
+          "2525539.93"
+        ],
+        [
+          "0.00",
+          "0.00",
+          "31676.41",
+          "160485.01",
+          "375407.37",
+          "664444.41",
+          "1006275.47",
+          "1440351.03",
+          "1874426.59",
+          "2308502.15",
+          "2774254.13",
+          "3330162.05",
+          "3886069.97",
+          "4441977.89",
+          "4997885.81",
+          "5553793.73",
+          "6109701.65",
+          "6665609.57",
+          "7221517.49",
+          "7777425.41"
+        ]
+      ],
+      "liquidatable_positions": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    }
+  },
+  "uncertainty": {
+    "draws": 256,
+    "seed": 20261010,
+    "method": "uniform draws of unverified model assumptions within their ranges; scenario parameters fixed",
+    "portfolio": {
+      "p05_usd": "0.00",
+      "p25_usd": "0.00",
+      "p50_usd": "0.00",
+      "p75_usd": "6339.02",
+      "p95_usd": "14308.38",
+      "min_usd": "0.00",
+      "max_usd": "24537.70",
+      "base_usd": "15838.21"
+    },
+    "positions": {
+      "lend_usde_01": {
+        "p05_usd": "0.00",
+        "p25_usd": "0.00",
+        "p50_usd": "0.00",
+        "p75_usd": "373.73",
+        "p95_usd": "11880.27",
+        "min_usd": "0.00",
+        "max_usd": "15823.14",
+        "base_usd": "15838.21"
+      },
+      "lend_susde_01": {
+        "p05_usd": "0.00",
+        "p25_usd": "0.00",
+        "p50_usd": "0.00",
+        "p75_usd": "0.00",
+        "p95_usd": "12054.58",
+        "min_usd": "0.00",
+        "max_usd": "15570.54",
+        "base_usd": "0.00"
+      }
+    },
+    "histogram": [
+      {
+        "from_usd": "0.00",
+        "to_usd": "1635.85",
+        "draws": 161
+      },
+      {
+        "from_usd": "1635.85",
+        "to_usd": "3271.69",
+        "draws": 14
+      },
+      {
+        "from_usd": "3271.69",
+        "to_usd": "4907.54",
+        "draws": 11
+      },
+      {
+        "from_usd": "4907.54",
+        "to_usd": "6543.39",
+        "draws": 7
+      },
+      {
+        "from_usd": "6543.39",
+        "to_usd": "8179.23",
+        "draws": 10
+      },
+      {
+        "from_usd": "8179.23",
+        "to_usd": "9815.08",
+        "draws": 10
+      },
+      {
+        "from_usd": "9815.08",
+        "to_usd": "11450.93",
+        "draws": 7
+      },
+      {
+        "from_usd": "11450.93",
+        "to_usd": "13086.77",
+        "draws": 12
+      },
+      {
+        "from_usd": "13086.77",
+        "to_usd": "14722.62",
+        "draws": 14
+      },
+      {
+        "from_usd": "14722.62",
+        "to_usd": "16358.47",
+        "draws": 5
+      },
+      {
+        "from_usd": "16358.47",
+        "to_usd": "17994.31",
+        "draws": 2
+      },
+      {
+        "from_usd": "17994.31",
+        "to_usd": "19630.16",
+        "draws": 1
+      },
+      {
+        "from_usd": "19630.16",
+        "to_usd": "21266.01",
+        "draws": 1
+      },
+      {
+        "from_usd": "21266.01",
+        "to_usd": "22901.85",
+        "draws": 0
+      },
+      {
+        "from_usd": "22901.85",
+        "to_usd": "24537.70",
+        "draws": 1
+      }
+    ],
+    "liquidatable_positions_share": {
+      "0": "1.0000"
+    },
+    "drivers": [
+      {
+        "assumption": "lend_usde_01 oracle pass-through",
+        "low": "0.0000",
+        "high": "1.0000",
+        "rank_correlation": "0.4751"
+      },
+      {
+        "assumption": "lend_susde_01 oracle pass-through",
+        "low": "0.0000",
+        "high": "1.0000",
+        "rank_correlation": "0.4458"
+      },
+      {
+        "assumption": "venue:susde_usdc depth (assumed)",
+        "low": "0.5000",
+        "high": "2.0000",
+        "rank_correlation": "0.0665"
+      },
+      {
+        "assumption": "lend_susde_01 LLTV",
+        "low": "0.8650",
+        "high": "0.9450",
+        "rank_correlation": "0.0468"
+      },
+      {
+        "assumption": "lend_usde_01 LLTV",
+        "low": "0.8650",
+        "high": "0.9450",
+        "rank_correlation": "0.0280"
+      },
+      {
+        "assumption": "venue:usde_usdc depth (assumed)",
+        "low": "0.5000",
+        "high": "2.0000",
+        "rank_correlation": "-0.0034"
+      }
+    ],
+    "fixed_because_verified": []
+  },
+  "position_curves": {
+    "x_param": "loss_pct",
+    "x_values": [
+      "0.0000",
+      "0.0500",
+      "0.1000",
+      "0.1500",
+      "0.2000",
+      "0.2500",
+      "0.3000",
+      "0.3500",
+      "0.4000",
+      "0.4500",
+      "0.5000",
+      "0.5500",
+      "0.6000",
+      "0.6500",
+      "0.7000",
+      "0.7500",
+      "0.8000",
+      "0.8500",
+      "0.9000",
+      "0.9500"
+    ],
+    "positions_usd": {
+      "lend_usde_01": [
+        "0.00",
+        "0.00",
+        "15838.21",
+        "80242.51",
+        "187703.68",
+        "332222.20",
+        "503137.73",
+        "720175.52",
+        "937213.30",
+        "1154251.08",
+        "1387127.06",
+        "1665081.02",
+        "1943034.98",
+        "2220988.95",
+        "2498942.91",
+        "2776896.87",
+        "3054850.83",
+        "3332804.79",
+        "3610758.75",
+        "3888712.71"
+      ],
+      "lend_susde_01": [
+        "0.00",
+        "0.00",
+        "0.00",
+        "44412.14",
+        "127583.98",
+        "275859.98",
+        "424135.98",
+        "646816.75",
+        "869497.51",
+        "1092178.27",
+        "1314859.03",
+        "1600039.80",
+        "1885220.56",
+        "2170401.32",
+        "2455582.09",
+        "2740762.85",
+        "3025943.61",
+        "3311124.38",
+        "3596305.14",
+        "3881485.90"
+      ]
+    },
+    "total_usd": [
+      "0.00",
+      "0.00",
+      "15838.21",
+      "124654.65",
+      "315287.66",
+      "608082.18",
+      "927273.72",
+      "1366992.26",
+      "1806710.80",
+      "2246429.35",
+      "2701986.10",
+      "3265120.82",
+      "3828255.55",
+      "4391390.27",
+      "4954524.99",
+      "5517659.72",
+      "6080794.44",
+      "6643929.16",
+      "7207063.89",
+      "7770198.61"
+    ]
+  },
+  "assumptions": [
+    "Conditional on the scenario: losses and savings are what happens if it occurs, not expected values.",
+    "Exit costs use venue fee, gas and the constant-product depth proxy from the snapshot; replace with executable quotes when available.",
+    "De-risking exits happen before the scenario at normal depth; pro-rata exits keep HF/LTV unchanged.",
+    "Liquidation penalty = close-factor share of debt x protocol incentive (Aave 50% above HF 0.95, Morpho 100%)."
+  ],
+  "warnings": [
+    "Computed from unverified market parameters; illustrative, never a real-market result."
+  ]
+}

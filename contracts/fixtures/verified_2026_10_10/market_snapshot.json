@@ -1,0 +1,287 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "snapshot_verified_20261010",
+  "as_of": "2026-10-10T11:57:23Z",
+  "chain_id": 1,
+  "block_number": 26161879,
+  "prices_usd": {
+    "USDe": {
+      "value": "0.999597",
+      "source_type": "observed"
+    },
+    "USDC": {
+      "value": "0.9998671",
+      "source_type": "observed"
+    },
+    "PYUSD": {
+      "value": "1.000067",
+      "source_type": "observed"
+    },
+    "sUSDe": {
+      "value": "1.251839",
+      "source_type": "derived"
+    },
+    "PT-sUSDe": {
+      "value": "0.993391",
+      "source_type": "derived"
+    }
+  },
+  "exchange_rates": {
+    "sUSDe_USDe": {
+      "value": "1.252344",
+      "source_type": "observed"
+    }
+  },
+  "markets": {
+    "aave_01": {
+      "market_kind": "aave_v3_reserve",
+      "liquidation_threshold": "0.93",
+      "liquidation_bonus": "0.02",
+      "oracle_pass_through": "0.0",
+      "oracle_type": "aave_capped_usdt_usd",
+      "oracle_address": "0xC26D4a1c46d884cfF6dE9800B6aE7A8Cf48B4Ff8",
+      "emode_category": 11,
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "oracle_pass_through": "derived"
+      },
+      "warnings": [
+        "Aave prices USDe with the Chainlink USDT/USD feed: a USDe market depeg does not move the oracle; a USDT depeg does."
+      ]
+    },
+    "morpho_01": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.915",
+      "liquidation_incentive": "0.0262",
+      "oracle_pass_through": "1.0",
+      "oracle_type": "morpho_chainlink_v2_susde_vault_x_usde_usd_over_pyusd_usd",
+      "oracle_address": "0xE6212D05cB5aF3C821Fef1C1A233a678724F9E7E",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "liquidation_incentive": "derived",
+        "oracle_pass_through": "derived"
+      },
+      "warnings": [
+        "Incentive from Morpho Blue formula min(1.15, 1/(0.3 x LLTV + 0.7)) - 1."
+      ]
+    },
+    "pendle_01": {
+      "market_kind": "pendle_pt_market",
+      "maturity": "2026-11-26T00:00:00Z",
+      "days_to_maturity": "46.5018",
+      "pt_implied_apy": "0.0501",
+      "valuation_method": "implied_apy_discount",
+      "market_address": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "pt_implied_apy": "observed",
+        "days_to_maturity": "derived"
+      }
+    }
+  },
+  "yields": {
+    "ethena_susde_01": {
+      "token_apy": "0.0485",
+      "source_type": "observed",
+      "field_sources": {
+        "token_apy": "observed"
+      }
+    },
+    "aave_01": {
+      "collateral_supply_apy": "0.0024",
+      "debt_borrow_apy": "0.0465",
+      "source_type": "observed"
+    },
+    "morpho_01": {
+      "collateral_supply_apy": "0.00",
+      "debt_borrow_apy": "0.0418",
+      "source_type": "observed"
+    },
+    "pendle_01": {
+      "token_apy": "0.0501",
+      "source_type": "observed"
+    }
+  },
+  "exit_venues": {
+    "venue:susde_usdc": {
+      "asset": "sUSDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "33041617.53",
+      "fee_rate": "0",
+      "gas_usd": "86.84",
+      "venue_address": null,
+      "source_type": "observed",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived"
+      },
+      "quotes": [
+        {
+          "size_tokens": "399412.29",
+          "size_usd": "500000.00",
+          "proceeds_usd": "499839.31",
+          "loss_pct": "0.0321",
+          "positions": []
+        },
+        {
+          "size_tokens": "798824.57",
+          "size_usd": "1000000.00",
+          "proceeds_usd": "999548.14",
+          "loss_pct": "0.0452",
+          "positions": []
+        },
+        {
+          "size_tokens": "1597649.15",
+          "size_usd": "2000000.00",
+          "proceeds_usd": "1998530.22",
+          "loss_pct": "0.0735",
+          "positions": []
+        },
+        {
+          "size_tokens": "3994122.87",
+          "size_usd": "5000000.00",
+          "proceeds_usd": "4342823.53",
+          "loss_pct": "13.1435",
+          "positions": []
+        },
+        {
+          "size_tokens": "7988245.74",
+          "size_usd": "10000000.00",
+          "proceeds_usd": "4256849.39",
+          "loss_pct": "57.4315",
+          "positions": []
+        },
+        {
+          "size_tokens": "19970614.35",
+          "size_usd": "25000000.00",
+          "proceeds_usd": "2966121.33",
+          "loss_pct": "88.1355",
+          "positions": []
+        },
+        {
+          "size_tokens": "39941228.71",
+          "size_usd": "50000000.00",
+          "proceeds_usd": "2684997.30",
+          "loss_pct": "94.6300",
+          "positions": []
+        },
+        {
+          "size_tokens": "79882457.41",
+          "size_usd": "100000000.00",
+          "proceeds_usd": "2340496.11",
+          "loss_pct": "97.6595",
+          "positions": []
+        },
+        {
+          "size_tokens": "119823686.12",
+          "size_usd": "150000000.00",
+          "proceeds_usd": "2340510.55",
+          "loss_pct": "98.4397",
+          "positions": []
+        }
+      ]
+    },
+    "venue:usde_usdc": {
+      "asset": "USDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "31323680.12",
+      "fee_rate": "0",
+      "gas_usd": "90.14",
+      "venue_address": null,
+      "source_type": "observed",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived"
+      },
+      "quotes": [
+        {
+          "size_tokens": "500201.58",
+          "size_usd": "500000.00",
+          "proceeds_usd": "500076.49",
+          "loss_pct": "0.0000",
+          "positions": []
+        },
+        {
+          "size_tokens": "1000403.16",
+          "size_usd": "1000000.00",
+          "proceeds_usd": "1000101.24",
+          "loss_pct": "0.0000",
+          "positions": []
+        },
+        {
+          "size_tokens": "2000806.32",
+          "size_usd": "2000000.00",
+          "proceeds_usd": "1999910.54",
+          "loss_pct": "0.0045",
+          "positions": []
+        },
+        {
+          "size_tokens": "5002015.81",
+          "size_usd": "5000000.00",
+          "proceeds_usd": "4997402.96",
+          "loss_pct": "0.0519",
+          "positions": []
+        },
+        {
+          "size_tokens": "10004031.62",
+          "size_usd": "10000000.00",
+          "proceeds_usd": "7580075.28",
+          "loss_pct": "24.1992",
+          "positions": []
+        },
+        {
+          "size_tokens": "25010079.06",
+          "size_usd": "25000000.00",
+          "proceeds_usd": "5700855.36",
+          "loss_pct": "77.1966",
+          "positions": []
+        },
+        {
+          "size_tokens": "50020158.12",
+          "size_usd": "50000000.00",
+          "proceeds_usd": "5044922.98",
+          "loss_pct": "89.9102",
+          "positions": []
+        },
+        {
+          "size_tokens": "100040316.25",
+          "size_usd": "100000000.00",
+          "proceeds_usd": "5334457.21",
+          "loss_pct": "94.6655",
+          "positions": []
+        },
+        {
+          "size_tokens": "150060474.37",
+          "size_usd": "150000000.00",
+          "proceeds_usd": "4135478.35",
+          "loss_pct": "97.2430",
+          "positions": []
+        }
+      ]
+    },
+    "venue:pendle_pt_susde": {
+      "asset": "PT-sUSDe",
+      "quote_method": "pool_reserves",
+      "effective_depth_usd": "3820497",
+      "observed_liquidity_usd": "3820497",
+      "fee_rate": "0.001",
+      "gas_usd": "40",
+      "venue_address": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+      "source_type": "observed",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "assumed",
+        "gas_usd": "assumed"
+      }
+    }
+  },
+  "warnings": [
+    "Market parameters, oracles, prices and yields observed on Ethereum mainnet at the block above; holdings are fictional.",
+    "Pendle depth = total observed pool liquidity under a constant-product proxy; the real AMM concentrates liquidity, so impact is overstated.",
+    "The only Morpho sUSDe/USDC market holds ~9.5k USD; the position uses the liquid sUSDe/PYUSD market instead.",
+    "sUSDe and USDe exit venues: KyberSwap executable quotes from 0.5m to 150m USD, taken after the snapshot block (not block-pinned)."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "verified_lending_2026_10_10_portfolio",
+  "as_of": "2026-10-10T15:21:47Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_susde_01",
+      "protocol": "morpho",
+      "chain_id": 1,
+      "position_type": "lending_supply",
+      "market_id": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+      "asset_symbol": "PYUSD",
+      "quantity": "5000000",
+      "quantity_unit": "PYUSD",
+      "gross_value_usd": "5000000.00",
+      "debt_value_usd": "0",
+      "net_equity_usd": "5000000.00",
+      "exit_venue_id": "venue:morpho_susde_pyusd_supply",
+      "data_origin": "fictional"
+    },
+    {
+      "position_id": "lend_usde_01",
+      "protocol": "morpho",
+      "chain_id": 1,
+      "position_type": "lending_supply",
+      "market_id": "0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+      "asset_symbol": "RLUSD",
+      "quantity": "3000000",
+      "quantity_unit": "RLUSD",
+      "gross_value_usd": "3000000.00",
+      "debt_value_usd": "0",
+      "net_equity_usd": "3000000.00",
+      "exit_venue_id": "venue:morpho_usde_rlusd_supply",
+      "data_origin": "fictional"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "8000000.00",
+    "debt_value_usd": "0.00",
+    "net_equity_usd": "8000000.00"
+  }
+}

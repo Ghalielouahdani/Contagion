@@ -1,0 +1,294 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_verified_lending_2026_10_10_liquidity",
+  "request_id": "verified_lending_2026_10_10_liquidity",
+  "portfolio_id": "verified_lending_2026_10_10_portfolio",
+  "scenario_id": "liquidity_crisis",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_susde_01",
+      "gross_value_before_usd": "5000335.00",
+      "gross_value_after_usd": "5000335.00",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000335.00",
+      "net_equity_after_usd": "5000335.00",
+      "conditional_loss_usd": "0.00",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Lender exit: only 2,408,767 of 5,000,000 PYUSD can be withdrawn now; 2,591,233 stays locked until borrowers repay or new supply arrives (a delay, not a loss)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:morpho_susde_pyusd_supply",
+            "nodes": [
+              "position:lend_susde_01",
+              "venue:morpho_susde_pyusd_supply"
+            ],
+            "edges": [
+              "edge:10"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "lend_usde_01",
+      "gross_value_before_usd": "3000066.00",
+      "gross_value_after_usd": "3000066.00",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "3000066.00",
+      "net_equity_after_usd": "3000066.00",
+      "conditional_loss_usd": "0.00",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Lender exit: only 863,213 of 3,000,000 RLUSD can be withdrawn now; 2,136,787 stays locked until borrowers repay or new supply arrives (a delay, not a loss)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "exit_liquidity",
+            "root": "venue:morpho_usde_rlusd_supply",
+            "nodes": [
+              "position:lend_usde_01",
+              "venue:morpho_usde_rlusd_supply"
+            ],
+            "edges": [
+              "edge:19"
+            ],
+            "channels": [
+              "exit_liquidity"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          }
+        }
+      ]
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "8000401.00",
+    "net_equity_after_usd": "8000401.00",
+    "total_conditional_loss_usd": "0.00",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_verified_lending_2026_10_10",
+    "input_graph_id": "graph_verified_lending_2026_10_10"
+  },
+  "warnings": [],
+  "trace": [
+    {
+      "id": "shared_liquidity_penalty",
+      "label": "Shared exit venues: selling together costs more",
+      "formula": "sum over venues of cost(sum of sizes) - sum of each position's standalone cost",
+      "inputs": [
+        {
+          "name": "joint cost",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "standalone costs",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "0.00",
+        "unit": "usd"
+      },
+      "note": "Exists only at portfolio level: no single position carries it."
+    },
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "lend_susde_01",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "lend_usde_01",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "0.00",
+        "unit": "usd"
+      },
+      "note": "0.00% of net equity (8000401.00 USD)."
+    }
+  ],
+  "contagion": {
+    "graph_id": "graph_verified_lending_2026_10_10",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "protocol:morpho",
+        "label": "Morpho Blue",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      }
+    ],
+    "warnings": []
+  }
+}
