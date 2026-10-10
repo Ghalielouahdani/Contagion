@@ -1164,12 +1164,18 @@ function AssistantDock({
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [audioMuted, setAudioMuted] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
   const [amplitude, setAmplitude] = useState(0.12);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionFinalRef = useRef(false);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const speechRunRef = useRef(0);
+  const activeSpeechMessageRef = useRef<string | null>(null);
+  const preferredVoice = useMemo(() => pickPreferredVoice(voices), [voices]);
+  const selectedSpeechVoice = voices.find((voice) => voice.voiceURI === selectedVoiceURI) ?? preferredVoice;
 
   useEffect(() => {
     if (!open) return;
@@ -1195,6 +1201,18 @@ function AssistantDock({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, setOpen]);
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
+      setSelectedVoiceURI((current) => current || pickPreferredVoice(availableVoices)?.voiceURI || "");
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -1238,7 +1256,7 @@ function AssistantDock({
         }
       }
       if (inputMode === "voice" && !audioMuted) {
-        speak(response.message);
+        speak(response.message, assistantMessage.id);
       } else {
         setAssistantState("idle");
       }
@@ -1256,23 +1274,55 @@ function AssistantDock({
   }
 
   function cancelSpeech() {
+    speechRunRef.current += 1;
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    if (activeSpeechMessageRef.current) {
+      const messageId = activeSpeechMessageRef.current;
+      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+      activeSpeechMessageRef.current = null;
+    }
     setAssistantState((current) => (current === "speaking" ? "idle" : current));
   }
 
-  function speak(text: string) {
+  function speak(text: string, messageId: string) {
     if (!("speechSynthesis" in window)) {
       setAssistantState("idle");
       return;
     }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.onstart = () => setAssistantState("speaking");
-    utterance.onend = () => setAssistantState("idle");
-    utterance.onerror = () => setAssistantState("idle");
-    window.speechSynthesis.speak(utterance);
+    const chunks = splitSpeechChunks(text);
+    if (!chunks.length) {
+      setAssistantState("idle");
+      return;
+    }
+    const runId = speechRunRef.current + 1;
+    speechRunRef.current = runId;
+    activeSpeechMessageRef.current = messageId;
+    setAssistantState("speaking");
+
+    const speakChunk = (index: number) => {
+      if (speechRunRef.current !== runId) return;
+      const chunk = chunks[index];
+      if (!chunk) {
+        setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+        activeSpeechMessageRef.current = null;
+        setAssistantState("idle");
+        return;
+      }
+      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: chunk } : message)));
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      if (selectedSpeechVoice) utterance.voice = selectedSpeechVoice;
+      utterance.rate = 0.98;
+      utterance.pitch = 1;
+      utterance.onend = () => speakChunk(index + 1);
+      utterance.onerror = () => {
+        activeSpeechMessageRef.current = null;
+        setAssistantState("idle");
+      };
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakChunk(0);
   }
 
   async function startListening() {
@@ -1382,6 +1432,19 @@ function AssistantDock({
               ))}
               {!voiceSupported ? <p className="speech-fallback">Voice is not available in this browser; typing still works.</p> : null}
             </div>
+            <div className="assistant-voice-settings" aria-label="Speech settings">
+              <label>
+                <span>Voice</span>
+                <select value={selectedSpeechVoice?.voiceURI ?? ""} onChange={(event) => setSelectedVoiceURI(event.target.value)} disabled={!voices.length || audioMuted}>
+                  {!voices.length ? <option value="">Browser default</option> : null}
+                  {voices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name} · {voice.lang}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <form
               className="assistant-input"
               onSubmit={(event) => {
@@ -1416,6 +1479,41 @@ function AssistantDock({
       </AnimatePresence>
     </>
   );
+}
+
+function pickPreferredVoice(voices: SpeechSynthesisVoice[]) {
+  return [...voices].sort((a, b) => voiceScore(b) - voiceScore(a))[0] ?? null;
+}
+
+function voiceScore(voice: SpeechSynthesisVoice) {
+  const name = voice.name.toLowerCase();
+  const lang = voice.lang.toLowerCase();
+  let score = 0;
+  if (lang.startsWith("en-us")) score += 70;
+  if (lang.startsWith("en-gb")) score += 62;
+  if (lang.startsWith("en")) score += 45;
+  if (/(google|microsoft|neural|online|premium|natural|samantha|ava|jenny|aria|sonia|daniel)/.test(name)) score += 28;
+  if (voice.localService) score += 4;
+  if (/compact|robot|basic/.test(name)) score -= 12;
+  return score;
+}
+
+function splitSpeechChunks(text: string) {
+  return text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?])\s+|;\s+/)
+    .flatMap((sentence) => {
+      const clean = sentence.trim();
+      if (clean.length <= 150) return clean;
+      return clean.split(/,\s+/).reduce<string[]>((chunks, clause) => {
+        const last = chunks[chunks.length - 1];
+        if (!last || `${last}, ${clause}`.length > 145) chunks.push(clause);
+        else chunks[chunks.length - 1] = `${last}, ${clause}`;
+        return chunks;
+      }, []);
+    })
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
 }
 
 function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: number }) {
