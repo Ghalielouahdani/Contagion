@@ -142,8 +142,12 @@ class GeminiClient:
             raise AdvisorError(504, "Gemini timed out.") from exc
         except httpx.HTTPError as exc:
             raise AdvisorError(502, "Could not reach Gemini.") from exc
-        if response.status_code in (401, 403):
-            raise AdvisorError(503, "Gemini rejected the API key.")
+        try:   # Gemini signale une clé invalide en 400 avec la raison API_KEY_INVALID
+            reasons = [d.get("reason") for d in response.json().get("error", {}).get("details", [])]
+        except (ValueError, AttributeError):
+            reasons = []
+        if response.status_code in (401, 403) or "API_KEY_INVALID" in reasons:
+            raise AdvisorError(503, "Gemini rejected the API key. Replace GEMINI_API_KEY in the backend .env.")
         if response.status_code == 429:
             raise AdvisorError(503, "Gemini quota or rate limit reached.")
         if not response.is_success:

@@ -104,6 +104,16 @@ def test_invented_numbers_are_flagged():
     assert advise(*inputs(), llm=FakeLLM(grounded))["advice"]["ungrounded_numbers"] == []
 
 
+def test_rejected_api_key_gives_a_clear_error(monkeypatch):
+    import httpx
+
+    body = {"error": {"code": 400, "details": [{"reason": "API_KEY_INVALID"}]}}
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: httpx.Response(400, json=body))
+    out = advise(*inputs(), llm=GeminiClient(api_key="not-a-real-key", model="gemini-test"))
+    assert out["advice_error"]["status"] == 503
+    assert "rejected the API key" in out["advice_error"]["message"]
+
+
 def test_missing_api_key_gives_a_clear_error_without_network():
     out = advise(*inputs(), llm=GeminiClient(api_key=""))
     assert out["advice_error"] == {"status": 503, "message": "AI advisor requires GEMINI_API_KEY on the backend."}
