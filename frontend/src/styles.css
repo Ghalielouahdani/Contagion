@@ -716,6 +716,15 @@ tbody tr[data-highlighted="true"] {
   background: var(--np-line);
 }
 
+.scenario-receipt {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--np-line);
+  border-bottom: 1px solid var(--np-line);
+}
+
 .evidence-card {
   display: grid;
   gap: 12px;

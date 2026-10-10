@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { createActionRegistry } from "./actions/registry";
 import { loadAppData, marketSnapshot, postAssistantMessage } from "./data/api";
 import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
 import type {
@@ -152,6 +153,9 @@ function App() {
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
   const [inspectedExitFraction, setInspectedExitFraction] = useState<string | null>(null);
+  const [shockPct, setShockPct] = useState(5);
+  const [horizonDays, setHorizonDays] = useState(7);
+  const [liquidityLossPct, setLiquidityLossPct] = useState(80);
   const [commandOpen, setCommandOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [hasRun, setHasRun] = useState(true);
@@ -160,6 +164,7 @@ function App() {
   const appQuery = useQuery({
     queryKey: ["app-data", mode, scenario],
     queryFn: () => loadAppData(mode, scenario),
+    placeholderData: (previousData) => previousData,
   });
 
   useEffect(() => {
@@ -194,11 +199,22 @@ function App() {
       setSelectedPosition(action.positionId);
       if (action.view) setView(action.view);
     }
-    if (action.type === "select_scenario") {
+    if (action.type === "set_scenario") {
       setScenario(action.scenario);
-      if (action.run) runScenario();
     }
-    if (action.type === "run_scenario") {
+    if (action.type === "set_shock") {
+      setShockPct(action.shockPct);
+      setView("scenario");
+    }
+    if (action.type === "set_horizon") {
+      setHorizonDays(action.days);
+      setView("scenario");
+    }
+    if (action.type === "set_liquidity_loss") {
+      setLiquidityLossPct(action.percent);
+      setView("scenario");
+    }
+    if (action.type === "run_simulation") {
       if (action.scenario) setScenario(action.scenario);
       setHasRun(true);
       setView("decision");
@@ -207,7 +223,7 @@ function App() {
       setSelectedPosition(action.positionId);
       setView("graph");
     }
-    if (action.type === "inspect_exit_fraction") {
+    if (action.type === "set_exit_fraction") {
       setInspectedExitFraction(action.fraction);
       setView("decision");
     }
@@ -220,6 +236,10 @@ function App() {
     setMode("fixture");
     setSelectedPosition("aave_01");
     setSelectedEdge(null);
+    setShockPct(5);
+    setHorizonDays(7);
+    setLiquidityLossPct(80);
+    setInspectedExitFraction(null);
     setHasRun(true);
     setView("portfolio");
   }
@@ -304,6 +324,12 @@ function App() {
                     setSelectedPosition={setSelectedPosition}
                     hoveredPosition={hoveredPosition}
                     setHoveredPosition={setHoveredPosition}
+                    shockPct={shockPct}
+                    setShockPct={setShockPct}
+                    horizonDays={horizonDays}
+                    setHorizonDays={setHorizonDays}
+                    liquidityLossPct={liquidityLossPct}
+                    setLiquidityLossPct={setLiquidityLossPct}
                     runScenario={runScenario}
                   />
                 ) : null}
@@ -311,6 +337,7 @@ function App() {
                   <DecisionEngine
                     data={data}
                     scenario={scenario}
+                    scenarioInputs={{ shockPct, horizonDays, liquidityLossPct }}
                     hasRun={hasRun}
                     selectedRisk={selectedRisk}
                     selectedPortfolio={selectedPortfolio}
@@ -335,8 +362,6 @@ function App() {
         setQuery={setQuery}
         setOpen={setCommandOpen}
         data={data}
-        setView={setView}
-        setSelectedPosition={setSelectedPosition}
         executeAction={executeAction}
       />
       {data ? (
@@ -349,6 +374,7 @@ function App() {
           scenario={scenario}
           selectedPosition={selectedPosition}
           inspectedExitFraction={inspectedExitFraction}
+          scenarioInputs={{ shockPct, horizonDays, liquidityLossPct }}
           executeAction={executeAction}
         />
       ) : null}
@@ -730,6 +756,12 @@ function ScenarioLab({
   setSelectedPosition,
   hoveredPosition,
   setHoveredPosition,
+  shockPct,
+  setShockPct,
+  horizonDays,
+  setHorizonDays,
+  liquidityLossPct,
+  setLiquidityLossPct,
   runScenario,
 }: {
   data: AppData;
@@ -739,13 +771,16 @@ function ScenarioLab({
   setSelectedPosition: (id: string) => void;
   hoveredPosition: string | null;
   setHoveredPosition: (id: string | null) => void;
+  shockPct: number;
+  setShockPct: (value: number) => void;
+  horizonDays: number;
+  setHorizonDays: (value: number) => void;
+  liquidityLossPct: number;
+  setLiquidityLossPct: (value: number) => void;
   runScenario: () => void;
 }) {
-  const [shock, setShock] = useState(5);
-  const [horizon, setHorizon] = useState(7);
-  const [liquidity, setLiquidity] = useState(80);
   const selectedRisk = data.risk.positions.find((position) => position.position_id === selectedPosition) ?? data.risk.positions[0];
-  const previewScale = scenario === "usde_depeg" ? shock / 5 : liquidity / 80;
+  const previewScale = scenario === "usde_depeg" ? shockPct / 5 : liquidityLossPct / 80;
   const valuationData = data.risk.positions.map((position) => ({
     id: position.position_id,
     name: compactId(position.position_id),
@@ -766,14 +801,14 @@ function ScenarioLab({
       </section>
 
       <section className="control-panel">
-        <Control label="USDe shock magnitude" value={signedPercent(-shock)}>
-          <input type="range" min="1" max="25" value={shock} onChange={(event) => setShock(Number(event.target.value))} />
+        <Control label="USDe shock magnitude" value={signedPercent(-shockPct)}>
+          <input type="range" min="1" max="25" value={shockPct} onChange={(event) => setShockPct(Number(event.target.value))} />
         </Control>
-        <Control label="Liquidity depth reduction" value={`${liquidity}%`}>
-          <input type="range" min="0" max="95" value={liquidity} onChange={(event) => setLiquidity(Number(event.target.value))} />
+        <Control label="Liquidity depth reduction" value={`${liquidityLossPct}%`}>
+          <input type="range" min="0" max="95" value={liquidityLossPct} onChange={(event) => setLiquidityLossPct(Number(event.target.value))} />
         </Control>
-        <Control label="Decision horizon" value={`${horizon} days`}>
-          <input type="range" min="1" max="30" value={horizon} onChange={(event) => setHorizon(Number(event.target.value))} />
+        <Control label="Decision horizon" value={`${horizonDays} days`}>
+          <input type="range" min="1" max="30" value={horizonDays} onChange={(event) => setHorizonDays(Number(event.target.value))} />
         </Control>
         <button className="run-card" onClick={runScenario}>
           <Play size={16} />
@@ -844,6 +879,7 @@ function ScenarioLab({
 function DecisionEngine({
   data,
   scenario,
+  scenarioInputs,
   hasRun,
   selectedRisk,
   selectedPortfolio,
@@ -857,6 +893,11 @@ function DecisionEngine({
 }: {
   data: AppData;
   scenario: ScenarioKind;
+  scenarioInputs: {
+    shockPct: number;
+    horizonDays: number;
+    liquidityLossPct: number;
+  };
   hasRun: boolean;
   selectedRisk?: RiskPosition;
   selectedPortfolio?: PortfolioPosition;
@@ -990,6 +1031,12 @@ function DecisionEngine({
           </div>
         </div>
         <p>{scenario === "usde_depeg" ? data.decision.reason : "No P3 liquidity decision fixture yet. Showing risk and exit mechanics without inventing a recommendation."}</p>
+        <div className="scenario-receipt" aria-label="Scenario inputs used for the latest run">
+          <MetricPair label="Scenario" value={scenarioCopy[scenario].title} />
+          <MetricPair label="USDe shock" value={signedPercent(-scenarioInputs.shockPct)} />
+          <MetricPair label="Liquidity loss" value={`${scenarioInputs.liquidityLossPct}%`} />
+          <MetricPair label="Horizon" value={`${scenarioInputs.horizonDays} days`} />
+        </div>
         <button className="icon-button text-button" onClick={() => setView("graph")}>
           <GitBranch size={14} />
           Inspect causal path
@@ -1025,8 +1072,6 @@ function CommandPalette({
   setQuery,
   setOpen,
   data,
-  setView,
-  setSelectedPosition,
   executeAction,
 }: {
   open: boolean;
@@ -1034,23 +1079,9 @@ function CommandPalette({
   setQuery: (query: string) => void;
   setOpen: (open: boolean) => void;
   data?: AppData;
-  setView: (view: View) => void;
-  setSelectedPosition: (id: string) => void;
   executeAction: (action: DashboardAction) => void;
 }) {
-  const commands = [
-    ...Object.entries(viewMeta).map(([id, meta]) => ({ type: "page", label: meta.label, action: () => setView(id as View) })),
-    { type: "scenario", label: "Run Scenario A - USDe depeg", action: () => executeAction({ type: "run_scenario", scenario: "usde_depeg" }) },
-    { type: "scenario", label: "Run Scenario B - liquidity crisis", action: () => executeAction({ type: "run_scenario", scenario: "liquidity_crisis" }) },
-    { type: "decision", label: "Inspect 50% exit", action: () => executeAction({ type: "inspect_exit_fraction", fraction: "0.50" }) },
-    ...(data?.portfolio.positions.map((position) => ({
-      type: "position",
-      label: `${position.protocol} - ${compactId(position.position_id)}`,
-      action: () => {
-        executeAction({ type: "select_position", positionId: position.position_id, view: "decision" });
-      },
-    })) ?? []),
-  ].filter((command) => command.label.toLowerCase().includes(query.toLowerCase()));
+  const commands = createActionRegistry(data).filter((command) => command.label.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <AnimatePresence>
@@ -1075,7 +1106,7 @@ function CommandPalette({
                 <button
                   key={`${command.type}-${command.label}`}
                   onClick={() => {
-                    command.action();
+                    command.actions.forEach(executeAction);
                     setOpen(false);
                     setQuery("");
                   }}
@@ -1101,6 +1132,7 @@ function AssistantDock({
   scenario,
   selectedPosition,
   inspectedExitFraction,
+  scenarioInputs,
   executeAction,
 }: {
   open: boolean;
@@ -1111,6 +1143,11 @@ function AssistantDock({
   scenario: ScenarioKind;
   selectedPosition: string;
   inspectedExitFraction: string | null;
+  scenarioInputs: {
+    shockPct: number;
+    horizonDays: number;
+    liquidityLossPct: number;
+  };
   executeAction: (action: DashboardAction) => void;
 }) {
   const [messages, setMessages] = useState<AssistantMessage[]>([
@@ -1174,6 +1211,7 @@ function AssistantDock({
           scenario,
           selectedPosition,
           inspectedExitFraction,
+          scenarioInputs,
           data: stateData,
         },
         mode,
@@ -1182,10 +1220,14 @@ function AssistantDock({
         id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
-        action: response.action,
       };
       setMessages((current) => [...current, assistantMessage]);
-      if (response.action) executeAction(response.action);
+      if (response.actions?.length) {
+        for (const action of response.actions) {
+          executeAction(action);
+          await new Promise((resolve) => window.setTimeout(resolve, action.type === "run_simulation" ? 520 : 300));
+        }
+      }
       speak(response.message);
     } catch {
       setMessages((current) => [

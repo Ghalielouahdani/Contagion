@@ -55,10 +55,13 @@ export type AppData = {
 export type DashboardAction =
   | { type: "navigate_view"; view: View }
   | { type: "select_position"; positionId: string; view?: View }
-  | { type: "select_scenario"; scenario: ScenarioKind; run?: boolean }
-  | { type: "run_scenario"; scenario?: ScenarioKind }
+  | { type: "set_scenario"; scenario: ScenarioKind }
+  | { type: "set_shock"; shockPct: number }
+  | { type: "set_horizon"; days: number }
+  | { type: "set_liquidity_loss"; percent: number }
+  | { type: "run_simulation"; scenario?: ScenarioKind }
   | { type: "open_graph_for_position"; positionId: string }
-  | { type: "inspect_exit_fraction"; fraction: string }
+  | { type: "set_exit_fraction"; fraction: string }
   | { type: "toggle_data_mode" }
   | { type: "toggle_theme" };
 
@@ -76,10 +79,15 @@ export type AssistantRequest = {
   scenario: ScenarioKind;
   selectedPosition: string;
   inspectedExitFraction?: string | null;
+  scenarioInputs: {
+    shockPct: number;
+    horizonDays: number;
+    liquidityLossPct: number;
+  };
   data: AppData;
 };
 
 export type AssistantResponse = {
   message: string;
-  action?: DashboardAction;
+  actions?: DashboardAction[];
 };
