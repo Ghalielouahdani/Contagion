@@ -27,6 +27,10 @@ Read: blueprint sections 5 (user journey), 11 (data shown), 16 P4.
 3. Connect to the live API endpoints once each module is ready.
 4. **Demo safety:** the app must run fully offline on fixtures. Prepare a demo script, screenshots and a backup recording.
 
+## Data source
+
+The app defaults to offline fixtures. Leave `VITE_USE_FIXTURES=true` or unset to read from `contracts/fixtures/demo_ethena_01`. Set `VITE_USE_FIXTURES=false` only when the FastAPI backend is running, then use the visible sidebar switch to compare fixtures with live API data.
+
 ## Definition of done
 
 A reviewer loads the portfolio, inspects the dependencies, runs both scenarios and understands the STAY/REDUCE/EXIT reasoning in under three minutes, even offline.

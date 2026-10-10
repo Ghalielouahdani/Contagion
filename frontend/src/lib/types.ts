@@ -1,18 +1,72 @@
-import portfolioFixture from "../../../contracts/fixtures/demo_ethena_01/portfolio.json";
-import graphFixture from "../../../contracts/fixtures/demo_ethena_01/dependency_graph.json";
-import riskDepegFixture from "../../../contracts/fixtures/demo_ethena_01/risk_result.json";
-import decisionFixture from "../../../contracts/fixtures/demo_ethena_01/decision_result.json";
-
 export type ScenarioKind = "usde_depeg" | "liquidity_crisis";
 export type View = "portfolio" | "graph" | "scenario" | "decision";
 export type DataMode = "fixture" | "api";
-export type Portfolio = typeof portfolioFixture;
-export type PortfolioPosition = Portfolio["positions"][number];
-export type DependencyGraph = typeof graphFixture;
-export type GraphNode = DependencyGraph["nodes"][number];
-export type GraphEdge = DependencyGraph["edges"][number];
-export type DecisionResult = typeof decisionFixture;
-export type ExitOption = DecisionResult["exit_options"][number];
+
+export type PortfolioPosition = {
+  position_id: string;
+  protocol: string;
+  chain_id: number;
+  position_type: string;
+  market_id: string | null;
+  asset_symbol?: string;
+  collateral_asset?: string;
+  debt_asset?: string;
+  quantity?: string;
+  gross_value_usd: string;
+  debt_value_usd: string;
+  net_equity_usd: string;
+  exit_venue_id: string;
+  data_origin: string;
+  [key: string]: unknown;
+};
+
+export type Portfolio = {
+  schema_version: string;
+  portfolio_id: string;
+  as_of: string;
+  quote_currency: string;
+  positions: PortfolioPosition[];
+  totals: {
+    gross_value_usd: string;
+    debt_value_usd: string;
+    net_equity_usd: string;
+  };
+  [key: string]: unknown;
+};
+
+export type GraphNode = {
+  id: string;
+  type: string;
+  label: string;
+  [key: string]: unknown;
+};
+
+export type GraphEdge = {
+  id: string;
+  source: string;
+  target: string;
+  relation: string;
+  risk_channel: string;
+  confidence: string;
+  evidence: {
+    method: string;
+    reference: string;
+    observed_at: string;
+    status?: string;
+  };
+  [key: string]: unknown;
+};
+
+export type DependencyGraph = {
+  schema_version: string;
+  graph_id: string;
+  portfolio_id: string;
+  as_of: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  warnings?: string[];
+  [key: string]: unknown;
+};
 
 export type RiskMetric = {
   type: string;
@@ -40,14 +94,76 @@ export type RiskPosition = {
   warnings: string[];
 };
 
-export type RiskResult = Omit<typeof riskDepegFixture, "positions"> & {
+export type RiskResult = {
+  schema_version: string;
+  simulation_id: string;
+  request_id: string;
+  portfolio_id: string;
+  scenario_id: ScenarioKind | string;
+  horizon_days: number;
+  currency: string;
   positions: RiskPosition[];
+  portfolio: {
+    total_conditional_loss_usd: string;
+    shared_liquidity_penalty_usd?: string;
+    aggregation_status: string;
+    [key: string]: unknown;
+  };
+  metadata?: Record<string, unknown>;
+  warnings?: string[];
+  [key: string]: unknown;
+};
+
+export type ExitOption = {
+  exit_fraction: string;
+  fees_usd: string;
+  gas_usd: string;
+  price_impact_usd: string;
+  estimated_exit_cost_usd: string;
+  foregone_yield_usd: string;
+  residual_stress_loss_usd: string;
+  break_even_probability: string | null;
+  objective_usd: string | null;
+  quote_status: string;
+};
+
+export type DecisionResult = {
+  schema_version: string;
+  decision_id: string;
+  simulation_id: string;
+  portfolio_id: string;
+  position_id: string;
+  scenario_id: ScenarioKind | string;
+  horizon_days: number;
+  mode: string;
+  currency: string;
+  exit_options: ExitOption[];
+  recommendation: string;
+  recommended_exit_fraction: string | null;
+  reason: string;
+  warnings: string[];
+  [key: string]: unknown;
+};
+
+export type MarketSnapshot = {
+  schema_version: string;
+  snapshot_id: string;
+  as_of: string;
+  chain_id: number;
+  prices_usd: Record<string, unknown>;
+  exchange_rates: Record<string, unknown>;
+  markets: Record<string, unknown>;
+  yields: Record<string, unknown>;
+  exit_venues: Record<string, unknown>;
+  warnings: string[];
+  [key: string]: unknown;
 };
 
 export type AppData = {
-  health: { status: string; mode: DataMode };
+  health: { status: string; mode: DataMode; source: string; mockedFixtures: string[] };
   portfolio: Portfolio;
   graph: DependencyGraph;
+  marketSnapshot: MarketSnapshot;
   risk: RiskResult;
   decision: DecisionResult;
 };

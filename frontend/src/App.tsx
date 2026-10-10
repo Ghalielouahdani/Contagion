@@ -50,7 +50,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
-import { loadAppData, marketSnapshot, postAssistantMessage } from "./data/api";
+import { defaultDataMode, loadAppData, postAssistantMessage } from "./data/api";
 import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
 import type {
   AppData,
@@ -149,7 +149,7 @@ const sections = [
 function App() {
   const [view, setView] = useState<View>("portfolio");
   const [scenario, setScenario] = useState<ScenarioKind>("usde_depeg");
-  const [mode, setMode] = useState<DataMode>("fixture");
+  const [mode, setMode] = useState<DataMode>(defaultDataMode);
   const [theme, setTheme] = useState<Theme>("light");
   const [selectedPosition, setSelectedPosition] = useState("aave_01");
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
@@ -255,7 +255,7 @@ function App() {
         setMode={setMode}
         theme={theme}
         setTheme={setTheme}
-        health={data?.health.status}
+        health={data?.health}
       />
 
       <section className="content-pane">
@@ -399,7 +399,7 @@ function Sidebar({
   setMode: (mode: DataMode) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  health?: string;
+  health?: AppData["health"];
 }) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Explore: true, Run: true });
 
@@ -447,15 +447,18 @@ function Sidebar({
       </nav>
 
       <div className="sidebar-controls">
-        <button className="mode-toggle" onClick={() => setMode(mode === "fixture" ? "api" : "fixture")}>
+        <button className="mode-toggle" onClick={() => setMode(mode === "fixture" ? "api" : "fixture")} aria-pressed={mode === "fixture"}>
           <Database size={14} />
-          {mode === "fixture" ? "Fixture mode" : "API mode"}
+          {mode === "fixture" ? "Fixtures ON" : "Live API"}
         </button>
         <button className="mode-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
           {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
           {theme}
         </button>
-        <span className="status-line">{health ?? "loading"}</span>
+        <span className="status-line">
+          {health?.status ?? "loading"}
+          {health?.mockedFixtures.length ? ` · ${health.mockedFixtures.length} mock` : ""}
+        </span>
       </div>
     </aside>
   );
@@ -581,7 +584,7 @@ function PortfolioDashboard({
             ))}
           </tbody>
         </table>
-        <WarningList warnings={marketSnapshot.warnings} />
+        <WarningList warnings={data.marketSnapshot.warnings} />
       </section>
     </div>
   );
@@ -744,7 +747,7 @@ function DependencyGraphView({
         ) : (
           <p className="muted">Click an edge to inspect relation, source and confidence.</p>
         )}
-        <WarningList warnings={graph.warnings} />
+        <WarningList warnings={graph.warnings ?? []} />
       </aside>
     </div>
   );
@@ -1029,10 +1032,10 @@ function DecisionEngine({
           <BadgeCheck size={18} />
           <div>
             <span>Verdict</span>
-            <strong>{scenario === "usde_depeg" ? data.decision.recommendation : "INSUFFICIENT_DATA"}</strong>
+            <strong>{data.decision.recommendation}</strong>
           </div>
         </div>
-        <p>{scenario === "usde_depeg" ? data.decision.reason : "No P3 liquidity decision fixture yet. Showing risk and exit mechanics without inventing a recommendation."}</p>
+        <p>{data.decision.reason}</p>
         <div className="scenario-receipt" aria-label="Scenario inputs used for the latest run">
           <MetricPair label="Scenario" value={scenarioCopy[scenario].title} />
           <MetricPair label="USDe shock" value={signedPercent(-scenarioInputs.shockPct)} />
