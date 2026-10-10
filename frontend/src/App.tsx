@@ -2155,6 +2155,8 @@ function AssistantDock({
   const [voiceDiagnostic, setVoiceDiagnostic] = useState("");
   const [amplitude, setAmplitude] = useState(0.12);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionFinalRef = useRef(false);
   const recognitionTranscriptRef = useRef("");
@@ -2173,6 +2175,11 @@ function AssistantDock({
   useEffect(() => {
     setVoiceSupported(Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition));
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [messages, assistantState, voiceIssue, voiceDiagnostic, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -2230,9 +2237,10 @@ function AssistantDock({
       const assistantMessage: AssistantMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response.message,
+        content: response.message?.trim() || "The assistant returned an empty reply. Check the backend logs for the raw model response.",
         inputMode,
       };
+      console.info("[Assistant UI] assistant reply received", response);
       setMessages((current) => [...current, assistantMessage]);
       if (response.actions?.length) {
         for (const action of response.actions) {
@@ -2241,7 +2249,8 @@ function AssistantDock({
         }
       }
       setAssistantState("idle");
-    } catch {
+    } catch (error) {
+      console.warn("[Assistant UI] assistant request failed", error);
       setMessages((current) => [
         ...current,
         {
@@ -2657,16 +2666,22 @@ function AssistantDock({
                 <X size={15} />
               </button>
             </header>
-            <div className="assistant-messages" aria-live="polite">
+            <div className="assistant-messages" aria-live="polite" ref={messagesRef}>
               {messages.map((message) => (
                 <div className="assistant-message" data-role={message.role} key={message.id}>
                   <p>{message.content}</p>
                   {message.caption && message.role === "assistant" ? <small>{message.caption}</small> : null}
                 </div>
               ))}
+              {assistantState === "thinking" ? (
+                <div className="assistant-message assistant-message-pending" data-role="assistant">
+                  <p>Thinking with the local model...</p>
+                </div>
+              ) : null}
               {!voiceSupported ? <p className="speech-fallback">Voice input is not supported in this browser; typing still works.</p> : null}
               {voiceDiagnostic ? <p className="speech-fallback">{voiceDiagnostic}</p> : null}
               {voiceIssue ? <p className="speech-fallback">{voiceIssue}</p> : null}
+              <div ref={messagesEndRef} aria-hidden="true" />
             </div>
             <form
               className="assistant-input"

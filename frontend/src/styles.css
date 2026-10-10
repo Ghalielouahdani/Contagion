@@ -1750,6 +1750,15 @@ tbody tr[data-highlighted="true"] {
   border-color: var(--np-strong);
 }
 
+.assistant-message-pending {
+  color: var(--np-muted);
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--np-accent) 12%, transparent), transparent),
+    var(--np-page);
+  background-size: 220% 100%;
+  animation: assistant-pending 1.4s ease-in-out infinite;
+}
+
 .assistant-message p {
   margin-bottom: 0;
   color: var(--np-strong);
@@ -1779,6 +1788,15 @@ tbody tr[data-highlighted="true"] {
   padding: 0 12px;
   background: var(--np-page);
   color: var(--np-strong);
+}
+
+@keyframes assistant-pending {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
 }
 
 @keyframes shimmer {
