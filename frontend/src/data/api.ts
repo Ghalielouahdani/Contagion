@@ -36,6 +36,18 @@ const surfaceLoaders = import.meta.glob("../../../contracts/fixtures/*/risk_surf
 
 export const defaultDataMode: DataMode = readFixtureDefault() ? "fixture" : "api";
 
+export type PortfolioData = Pick<AppData, "portfolio" | "graph" | "marketSnapshot">;
+
+/** The original portfolio is fetched independently from submitted stress runs. */
+export async function loadPortfolioData(mode: DataMode, set: string): Promise<PortfolioData> {
+  if (mode === "api") return requestJson<PortfolioData>(withSet("/api/v1/portfolio-baseline", set));
+  return {
+    portfolio: readFixture<Portfolio>(set, "portfolio.json"),
+    graph: readFixture<DependencyGraph>(set, "dependency_graph.json"),
+    marketSnapshot: readFixture<MarketSnapshot>(set, "market_snapshot.json"),
+  };
+}
+
 /** Fixture sets bundled with the app (each contracts/fixtures/<set>/ with a manifest). */
 export const fixtureSets: Array<{ id: string; description: string }> = Object.entries(smallFixtures)
   .filter(([path]) => path.endsWith("/manifest.json"))

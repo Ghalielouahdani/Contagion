@@ -113,6 +113,14 @@ def portfolio(set: str | None = Query(None)) -> dict:
     return _files(set)["portfolio"]
 
 
+@app.get("/api/v1/portfolio-baseline")
+def portfolio_baseline(set: str | None = Query(None)) -> dict:
+    """Original portfolio and observations, independent of discovery and stress runs."""
+    files = _set_files(set or DEFAULT_SET)
+    return {"portfolio": files["portfolio"], "graph": files["dependency_graph"],
+            "marketSnapshot": files["market_snapshot"]}
+
+
 @app.post("/api/v1/discover")
 def discover(body: dict = Body(default={}), set: str | None = Query(None), discovery: str = Query("stored")) -> dict:
     files = _set_files(set or DEFAULT_SET)

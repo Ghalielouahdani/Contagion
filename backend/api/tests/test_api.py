@@ -21,6 +21,19 @@ def test_health_lists_sets_and_modules():
     assert {"demo_ethena_01", "verified_2026_10_10"} <= set(body["fixture_sets"])
 
 
+def test_original_portfolio_is_unchanged_by_stress_runs():
+    query = "?set=stress_portfolio_01"
+    before = client.get("/api/v1/portfolio-baseline" + query)
+    assert before.status_code == 200
+    folder = Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / "stress_portfolio_01"
+    request = json.loads((folder / "scenario_request_cascade.json").read_text())
+    request["scenario"]["parameters"]["usde_spot_shock_pct"] = "-0.20"
+    simulated = client.post("/api/v1/simulate" + query, json=request)
+    assert simulated.status_code == 200
+    assert D(simulated.json()["portfolio"]["total_conditional_loss_usd"]) > 0
+    assert client.get("/api/v1/portfolio-baseline" + query).json() == before.json()
+
+
 def test_portfolio_graph_and_snapshot_follow_the_selected_set():
     assert client.get("/api/v1/portfolio").json()["portfolio_id"] == "stress_portfolio_01"
     assert client.get("/api/v1/portfolio?set=verified_2026_10_10").json()["portfolio_id"] == "verified_ethena_01"

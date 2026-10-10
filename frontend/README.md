@@ -29,6 +29,11 @@ Read: blueprint sections 5 (user journey), 11 (data shown), 16 P4.
 
 ## Data source
 
+Portfolio Dashboard and Dependency Graph read the original portfolio baseline independently
+of stress runs. Editing sliders changes the draft only. Run updates Scenario Lab, its
+contagion overlay, Risk Engine and Decision Engine; baseline holdings, dependency labels
+and evidence stay unchanged. Portfolio cards open their original dependencies.
+
 Two modes, same screens. Choose a scenario, adjust its parameters, then click **Run scenario** to submit it against the selected portfolio. The unified stress portfolio is the default for all seven scenarios. See [portfolio composition](../docs/stress_portfolio.md). Editing controls keeps the last run visible with a pending-changes notice; graph paths, decisions and assistant context describe that last submitted run.
 
 | Mode | How | Risk numbers |

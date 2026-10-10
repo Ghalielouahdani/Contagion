@@ -59,6 +59,8 @@ import {
   defaultFixtureSet,
   fixtureSets,
   loadAppData,
+  loadPortfolioData,
+  type PortfolioData,
   postAssistantMessage,
   presetInputs,
 } from "./data/api";
@@ -106,7 +108,7 @@ declare global {
 
 const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string }> = {
   portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore" },
-  graph: { label: "Contagion Graph", icon: GitBranch, section: "Explore" },
+  graph: { label: "Dependency Graph", icon: GitBranch, section: "Explore" },
   scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run" },
   engine: { label: "Risk Engine", icon: Calculator, section: "Run" },
   decision: { label: "Decision Engine", icon: BarChart3, section: "Run" },
@@ -257,6 +259,9 @@ function App() {
   const [fixtureSet, setFixtureSet] = useState(defaultFixtureSet);
   const [theme, setTheme] = useState<Theme>("light");
   const [selectedPosition, setSelectedPosition] = useState("aave_01");
+  const [baselinePosition, setBaselinePosition] = useState("aave_01");
+  const [baselineEdge, setBaselineEdge] = useState<GraphEdge | null>(null);
+  const [baselineHover, setBaselineHover] = useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
   const [inspectedExitFraction, setInspectedExitFraction] = useState<string | null>(null);
@@ -305,6 +310,14 @@ function App() {
     queryKey: ["app-data", mode, fixtureSet, submitted],
     queryFn: () => loadAppData(mode, submitted.scenario, submitted.inputs, fixtureSet),
   });
+  const baselineQuery = useQuery({
+    queryKey: ["portfolio-baseline", mode, fixtureSet],
+    queryFn: () => loadPortfolioData(mode, fixtureSet),
+    staleTime: Infinity,
+  });
+  const baseline = baselineQuery.data;
+  const isBaselineView = view === "portfolio" || view === "graph";
+  const visibleQuery = isBaselineView ? baselineQuery : appQuery;
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -436,9 +449,9 @@ function App() {
           <div>
             <p className="eyebrow">DeFi Contagion Explorer</p>
             <h1>{viewMeta[view].label}</h1>
-            <p className="lead">{scenarioCopy[scenario].summary}</p>
+            <p className="lead">{isBaselineView ? (view === "portfolio" ? "Original holdings, debt and equity at the recorded market snapshot." : "Original dependencies between positions, assets, protocols, oracles and exit venues.") : scenarioCopy[scenario].summary}</p>
             <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.{fixtureSet === "stress_portfolio_01" ? " Synthetic allocations on real markets · recorded market observations." : ""}</p>
-            {hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {scenarioCopy[submitted.scenario].title}.</p> : null}
+            {!isBaselineView && hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {scenarioCopy[submitted.scenario].title}.</p> : null}
           </div>
           <div className="topbar-actions">
             <button className="icon-button text-button" onClick={() => setCommandOpen(true)}>
@@ -449,9 +462,9 @@ function App() {
               <RefreshCw size={15} />
               Reset
             </button>
-            <button className="run-button" onClick={runScenario} disabled={appQuery.isFetching}>
+            <button className="run-button" onClick={isBaselineView ? () => setView("scenario") : runScenario} disabled={!isBaselineView && appQuery.isFetching}>
               <Play size={15} />
-              {appQuery.isFetching ? "Running…" : "Run scenario"}
+              {isBaselineView ? "Stress test" : appQuery.isFetching ? "Running…" : "Run scenario"}
             </button>
           </div>
         </header>
@@ -464,35 +477,17 @@ function App() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
-            {appQuery.isLoading ? <SkeletonView /> : null}
-            {appQuery.isError ? <ErrorView mode={mode} /> : null}
-            {data ? (
+            {visibleQuery.isLoading ? <SkeletonView /> : null}
+            {visibleQuery.isError ? <ErrorView mode={mode} /> : null}
+            {baseline && view === "portfolio" ? <PortfolioDashboard data={baseline}
+              selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition} setView={setView}
+              hoveredPosition={baselineHover} setHoveredPosition={setBaselineHover} /> : null}
+            {baseline && view === "graph" ? <ReactFlowProvider><DependencyGraphView graph={baseline.graph}
+              selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition}
+              selectedEdge={baselineEdge} setSelectedEdge={setBaselineEdge}
+              hoveredPosition={baselineHover} setHoveredPosition={setBaselineHover} /></ReactFlowProvider> : null}
+            {data && !isBaselineView ? (
               <>
-                {view === "portfolio" ? (
-                  <PortfolioDashboard
-                    data={data}
-                    selectedPosition={selectedPosition}
-                    setSelectedPosition={setSelectedPosition}
-                    setView={setView}
-                    hoveredPosition={hoveredPosition}
-                    setHoveredPosition={setHoveredPosition}
-                  />
-                ) : null}
-                {view === "graph" ? (
-                  <ReactFlowProvider>
-                    <DependencyGraphView
-                      graph={data.graph}
-                      risk={data.risk}
-                      scenario={submitted.scenario}
-                      selectedPosition={selectedPosition}
-                      setSelectedPosition={setSelectedPosition}
-                      selectedEdge={selectedEdge}
-                      setSelectedEdge={setSelectedEdge}
-                      hoveredPosition={hoveredPosition}
-                      setHoveredPosition={setHoveredPosition}
-                    />
-                  </ReactFlowProvider>
-                ) : null}
                 {view === "scenario" ? (
                   <div className="page-stack">
                   <ScenarioLab
@@ -674,7 +669,7 @@ function PortfolioDashboard({
   hoveredPosition,
   setHoveredPosition,
 }: {
-  data: AppData;
+  data: PortfolioData;
   selectedPosition: string;
   setSelectedPosition: (id: string) => void;
   setView: (view: View) => void;
@@ -694,11 +689,15 @@ function PortfolioDashboard({
 
   return (
     <div className="page-stack">
-      <SummaryStrip portfolio={data.portfolio} risk={data.risk} analytics={data.analytics} analyticsIsPreset={data.analyticsIsPreset} />
+      <section className="summary-strip">
+        <Stat label="Gross exposure" value={money(data.portfolio.totals.gross_value_usd)} detail="Original portfolio" />
+        <Stat label="Debt" value={money(data.portfolio.totals.debt_value_usd)} detail="Borrow liabilities" />
+        <Stat label="Net equity" value={money(data.portfolio.totals.net_equity_usd)} detail="Before stress" />
+        <Stat label="Positions" value={String(data.portfolio.positions.length)} detail="Same holdings across stress tests" />
+      </section>
       <section className="position-grid">
         {data.portfolio.positions.map((position) => {
-          const risk = data.risk.positions.find((item) => item.position_id === position.position_id);
-          const source = risk?.source_type ?? position.data_origin;
+          const source = position.data_origin;
           return (
             <button
               key={position.position_id}
@@ -709,7 +708,7 @@ function PortfolioDashboard({
               onMouseLeave={() => setHoveredPosition(null)}
               onClick={() => {
                 setSelectedPosition(position.position_id);
-                setView("decision");
+                setView("graph");
               }}
             >
               <div className="card-topline">
@@ -723,8 +722,8 @@ function PortfolioDashboard({
               <MetricPair label="Debt" value={money(position.debt_value_usd)} />
               <MetricPair label="Net equity" value={money(position.net_equity_usd)} />
               <div className="loss-strip">
-                <span>stress loss</span>
-                <strong>{money(risk?.conditional_loss_usd)}</strong>
+                <span>Original position</span>
+                <strong>Inspect dependencies →</strong>
               </div>
             </button>
           );
@@ -792,58 +791,6 @@ function PortfolioDashboard({
   );
 }
 
-function SummaryStrip({
-  portfolio,
-  risk,
-  analytics,
-  analyticsIsPreset,
-}: {
-  portfolio: Portfolio;
-  risk: AppData["risk"];
-  analytics: AppData["analytics"];
-  analyticsIsPreset: boolean;
-}) {
-  const headline = analytics?.headline;
-  const tenPctNav = analytics?.breaking_points.nav_drawdown.find((row) => Number(row.nav_drawdown_pct) === 0.1);
-  return (
-    <section className="summary-strip">
-      <Stat label="Gross exposure" value={money(portfolio.totals.gross_value_usd)} detail="not capital" />
-      <Stat label="Debt" value={money(portfolio.totals.debt_value_usd)} detail="borrow liabilities" />
-      <Stat label="Net equity" value={money(portfolio.totals.net_equity_usd)} detail="capital at risk" />
-      <Stat label="Conditional loss" value={money(risk.portfolio.total_conditional_loss_usd)} detail={risk.portfolio.aggregation_status} />
-      {headline ? (
-        <>
-          {Number(headline.usde_effective_leverage) > 0 ? (
-            <Stat
-              label="USDe effective leverage"
-              value={`${Number(headline.usde_effective_leverage).toFixed(2)}×`}
-              detail={`${money(headline.usde_exposure_usd)} on one factor`}
-            />
-          ) : (
-            // Lenders lose nothing on a small move, then a lot past a threshold: a linear leverage would read 0x.
-            <Stat
-              label="USDe exposure"
-              value="threshold"
-              detail={`no loss on small moves · ${money(headline.scenario_loss_usd)} in this scenario`}
-            />
-          )}
-          <Stat
-            label="NAV −10% at"
-            value={tenPctNav?.usde_depeg_pct ? percent(tenPctNav.usde_depeg_pct) : "n/a"}
-            detail={tenPctNav?.usde_price ? `USDe depeg to ${Number(tenPctNav.usde_price).toFixed(3)}` : "not reached"}
-          />
-          <Stat label="Top risk driver" value={headline.top_risk_driver ?? "n/a"} detail="largest loss swing" />
-          <Stat
-            label="Act if probability >"
-            value={percent(headline.targeted_plan_break_even_probability)}
-            detail={`targeted plan saves ${money(headline.derisking_savings_usd)}${analyticsIsPreset ? ` · at ${money(headline.scenario_loss_usd)} preset loss` : ""}`}
-          />
-        </>
-      ) : null}
-    </section>
-  );
-}
-
 function factorLabel(factor: string) {
   return ({ usde_price: "USDe price decline", usde_backing: "Ethena backing impairment",
     susde_exchange_rate: "sUSDe exchange-rate decline", pt_implied_yield: "PT yield repricing",
@@ -864,7 +811,7 @@ function edgeLabel(relation: string) {
 function DependencyGraphView({
   graph,
   risk,
-  scenario,
+  scenario = "usde_depeg",
   selectedPosition,
   setSelectedPosition,
   selectedEdge,
@@ -873,8 +820,8 @@ function DependencyGraphView({
   setHoveredPosition,
 }: {
   graph: DependencyGraph;
-  risk: AppData["risk"];
-  scenario: ScenarioKind;
+  risk?: AppData["risk"];
+  scenario?: ScenarioKind;
   selectedPosition: string;
   setSelectedPosition: (id: string) => void;
   selectedEdge: GraphEdge | null;
@@ -882,6 +829,8 @@ function DependencyGraphView({
   hoveredPosition: string | null;
   setHoveredPosition: (id: string | null) => void;
 }) {
+  const isStress = Boolean(risk);
+  const positions = risk?.positions ?? [];
   const [search, setSearch] = useState("");
   const [enabledTypes, setEnabledTypes] = useState<Record<string, boolean>>({
     asset: true,
@@ -894,17 +843,17 @@ function DependencyGraphView({
   const flow = useReactFlow();
   const [pathScope, setPathScope] = useState<"all" | "selected">("all");
   // Paths come from the engine; position amounts are never allocated to individual edges.
-  const selectedContagion = risk.positions.find((position) => position.position_id === selectedPosition)?.contagion;
+  const selectedContagion = positions.find((position) => position.position_id === selectedPosition)?.contagion;
   const [factorFilter, setFactorFilter] = useState("all");
-  const factors = [...new Set(risk.positions.flatMap(position => position.contagion?.paths.map(path => path.factor) ?? []))];
+  const factors = [...new Set(positions.flatMap(position => position.contagion?.paths.map(path => path.factor) ?? []))];
   const activeFactor = factors.includes(factorFilter) ? factorFilter : "all";
-  const displayedPaths = useMemo(() => (pathScope === "all" ? risk.positions :
-    risk.positions.filter((position) => position.position_id === selectedPosition))
-    .flatMap((position) => position.contagion?.paths ?? []).filter(path => activeFactor === "all" || path.factor === activeFactor), [pathScope, risk.positions, selectedPosition, activeFactor]);
+  const displayedPaths = useMemo(() => (pathScope === "all" ? positions :
+    positions.filter((position) => position.position_id === selectedPosition))
+    .flatMap((position) => position.contagion?.paths ?? []).filter(path => activeFactor === "all" || path.factor === activeFactor), [pathScope, positions, selectedPosition, activeFactor]);
   const criticalEdges = useMemo(() => new Set(displayedPaths.flatMap((path) => path.edges)), [displayedPaths]);
   const criticalNodes = useMemo(() => new Set(displayedPaths.flatMap((path) => path.nodes)), [displayedPaths]);
   const roots = useMemo(() => new Set(displayedPaths.map((path) => path.root)), [displayedPaths]);
-  const positionRisks = useMemo(() => new Map(risk.positions.map((position) => [`position:${position.position_id}`, position])), [risk.positions]);
+  const positionRisks = useMemo(() => new Map(positions.map((position) => [`position:${position.position_id}`, position])), [positions]);
   const layout = useMemo(() => layoutGraph(graph.nodes), [graph.nodes]);
   const nodeLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
   const visibleNodeIds = useMemo(() => {
@@ -967,11 +916,11 @@ function DependencyGraphView({
   }, [criticalEdges, graph.edges, visibleNodeIds]);
 
   const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
-  const flowKey = `${activeFactor}-${risk.simulation_id}-${risk.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
+  const flowKey = `${activeFactor}-${risk?.simulation_id ?? graph.graph_id}-${risk?.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
 
   return (
     <div className="page-stack">
-      <section className="visual-panel contagion-summary">
+      {isStress ? <section className="visual-panel contagion-summary">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Scenario → dependencies → portfolio impact</p>
@@ -991,7 +940,7 @@ function DependencyGraphView({
           {[...roots].map((root) => <Badge key={root} tone="risk">{nodeLabel(root)}</Badge>)}
         </div>
         <div className="contagion-positions">
-          {risk.positions.map((position) => (
+          {positions.map((position) => (
             <button key={position.position_id} className="position-card" data-selected={position.position_id === selectedPosition}
               onClick={() => { setSelectedPosition(position.position_id); setSelectedEdge(null); }}>
               <strong>{compactId(position.position_id)}</strong>
@@ -1004,13 +953,17 @@ function DependencyGraphView({
             </button>
           ))}
         </div>
-        <Definition label="Portfolio conditional loss" value={money(risk.portfolio.total_conditional_loss_usd)} />
-        {Number(risk.portfolio.shared_liquidity_penalty_usd) > 0 ? <Definition label="Additional cost of shared exit venues" value={money(risk.portfolio.shared_liquidity_penalty_usd)} /> : null}
-        {scenario === "combined_crisis" && risk.comparison ? <>
-          <Definition label="Extra exit cost from liquidation selling" value={money(risk.comparison.excess_loss_usd)} />
+        <Definition label="Portfolio conditional loss" value={money(risk?.portfolio.total_conditional_loss_usd)} />
+        {Number(risk?.portfolio.shared_liquidity_penalty_usd) > 0 ? <Definition label="Additional cost of shared exit venues" value={money(risk?.portfolio.shared_liquidity_penalty_usd)} /> : null}
+        {scenario === "combined_crisis" && risk?.comparison ? <>
+          <Definition label="Extra exit cost from liquidation selling" value={money(risk?.comparison.excess_loss_usd)} />
           <p className="microcopy">Depeg → liquidations → selling into shared venues → more expensive fund exits. One round is modeled.</p>
         </> : null}
-      </section>
+      </section> : <section className="visual-panel">
+        <p className="eyebrow">Original dependency graph</p>
+        <h2>Portfolio dependencies before stress</h2>
+        <p className="microcopy">Relations and their evidence at the recorded snapshot. Run a scenario in Scenario Lab to see shock propagation and losses.</p>
+      </section>}
       <div className="graph-layout">
       <section className="graph-stage">
         <ReactFlow
@@ -1075,6 +1028,7 @@ function DependencyGraphView({
           <p className="muted">Click an edge to inspect relation, source and confidence.</p>
         )}
 
+        {isStress ? <>
         <div className="divider" />
         <p className="eyebrow">Shock propagation · {compactId(selectedPosition)}</p>
         <p className="microcopy">Paths explain exposure. The position loss is counted once even when several paths reach it.</p>
@@ -1095,15 +1049,16 @@ function DependencyGraphView({
         ) : (
           <p className="muted">No contagion path for this position in the current result.</p>
         )}
-        <WarningList warnings={risk.positions.find((position) => position.position_id === selectedPosition)?.warnings ?? []} />
+        <WarningList warnings={positions.find((position) => position.position_id === selectedPosition)?.warnings ?? []} />
         <WarningList warnings={[...(selectedContagion?.graph_gaps ?? []), ...(selectedContagion?.unmodeled_exposures ?? [])]} />
 
-        {risk.contagion?.hubs.length ? (
+        </> : null}
+        {risk?.contagion?.hubs.length ? (
           <>
             <div className="divider" />
             <p className="eyebrow">Contagion hubs</p>
             <div className="evidence-card">
-              {risk.contagion.hubs.slice(0, 5).map((hub) => (
+              {risk?.contagion.hubs.slice(0, 5).map((hub) => (
                 <Definition
                   key={hub.node}
                   label={hub.label}
