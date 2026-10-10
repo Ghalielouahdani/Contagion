@@ -899,12 +899,20 @@ function PortfolioDashboard({
 
   return (
     <div className="page-stack">
-      <SummaryStrip portfolio={data.portfolio} risk={data.risk} analytics={data.analytics} analyticsIsPreset={data.analyticsIsPreset} />
+      <SummaryStrip
+        portfolio={data.portfolio}
+        risk={data.risk}
+        analytics={data.analytics}
+        analyticsIsPreset={data.analyticsIsPreset}
+        selectedPosition={selectedPortfolio.position_id}
+        setHoveredPosition={setHoveredPosition}
+      />
       <section className="position-master-detail" aria-label="Position selector">
         <motion.article
           key={selectedPortfolio.position_id}
           className="position-detail-card"
           data-selected="true"
+          data-highlighted={hoveredPosition === selectedPortfolio.position_id}
           layout
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -946,6 +954,8 @@ function PortfolioDashboard({
               className="position-card position-card--compact"
               data-selected="false"
               data-highlighted={hoveredPosition === position.position_id}
+              data-tooltip={`Select ${compactId(position.position_id)} as the active position.`}
+              aria-label={`Select ${compactId(position.position_id)}`}
               layout
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1042,11 +1052,15 @@ function SummaryStrip({
   risk,
   analytics,
   analyticsIsPreset,
+  selectedPosition,
+  setHoveredPosition,
 }: {
   portfolio: Portfolio;
   risk: AppData["risk"];
   analytics: AppData["analytics"];
   analyticsIsPreset: boolean;
+  selectedPosition: string;
+  setHoveredPosition: (id: string | null) => void;
 }) {
   const headline = analytics?.headline;
   const tenPctNav = analytics?.breaking_points.nav_drawdown.find((row) => Number(row.nav_drawdown_pct) === 0.1);
@@ -1056,10 +1070,16 @@ function SummaryStrip({
   };
   return (
     <section className="summary-strip">
-      <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" />
-      <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" />
-      <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" />
-      <Stat label="Conditional loss" value={kpiMoney(risk.portfolio.total_conditional_loss_usd)} detail={risk.portfolio.aggregation_status} />
+      <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
+      <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
+      <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
+      <Stat
+        label="Conditional loss"
+        value={kpiMoney(risk.portfolio.total_conditional_loss_usd)}
+        detail={risk.portfolio.aggregation_status}
+        highlightId={selectedPosition}
+        setHoveredPosition={setHoveredPosition}
+      />
       {headline ? (
         <>
           <Stat
@@ -2293,15 +2313,100 @@ function RiskGauge({ metric }: { metric: NonNullable<RiskPosition["risk_metric"]
   );
 }
 
-function Stat({ label, value, detail, valueKind = "figure" }: { label: string; value: string; detail?: string; valueKind?: "figure" | "text" }) {
+function Stat({
+  label,
+  value,
+  detail,
+  valueKind = "figure",
+  highlightId,
+  setHoveredPosition,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  valueKind?: "figure" | "text";
+  highlightId?: string;
+  setHoveredPosition?: (id: string | null) => void;
+}) {
   return (
-    <div className="stat" data-value-kind={valueKind}>
+    <div
+      className="stat"
+      data-value-kind={valueKind}
+      data-tooltip={detail ? `${label}: ${value}. ${detail}` : `${label}: ${value}`}
+      onMouseEnter={() => {
+        if (highlightId) setHoveredPosition?.(highlightId);
+      }}
+      onMouseLeave={() => {
+        if (highlightId) setHoveredPosition?.(null);
+      }}
+    >
       <span className="stat-label">{label}</span>
-      <strong className="stat-value">{value}</strong>
+      <strong className="stat-value">{valueKind === "figure" ? <AnimatedFigure value={value} /> : value}</strong>
       <span className="stat-sublabel" aria-hidden="true" />
       {detail ? <small className="stat-footnote">{detail}</small> : <small className="stat-footnote" aria-hidden="true" />}
     </div>
   );
+}
+
+function AnimatedFigure({ value }: { value: string }) {
+  const parsed = useMemo(() => parseDisplayFigure(value), [value]);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const [current, setCurrent] = useState(parsed?.amount ?? 0);
+
+  useEffect(() => {
+    if (!parsed) return;
+    if (prefersReducedMotion) {
+      setCurrent(parsed.amount);
+      return;
+    }
+    const start = current;
+    const end = parsed.amount;
+    const startTime = window.performance.now();
+    let frame = 0;
+    const animate = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / 620);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCurrent(start + (end - start) * eased);
+      if (progress < 1) frame = window.requestAnimationFrame(animate);
+    };
+    frame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frame);
+  }, [parsed, prefersReducedMotion]);
+
+  if (!parsed) return <>{value}</>;
+  return (
+    <span className="animated-figure" aria-label={value}>
+      <span>{parsed.prefix}</span>
+      <span>{current.toFixed(parsed.decimals)}</span>
+      <span className="figure-unit">{parsed.suffix}</span>
+    </span>
+  );
+}
+
+function parseDisplayFigure(value: string) {
+  const trimmed = value.trim();
+  const normalized = trimmed.replace(/,/g, "");
+  const match = normalized.match(/^(\$)?(-?\d+(?:\.\d+)?)(M|B|K|%|×)?$/);
+  if (!match) return null;
+  const decimals = match[2].includes(".") ? match[2].split(".")[1].length : 0;
+  return {
+    prefix: match[1] ?? "",
+    amount: Number(match[2]),
+    suffix: match[3] ?? "",
+    decimals,
+  };
+}
+
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(query.matches);
+    const onChange = () => setPrefersReducedMotion(query.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  return prefersReducedMotion;
 }
 
 function MetricPair({ label, value }: { label: string; value: string }) {

@@ -21,7 +21,7 @@ html::before {
   pointer-events: none;
   opacity: 0.38;
   background-image:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--np-strong) 8%, transparent) 1px, transparent 0);
+    radial-gradient(circle at 1px 1px, var(--np-paper-grain) 1px, transparent 0);
   background-size: 18px 18px;
 }
 
@@ -559,6 +559,10 @@ p,
   padding: 20px 22px 18px;
   background: transparent;
   border-right: 1px solid var(--np-line);
+  isolation: isolate;
+  transition:
+    background var(--np-fast) ease,
+    box-shadow var(--np-fast) ease;
 }
 
 .stat:not(:first-child) {
@@ -583,6 +587,29 @@ p,
   align-self: start;
 }
 
+.stat::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--np-accent);
+  opacity: 0;
+  transform: scaleY(0.28);
+  transform-origin: center;
+  transition:
+    opacity var(--np-fast) ease,
+    transform var(--np-medium) var(--np-spring);
+}
+
+.stat:hover {
+  background: color-mix(in srgb, var(--np-accent-soft) 28%, transparent);
+}
+
+.stat:hover::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
 .stat-value {
   grid-row: figure;
   align-self: end;
@@ -598,6 +625,18 @@ p,
   overflow: hidden;
   text-overflow: clip;
   font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.animated-figure {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.figure-unit {
+  margin-left: 0.04em;
+  color: color-mix(in srgb, var(--np-strong) 86%, var(--np-muted));
 }
 
 .stat-sublabel {
@@ -623,7 +662,7 @@ p,
 .position-master-detail {
   display: grid;
   grid-template-columns: minmax(360px, 1.36fr) minmax(260px, 0.82fr);
-  gap: 1px;
+  gap: var(--np-grid-gap);
   border: 1px solid var(--np-line);
   background: var(--np-line);
 }
@@ -664,6 +703,7 @@ p,
 }
 
 .position-detail-card {
+  position: relative;
   min-height: 356px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(210px, 0.58fr);
@@ -673,7 +713,40 @@ p,
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--np-accent-soft) 58%, transparent), transparent 64%),
     var(--np-surface);
-  box-shadow: var(--np-shadow-soft);
+  box-shadow: var(--np-shadow-active);
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    background var(--np-fast) ease,
+    box-shadow var(--np-medium) ease,
+    transform var(--np-medium) var(--np-spring);
+}
+
+.position-detail-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: -1;
+  width: 4px;
+  background: var(--np-accent);
+}
+
+.position-detail-card::after {
+  content: "";
+  position: absolute;
+  right: clamp(28px, 3vw, 44px);
+  top: clamp(28px, 3vw, 44px);
+  width: clamp(86px, 10vw, 138px);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--np-accent) 42%, transparent);
+  border-radius: 50%;
+  opacity: 0.34;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+}
+
+.position-detail-card[data-highlighted="true"] {
+  transform: translateY(-2px);
 }
 
 .position-detail-copy {
@@ -739,12 +812,17 @@ p,
   min-width: 0;
   display: grid;
   grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: 1px;
+  gap: var(--np-grid-gap);
   background: var(--np-line);
 }
 
 .position-card--compact {
   min-height: 0;
+  justify-content: stretch;
+}
+
+.position-card--compact h2 {
+  font-size: clamp(22px, 1.8vw, 32px);
 }
 
 .position-card:hover,
@@ -756,6 +834,12 @@ p,
   background: var(--np-surface);
   transform: translateY(-3px);
   box-shadow: var(--np-shadow-soft);
+}
+
+.position-card:focus-visible,
+.stat:focus-visible {
+  outline: 2px solid var(--np-focus);
+  outline-offset: -2px;
 }
 
 .card-topline,
@@ -823,6 +907,41 @@ p,
   margin-top: 12px;
   padding-top: 14px;
   border-top: 1px solid var(--np-line-strong);
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 18px;
+  bottom: calc(100% + 10px);
+  z-index: 30;
+  max-width: min(280px, 80vw);
+  padding: 9px 10px;
+  border: 1px solid var(--np-line-strong);
+  border-radius: var(--np-radius-tight);
+  background: color-mix(in srgb, var(--np-page) 96%, transparent);
+  box-shadow: var(--np-shadow-hover);
+  color: var(--np-strong);
+  font-size: 11px;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition:
+    opacity var(--np-fast) ease,
+    transform var(--np-fast) ease;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .badge {
