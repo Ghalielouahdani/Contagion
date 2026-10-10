@@ -106,12 +106,14 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
     # Meilleur seuil de bascule : l'option qui bat STAY au p le plus bas.
     scenario = SCENARIO_LABELS.get(scenario_id, "scenario")
     candidates = [o for o in options if o["_p_star"] is not None]
-    if candidates:
-        cheapest = min(candidates, key=lambda o: o["_p_star"])
+    cheapest = min(candidates, key=lambda o: o["_p_star"]) if candidates else None
+    if cheapest is None:
+        threshold = f"No exit reduces the loss under this {scenario}, so no exit can beat staying."
+    elif cheapest["_p_star"] > 1:   # p* > 100 % : la sortie coûte plus que toute la perte évitée
+        threshold = f"Every exit costs more than the loss it avoids, so no exit can beat staying even if this {scenario} is certain."
+    else:
         threshold = (f"{option_label(D(cheapest['exit_fraction']))} beats staying if the user's probability "
                      f"of this {scenario} exceeds {pct(D(cheapest['break_even_probability']))}%.")
-    else:
-        threshold = f"No exit reduces the loss under this {scenario}, so no exit can beat staying."
 
     # Règles de la section 8.
     if not priced:

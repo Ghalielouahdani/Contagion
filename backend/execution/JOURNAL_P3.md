@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : étapes 0 à 6 terminées sur 8
+> État : étapes 0 à 7 terminées sur 8
 
 ---
 
@@ -342,6 +342,46 @@ Le fichier `tests/test_section16.py` contient un test par exigence du blueprint.
 
 **Résultat :** 20 tests dans ce fichier, **37 au total**, tous verts.
 
+Commit `57b39ed`.
+
+### Étape 7 : données de sensibilité pour le dashboard
+
+**Pourquoi :** nos chiffres reposent sur deux hypothèses fragiles, la probabilité de la crise et la profondeur des pools. Le gestionnaire doit voir **à quel point la décision en dépend**. P4 affichera un curseur. `sensitivity()` (dans `sensitivity.py`) lui prépare toutes les valeurs à l'avance, dans un JSON simple, pour qu'il n'ait aucun calcul à faire.
+
+**1. J(x) en fonction de p** (`objective_vs_probability`) : 51 points de 0 à 50 % pour chacune des 5 options, plus la meilleure option à chaque point. Pour aave_01 :
+
+| p | J(0 %) | J(25 %) | J(50 %) | J(75 %) | J(100 %) | Meilleur |
+|---|---|---|---|---|---|---|
+| 0 % | 0 | 2 905 | 9 492 | 19 773 | 33 721 | 0 % (STAY) |
+| 10 % | 15 000 | **14 155** | 16 992 | 23 523 | 33 721 | 25 % |
+| 20 % | 30 000 | 25 405 | **24 492** | 27 273 | 33 721 | 50 % |
+| 30 % | 45 000 | 36 655 | 31 992 | **31 023** | 33 721 | 75 % |
+| 50 % | 75 000 | 59 155 | 46 992 | 38 523 | **33 721** | 100 % (EXIT) |
+
+Comment lire le graphique que P4 en tirera :
+- **chaque option est une droite** : J(x) = coût certain + p × perte restante ;
+- **elle part du coût certain** (à p = 0) ;
+- **sa pente vaut la perte restante**. La droite « tout vendre » est donc **plate** : il ne reste rien d'exposé.
+- La meilleure option est la droite la plus basse. Quand p augmente, on passe d'une droite à la suivante : 0 → 25 → 50 → 75 → 100 %.
+
+**2. p\* quand la pool est plus mince** (`break_even_vs_depth`), pour aave_01 :
+
+| Profondeur | p\* 25 % | p\* 50 % | p\* 75 % | p\* 100 % |
+|---|---|---|---|---|
+| 300 M$ (÷ 1) | 7,75 % | 12,66 % | 17,58 % | 22,48 % |
+| 150 M$ (÷ 2) | 12,71 % | 22,51 % | 32,24 % | 41,89 % |
+| 60 M$ (÷ 5) | 27,45 % | 51,49 % | 74,98 % | 97,92 % |
+| 30 M$ (÷ 10) | 51,54 % | 97,94 % | **142,22 %** | **184,50 %** |
+
+**Un p\* au-dessus de 100 %** veut dire que la sortie coûte plus cher que **toute** la perte qu'elle évite : même une crise certaine ne la justifierait pas. Le chiffre est gardé, parce qu'il est vrai et montre l'ampleur du problème. Mais le texte `reason` du moteur a été corrigé : il disait « beats staying if probability exceeds 184% », ce qui n'avait pas de sens. Il dit maintenant *« no exit can beat staying even if this depeg is certain »*.
+
+**À retenir :** la recommandation pour aave_01 est **très sensible à la profondeur**. Si la vraie pool n'avait que 60 M$ de liquidité, il faudrait plus de 27 % de risque pour justifier ne serait-ce qu'une réduction de 25 %. D'où l'importance que P1 fournisse de vrais devis.
+
+**Garde-fous :**
+- Le premier avertissement est toujours *« Assumption-driven: probabilities are user inputs… »* (section 7.4).
+- Diviser la profondeur ne fait bouger **que le proxy**. Si un vrai devis est branché, un avertissement le signale.
+- Profondeur inconnue : les p\* sont vides et un avertissement explique pourquoi.
+
 ---
 
 ## 4. Organisation du code actuel
@@ -351,10 +391,12 @@ backend/execution/
 ├── __init__.py              (vide : fait du dossier un package)
 ├── decision.py              moteur de décision
 ├── exit_cost.py             estimateur de coût de sortie (sources de prix interchangeables)
+├── sensitivity.py           données de sensibilité pour le curseur de P4
 ├── tests/
 │   ├── test_decision.py     tests du moteur
 │   ├── test_exit_cost.py    tests de l'estimateur
-│   └── test_section16.py    tests exigés par la section 16
+│   ├── test_section16.py    tests exigés par la section 16
+│   └── test_sensitivity.py  tests des données de sensibilité
 ├── README.md                (consignes d'origine, sera réécrit à l'étape 8)
 └── JOURNAL_P3.md            ce fichier
 ```
@@ -420,9 +462,19 @@ python3 -m pytest backend/execution -v
 | `test_reason_names_the_cheapest_threshold_not_always_25pct` | Gas énorme + pool infinie → le texte cite « Exiting fully », pas 25 % |
 | `test_liquidity_crisis_exits_at_pre_crisis_depth` | Scénario liquidité : bons identifiants, coûts identiques au depeg (profondeur d'avant crise), p\* 25 % = 8,13 % |
 
-Plus les 20 tests de `tests/test_section16.py`, détaillés dans la section « Étape 6 » ci-dessus.
+Plus les 20 tests de `tests/test_section16.py`, détaillés dans la section « Étape 6 » ci-dessus, et ceux de `tests/test_sensitivity.py` :
 
-Dernier résultat : **37 passed**.
+| Test | Ce qu'il vérifie |
+|---|---|
+| `test_objective_curve_covers_0_to_50pct_for_every_option` | 51 points de 0 à 50 %, pour les 5 options |
+| `test_objective_at_p0_is_the_certain_cost_and_full_exit_is_flat` | À p = 0, J = coût certain (2 904,84 $) ; la droite « tout vendre » est plate |
+| `test_best_fraction_matches_the_engine_and_never_decreases` | À 15 %, meilleur = 25 % (comme le moteur) ; le meilleur choix ne recule jamais quand p monte |
+| `test_break_even_rises_as_depth_is_divided` | p\* à ÷ 1 = golden 7,75 % ; tous les p\* montent quand la pool s'amincit |
+| `test_missing_depth_gives_null_thresholds_and_a_warning` | Profondeur inconnue → pas de p\*, pas de choix, avertissement |
+| `test_output_is_plain_json_with_string_numbers` | La sortie est du JSON pur, avec l'avertissement « Assumption-driven » en tête |
+| `test_reason_says_no_exit_pays_when_every_p_star_exceeds_100pct` | Pool minuscule → tous les p\* > 100 %, et le texte dit qu'aucune sortie ne paie |
+
+Dernier résultat : **44 passed**.
 
 On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : le script affiche « IDENTIQUE » puis le JSON complet.
 
@@ -431,7 +483,8 @@ On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : 
 ## 6. Historique git (branche `feat/p3`)
 
 ```
-(étape 6) P3: section 16 test suite  ← étape 6
+(étape 7) P3: sensitivity data for the dashboard slider  ← étape 7
+57b39ed  P3: section 16 test suite  ← étape 6
 f98ae3f  P3: complete section 8 recommendation rules + liquidity check  ← étape 5
 20d31e4  P3: pluggable exit cost estimator (executable → pool → proxy)  ← étape 4
 ff6fbc4  P3: run decisions on all four positions + portfolio summary  ← étape 3
@@ -462,5 +515,4 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 
 | Étape | Contenu |
 |---|---|
-| 7 | Données de sensibilité pour le curseur du dashboard |
 | 8 | Point d'entrée pour l'API `POST /api/v1/decide` + README |
