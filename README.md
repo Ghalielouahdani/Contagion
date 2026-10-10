@@ -60,5 +60,5 @@ DISCOVERY_LIVE=1 .venv/bin/python -m pytest backend/discovery/tests/test_live.py
 |---|---|---|
 | `backend/adapters`, `backend/discovery` | P1 | dependency graph and market snapshot from Ethereum (evidence on every edge) |
 | `backend/risk` | P2 | scenarios A-G, contagion paths, analytics for the fund |
-| `backend/execution` | P3 | STAY / REDUCE / EXIT from exit costs, residual loss and break-even probability |
+| `backend/execution` | P3 | STAY / REDUCE / EXIT from exit costs, residual loss and break-even probability ([concept and worked example](backend/execution/CONCEPT.md)) |
 | `backend/api`, `frontend` | P4 | API orchestration and dashboard |

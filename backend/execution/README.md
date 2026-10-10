@@ -1,5 +1,7 @@
 # backend/execution/ — owner: P3 (Decision, Liquidity & Exit Optimization)
 
+> **Concept, inputs, expected output and a real worked example (in French): [CONCEPT.md](CONCEPT.md).**
+
 The decision engine. It answers: **"should I stay, reduce or exit this position, and is the exit worth what it costs?"**
 
 ```
