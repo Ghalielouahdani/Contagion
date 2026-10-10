@@ -2152,10 +2152,12 @@ function AssistantDock({
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(() => typeof window !== "undefined" && Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition));
   const [voiceIssue, setVoiceIssue] = useState("");
+  const [voiceDiagnostic, setVoiceDiagnostic] = useState("");
   const [amplitude, setAmplitude] = useState(0.12);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionFinalRef = useRef(false);
+  const recognitionTranscriptRef = useRef("");
   const recognitionActiveRef = useRef(false);
   const recognitionWantedRef = useRef(false);
   const recognitionManualStopRef = useRef(false);
@@ -2165,6 +2167,7 @@ function AssistantDock({
   const speechRunRef = useRef(0);
   const activeSpeechMessageRef = useRef<string | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const submitMessageRef = useRef<(raw: string, inputMode?: AssistantInputMode) => void>(() => undefined);
   const latestAssistantMessage = useMemo(() => [...messages].reverse().find((message) => message.role === "assistant"), [messages]);
 
   useEffect(() => {
@@ -2250,6 +2253,7 @@ function AssistantDock({
       setAssistantState("idle");
     }
   }
+  submitMessageRef.current = submitMessage;
 
   function cancelSpeech() {
     speechRunRef.current += 1;
@@ -2269,7 +2273,7 @@ function AssistantDock({
     setAssistantState((current) => (current === "speaking" ? "idle" : current));
   }
 
-  function speak(text: string, messageId: string) {
+  async function speak(text: string, messageId: string) {
     const cleanText = text.replace(/\s+/g, " ").trim();
     console.info("[Assistant speech] speaker requested", {
       messageId,
@@ -2299,10 +2303,16 @@ function AssistantDock({
     const runId = speechRunRef.current + 1;
     speechRunRef.current = runId;
     activeSpeechMessageRef.current = messageId;
+    setAssistantState("speaking");
     setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: cleanText } : message)));
+
+    const englishVoice = await resolveEnglishSpeechVoice(synth);
+    if (speechRunRef.current !== runId) return;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     speechUtteranceRef.current = utterance;
+    utterance.lang = "en-US";
+    if (englishVoice) utterance.voice = englishVoice;
     utterance.rate = 1;
     utterance.pitch = 1;
     utterance.onstart = () => {
@@ -2332,7 +2342,7 @@ function AssistantDock({
       pending: synth.pending,
       speaking: synth.speaking,
       paused: synth.paused,
-      voice: "browser default",
+      voice: englishVoice ? `${englishVoice.name} (${englishVoice.lang})` : "no English voice available; using lang=en-US",
     });
     synth.speak(utterance);
   }
@@ -2368,14 +2378,28 @@ function AssistantDock({
     if (!Recognition) {
       setVoiceSupported(false);
       setVoiceIssue("Speech recognition is not supported in this browser. Chrome on localhost or HTTPS is supported.");
+      setVoiceDiagnostic("SpeechRecognition API unavailable in this browser.");
+      console.warn("[Assistant voice] SpeechRecognition unavailable", getSpeechRecognitionSupport());
       return;
     }
     setVoiceSupported(true);
+    const supportSnapshot = getSpeechRecognitionSupport();
+    console.info("[Assistant voice] support check", {
+      standard: supportSnapshot.standard,
+      webkit: supportSnapshot.webkit,
+      secureContext: window.isSecureContext,
+      protocol: window.location.protocol,
+      host: window.location.host,
+      hasMediaDevices: Boolean(navigator.mediaDevices?.getUserMedia),
+      hasPermissionsApi: Boolean(navigator.permissions?.query),
+    });
+    setVoiceDiagnostic(`Voice input: ${supportSnapshot.engine}. Checking microphone permission...`);
     setVoiceIssue("");
     cancelSpeech();
     setListening(true);
     setAssistantState("listening");
     recognitionFinalRef.current = false;
+    recognitionTranscriptRef.current = "";
     recognitionHadErrorRef.current = false;
     recognitionManualStopRef.current = false;
     recognitionRestartCountRef.current = 0;
@@ -2389,6 +2413,7 @@ function AssistantDock({
         setAssistantState("idle");
         recognitionWantedRef.current = false;
         setVoiceIssue("Microphone permission was denied. Allow microphone access for this localhost page, then try again.");
+        setVoiceDiagnostic("Microphone permission denied.");
         return;
       }
       if (name === "NotFoundError" || name === "DevicesNotFoundError") {
@@ -2396,22 +2421,58 @@ function AssistantDock({
         setAssistantState("idle");
         recognitionWantedRef.current = false;
         setVoiceIssue("No microphone was found. Connect or enable a microphone, then try again.");
+        setVoiceDiagnostic("No microphone device was found.");
         return;
       }
       setListening(false);
       setAssistantState("idle");
       recognitionWantedRef.current = false;
       setVoiceIssue(`Microphone permission could not be confirmed (${name || "unknown"}). Typing still works.`);
+      setVoiceDiagnostic(`Microphone check failed: ${name || "unknown"}.`);
       return;
     }
 
+    setVoiceDiagnostic("Microphone permission granted. Starting speech recognition...");
     startAmbientListeningMotion();
     beginSpeechRecognition(Recognition);
   }
 
   async function confirmMicrophonePermission() {
-    if (!navigator.mediaDevices?.getUserMedia) return;
+    if (!window.isSecureContext && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      console.warn("[Assistant voice] insecure context blocks microphone", {
+        protocol: window.location.protocol,
+        host: window.location.host,
+      });
+      throw new DOMException("Microphone requires HTTPS or localhost.", "SecurityError");
+    }
+    if (navigator.permissions?.query) {
+      try {
+        const permission = await navigator.permissions.query({ name: "microphone" as PermissionName });
+        console.info("[Assistant voice] navigator.permissions microphone", { state: permission.state });
+        setVoiceDiagnostic(`Microphone permission state: ${permission.state}. Requesting access...`);
+      } catch (error) {
+        console.info("[Assistant voice] navigator.permissions microphone query unavailable", error);
+        setVoiceDiagnostic("Microphone permission API unavailable. Requesting access directly...");
+      }
+    } else {
+      console.info("[Assistant voice] navigator.permissions API unavailable");
+      setVoiceDiagnostic("Microphone permission API unavailable. Requesting access directly...");
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      console.warn("[Assistant voice] navigator.mediaDevices.getUserMedia unavailable");
+      throw new DOMException("getUserMedia is unavailable in this environment.", "NotSupportedError");
+    }
+    console.info("[Assistant voice] requesting getUserMedia({ audio: true })");
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.info("[Assistant voice] getUserMedia granted", {
+      audioTracks: stream.getAudioTracks().map((track) => ({
+        enabled: track.enabled,
+        id: track.id,
+        label: track.label,
+        muted: track.muted,
+        readyState: track.readyState,
+      })),
+    });
     // Chrome's SpeechRecognition owns the real capture. Holding this stream open
     // can make recognition abort immediately on some systems.
     stream.getTracks().forEach((track) => track.stop());
@@ -2419,6 +2480,30 @@ function AssistantDock({
 
   function beginSpeechRecognition(Recognition: SpeechRecognitionCtor) {
     if (!recognitionWantedRef.current || recognitionActiveRef.current) return;
+    const recognition = getOrCreateSpeechRecognition(Recognition);
+    console.info("[Assistant voice] calling SpeechRecognition.start()", {
+      active: recognitionActiveRef.current,
+      wanted: recognitionWantedRef.current,
+      lang: recognition.lang,
+      continuous: recognition.continuous,
+      interimResults: recognition.interimResults,
+    });
+    try {
+      recognition.start();
+    } catch (error) {
+      recognitionWantedRef.current = false;
+      recognitionActiveRef.current = false;
+      setListening(false);
+      setAssistantState("idle");
+      stopAmbientListeningMotion();
+      console.warn("[Assistant voice] SpeechRecognition start failed", error);
+      setVoiceIssue("Speech recognition could not start. It may already be running in this tab.");
+      setVoiceDiagnostic("Speech recognition start failed before listening.");
+    }
+  }
+
+  function getOrCreateSpeechRecognition(Recognition: SpeechRecognitionCtor) {
+    if (recognitionRef.current) return recognitionRef.current;
     const recognition = new Recognition();
     recognition.continuous = false;
     recognition.interimResults = true;
@@ -2429,35 +2514,48 @@ function AssistantDock({
       setListening(true);
       setAssistantState("listening");
       setVoiceIssue("");
+      setVoiceDiagnostic("Speech recognition is listening...");
       console.info("[Assistant voice] SpeechRecognition started");
     };
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map((result) => result[0].transcript)
-        .join(" ");
+        .join(" ")
+        .trim();
+      recognitionTranscriptRef.current = transcript;
+      console.info("[Assistant voice] SpeechRecognition result", {
+        transcript,
+        resultCount: event.results.length,
+        isFinal: event.results[event.results.length - 1]?.isFinal,
+      });
       setInput(transcript);
+      setVoiceDiagnostic(transcript ? `Heard: "${transcript}"` : "Listening...");
       const last = event.results[event.results.length - 1];
-      if (last?.isFinal) {
+      if (last?.isFinal && transcript) {
         recognitionFinalRef.current = true;
         recognitionWantedRef.current = false;
         recognitionManualStopRef.current = true;
-        submitMessage(transcript, "voice");
+        submitMessageRef.current(transcript, "voice");
         recognition.stop();
       }
     };
     recognition.onend = () => {
       recognitionActiveRef.current = false;
-      recognitionRef.current = null;
+      const transcript = recognitionTranscriptRef.current.trim();
       console.info("[Assistant voice] SpeechRecognition ended", {
         wanted: recognitionWantedRef.current,
         final: recognitionFinalRef.current,
         hadError: recognitionHadErrorRef.current,
         manualStop: recognitionManualStopRef.current,
+        transcript,
       });
-      if (recognitionWantedRef.current && !recognitionFinalRef.current && !recognitionManualStopRef.current && recognitionRestartCountRef.current < 2) {
-        recognitionRestartCountRef.current += 1;
-        window.setTimeout(() => beginSpeechRecognition(Recognition), 220);
-        return;
+      if (!recognitionFinalRef.current && !recognitionHadErrorRef.current && !recognitionManualStopRef.current && transcript) {
+        recognitionFinalRef.current = true;
+        recognitionWantedRef.current = false;
+        submitMessageRef.current(transcript, "voice");
+      } else if (!recognitionFinalRef.current && !recognitionHadErrorRef.current && !recognitionManualStopRef.current) {
+        setVoiceIssue("Speech recognition ended without a transcript. Check microphone input, keep the tab focused, then try again.");
+        setVoiceDiagnostic("Speech recognition ended with no transcript.");
       }
       recognitionWantedRef.current = false;
       setListening(false);
@@ -2467,37 +2565,40 @@ function AssistantDock({
     recognition.onerror = (event) => {
       const error = event.error ?? "unknown";
       recognitionHadErrorRef.current = true;
-      console.warn("[Assistant voice] SpeechRecognition error", event);
+      console.warn("[Assistant voice] SpeechRecognition error", {
+        error,
+        event,
+        wanted: recognitionWantedRef.current,
+        active: recognitionActiveRef.current,
+        manualStop: recognitionManualStopRef.current,
+      });
+      setVoiceDiagnostic(`Speech recognition error: ${error}.`);
       if (error === "not-allowed" || error === "service-not-allowed") {
         recognitionWantedRef.current = false;
-        setVoiceIssue("Microphone permission was denied. Allow microphone access for this localhost page, then try again.");
+        setVoiceIssue("Microphone permission was denied or blocked by the browser/OS. Allow microphone access for Chrome and this localhost page.");
       } else if (error === "no-speech") {
-        setVoiceIssue("I did not catch speech. Try again, or type the request.");
+        setVoiceIssue("I did not catch speech. Try again, speak after the mic switches on, or type the request.");
       } else if (error === "audio-capture") {
         recognitionWantedRef.current = false;
-        setVoiceIssue("The browser could not capture microphone audio. Check the selected input device and browser permission.");
+        setVoiceIssue("The browser could not capture microphone audio. Check the selected input device and browser/OS permission.");
       } else if (error === "network") {
         recognitionWantedRef.current = false;
         setVoiceIssue("Speech recognition could not reach the browser speech service. Typing still works.");
       } else if (error === "aborted") {
-        setVoiceIssue("Speech recognition was aborted by the browser. I logged the exact event; try pressing the mic once and keep this tab focused.");
+        if (!recognitionManualStopRef.current) {
+          setVoiceIssue("Speech recognition was aborted by the browser. Check tab focus, mic permission, and whether another app is holding the microphone.");
+        }
       } else {
         setVoiceIssue(`Speech recognition stopped (${error}). Typing still works.`);
       }
     };
     recognitionRef.current = recognition;
-    try {
-      recognition.start();
-    } catch (error) {
-      recognitionWantedRef.current = false;
-      recognitionActiveRef.current = false;
-      recognitionRef.current = null;
-      setListening(false);
-      setAssistantState("idle");
-      stopAmbientListeningMotion();
-      console.warn("[Assistant voice] SpeechRecognition start failed", error);
-      setVoiceIssue("Speech recognition could not start. It may already be running in this tab.");
-    }
+    console.info("[Assistant voice] SpeechRecognition instance created", {
+      lang: recognition.lang,
+      continuous: recognition.continuous,
+      interimResults: recognition.interimResults,
+    });
+    return recognition;
   }
 
   function stopListening() {
@@ -2508,7 +2609,6 @@ function AssistantDock({
     } catch {
       recognitionRef.current?.abort?.();
     }
-    recognitionRef.current = null;
     recognitionActiveRef.current = false;
     stopAmbientListeningMotion();
     setListening(false);
@@ -2565,6 +2665,7 @@ function AssistantDock({
                 </div>
               ))}
               {!voiceSupported ? <p className="speech-fallback">Voice input is not supported in this browser; typing still works.</p> : null}
+              {voiceDiagnostic ? <p className="speech-fallback">{voiceDiagnostic}</p> : null}
               {voiceIssue ? <p className="speech-fallback">{voiceIssue}</p> : null}
             </div>
             <form
@@ -2595,6 +2696,56 @@ function AssistantDock({
         ) : null}
       </AnimatePresence>
     </>
+  );
+}
+
+function getSpeechRecognitionSupport() {
+  const standard = typeof window !== "undefined" && Boolean(window.SpeechRecognition);
+  const webkit = typeof window !== "undefined" && Boolean(window.webkitSpeechRecognition);
+  return {
+    standard,
+    webkit,
+    engine: standard ? "SpeechRecognition" : webkit ? "webkitSpeechRecognition" : "unavailable",
+  };
+}
+
+async function resolveEnglishSpeechVoice(synth: SpeechSynthesis) {
+  let voices = synth.getVoices();
+  console.info("[Assistant speech] voices snapshot", {
+    count: voices.length,
+    english: voices.filter((voice) => voice.lang.toLowerCase().startsWith("en")).map((voice) => `${voice.name} (${voice.lang})`),
+  });
+
+  if (!voices.length) {
+    voices = await new Promise<SpeechSynthesisVoice[]>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        synth.removeEventListener("voiceschanged", finish);
+        resolve(synth.getVoices());
+      };
+      synth.addEventListener("voiceschanged", finish);
+      window.setTimeout(finish, 800);
+    });
+  }
+
+  const englishVoice = pickEnglishSpeechVoice(voices);
+  console.info("[Assistant speech] English voice resolution", {
+    count: voices.length,
+    selected: englishVoice ? `${englishVoice.name} (${englishVoice.lang})` : "none",
+    englishCount: voices.filter((voice) => voice.lang.toLowerCase().startsWith("en")).length,
+  });
+  return englishVoice;
+}
+
+function pickEnglishSpeechVoice(voices: SpeechSynthesisVoice[]) {
+  const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith("en"));
+  return (
+    englishVoices.find((voice) => voice.lang.toLowerCase().startsWith("en-us")) ??
+    englishVoices.find((voice) => voice.lang.toLowerCase().startsWith("en-gb")) ??
+    englishVoices[0] ??
+    null
   );
 }
 
