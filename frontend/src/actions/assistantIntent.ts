@@ -23,7 +23,7 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   const notes: string[] = [];
 
   const requestedScenario = parseScenario(text);
-  const shock = parseSignedPercent(text, ["shock", "depeg", "usde"]);
+  const shock = parseSignedPercent(text, ["shock", "depeg", "usde", "risk"]);
   const horizon = parseDays(text);
   const liquidity = parseLiquidity(text);
   const exitFraction = parseExitFraction(text);
@@ -37,9 +37,13 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   if (shock !== null) {
     const validation = validateRange("Shock", shock, ACTION_LIMITS.shockPct.min, ACTION_LIMITS.shockPct.max, ACTION_LIMITS.shockPct.unit);
     if (!validation.ok) return refuse(validation.message);
+    if (!requestedScenario && text.includes("risk")) {
+      actions.push({ type: "set_scenario", scenario: "usde_depeg" });
+      notes.push("Scenario A");
+    }
     actions.push({ type: "set_shock", shockPct: shock });
     actions.push({ type: "navigate_view", view: "scenario" });
-    notes.push(`shock -${shock}%`);
+    notes.push(text.includes("risk") ? `USDe risk shock -${shock}%` : `shock -${shock}%`);
   }
 
   if (horizon !== null) {
@@ -129,7 +133,9 @@ function parseScenario(text: string): ScenarioKind | null {
 function parseSignedPercent(text: string, anchors: string[]) {
   const hasAnchor = anchors.some((anchor) => text.includes(anchor));
   if (!hasAnchor && !/\bbump\b/.test(text)) return null;
-  const match = text.match(/-?\s*(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)/);
+  const match =
+    text.match(/-?\s*(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)/) ??
+    text.match(/\b(?:to|at|=)\s*-?\s*(\d{1,3}(?:\.\d+)?)(?!\s*(?:day|days|d)\b)/);
   return match ? Math.abs(Number(match[1])) : null;
 }
 

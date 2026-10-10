@@ -253,6 +253,7 @@ export async function postAssistantMessage(request: AssistantRequest, mode: Data
     });
     const localIntent = parseAssistantIntent(request);
     console.info("[DeFi Contagion] assistant backend response", response);
+    if (localIntent.actions.length) return localIntent;
     return { ...response, actions: response.actions?.length ? response.actions : localIntent.actions };
   } catch (error) {
     console.warn("[DeFi Contagion] assistant backend unavailable; using deterministic browser fallback", error);
