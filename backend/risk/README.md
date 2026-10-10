@@ -43,3 +43,30 @@ No shock → no change. A bigger shock → a bigger loss (monotonic). Pass-throu
 ## Definition of done
 
 Both scenarios run on the same portfolio, results are reproducible, and every loss and liquidation flag is explained. Never call a scenario loss an "expected loss": there is no probability at this stage.
+
+## Run it
+
+```bash
+python3.13 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # once, from the repo root
+.venv/bin/python -m pytest backend/risk                          # golden + property tests
+```
+
+```python
+from backend.risk import simulate
+result = simulate(portfolio, market_snapshot, scenario_request, dependency_graph)  # contract dicts in, risk_result dict out
+```
+
+```python
+from backend.risk.analytics import analyze
+value = analyze(portfolio, market_snapshot, scenario_request)  # risk_analytics dict: money value for the fund
+```
+
+`analyze` returns a headline (NAV, scenario loss, USDe effective leverage, de-risking savings, liquidation protection, break-even probability) plus factor exposure, breaking points, targeted vs uniform de-risking and liquidation protection. See blueprint section 7.5 and `docs/risk_engine_plan.md`.
+
+Code map: `model.py` (contract views) · `pricing.py` (market state, PT, oracle) · `metrics.py` (HF/LTV registry per market_kind) · `liquidity.py` (haircuts, joint exits) · `scenarios/` (one file per scenario + registry) · `report.py` (rounding that reconciles to the cent) · `engine.py` (entry point) · `analytics/` (exposure, breaking points, de-risking, liquidation protection, sensitivity tornado + grids, `analyze`). For a custom heatmap: `sensitivity.grid(portfolio, snapshot, request, x_param, xs, y_param, ys)` on model objects.
+
+Add a scenario: new file in `scenarios/` decorated with `@scenario("<id>")`, plus its import in `scenarios/__init__.py` and its schema in `contracts/`. Add a lending protocol: one compute function + one `register(...)` line in `metrics.py`.
+
+## Roadmap
+
+Full plan, differentiators and progress checklist: [docs/risk_engine_plan.md](../../docs/risk_engine_plan.md).

@@ -1,4 +1,10 @@
-Version 1.1 • 10 October 2026 • Team of four • MVP scope: Ethereum / Ethena / Aave / Morpho / Pendle
+Version 1.2 • 10 October 2026 • Team of four • MVP scope: Ethereum / Ethena / Aave / Morpho / Pendle
+
+## Changes in v1.2
+
+- Scenario A separates three mechanisms: USDe market depeg, USDe backing loss, and sUSDe exchange-rate cut (new optional `susde_rate_cut_pct`). An exchange-rate oracle with USDe hardcoded at 1 USD sees only the rate cut.
+- Liquidation penalty follows protocol rules: Aave repays 50% of the debt while HF ≥ 0.95 (100% below); Morpho has no close factor.
+- New section 7.5 and contract `risk_analytics`: the dollar value the engine creates for the fund (factor concentration, breaking points, targeted de-risking, liquidation protection).
 
 ## Changes in v1.1
 
@@ -123,23 +129,24 @@ USDe market depeg → oracle repricing (if applicable) → collateral valuation 
 |-------------------------------|--------------------------------------------------------------------------------------------------|---------|
 | `usde_spot_shock_pct`         | Move of the USDe market price (negative = depeg).                                                | -0.05   |
 | `susde_market_beta`           | sUSDe market price move = beta × USDe move.                                                      | 1.0     |
-| `backing_impairment_pct`      | Permanent loss of USDe backing; lowers the sUSDe exchange rate and every redemption claim.       | 0.00    |
+| `backing_impairment_pct`      | Permanent loss of USDe backing; the market reprices USDe and sUSDe. Oracles see it only through their pass-through. | 0.00    |
+| `susde_rate_cut_pct`          | Optional. Loss socialised to sUSDe stakers: the sUSDe exchange rate falls. Every sUSDe oracle and PT-sUSDe sees it. | 0.00    |
 | `oracle_pass_through_override`| If set, replaces every market's `oracle_pass_through` from the snapshot. `null` = use snapshot.  | null    |
-| `oracle_lag_hours`            | Delay before the oracle reflects the move. v1 reports it and the liquidation window only; final metrics use the fully passed-through oracle. | 0 |
+| `oracle_lag_hours`            | Delay before the oracle reflects the move. Final metrics use the fully passed-through oracle; the lag is priced as a window to deleverage before liquidation (section 7.5). | 0 |
 | `pt_implied_apy_shock`        | Additive change of the PT implied APY (stress widens the discount).                              | +0.03   |
 
 **Valuation rules:**
 
 - USDe position: loss = Q × (P_before − P_after).
-- sUSDe market value (USD) = shares × exchange_rate × USDe_price × (1 + susde_market_beta × shock). Backing impairment multiplies exchange_rate by (1 + backing_impairment_pct).
-- Oracle price used by a lending market = P_before × (1 + oracle_pass_through × market move). With pass-through 0 the oracle does not move and the health metric is unchanged even though the mark-to-market value fell.
-- Pendle PT (v1 proxy, label `approximation`): PT_price_usd = USDe_price × 1 / (1 + implied_apy)^(days_to_maturity / 365). After the shock, use the shocked USDe price and implied_apy + `pt_implied_apy_shock`. At or after maturity, PT_price = redemption value.
+- sUSDe market value (USD) = shares × exchange_rate × USDe_price × (1 + susde_market_beta × shock) × (1 + backing_impairment_pct) × (1 + susde_rate_cut_pct). USDe market price = P_before × (1 + shock) × (1 + backing_impairment_pct). Each mechanism is applied once.
+- Oracle price used by a lending market = P_before × (1 + oracle_pass_through × market move) × (1 + rate cut, for sUSDe collateral). The market move includes depeg and backing loss. With pass-through 0 (exchange-rate oracle, USDe hardcoded at 1 USD) the oracle ignores both and only a sUSDe rate cut moves it.
+- Pendle PT (v1 proxy, label `approximation`): PT_price_usd = USDe_price × (1 + susde_rate_cut_pct) × 1 / (1 + implied_apy)^(days_to_maturity / 365). After the shock, use the shocked USDe price and implied_apy + `pt_implied_apy_shock`. At or after maturity, PT_price = redemption value.
 
 **Risk metrics:**
 
 - Aave: HF = Σ(collateral oracle value × liquidation threshold) / Σ(debt oracle value). Liquidatable if HF < 1. Distance to liquidation (single collateral, stable debt) = 1 − 1/HF.
 - Morpho: LTV = debt value / collateral oracle value. Liquidatable if LTV > LLTV. Distance to liquidation = 1 − LTV/LLTV.
-- Liquidatable does not mean immediately or fully liquidated.
+- Liquidatable does not mean immediately or fully liquidated. Penalty = close-factor share of debt × protocol incentive: Aave repays 50% of the debt while HF ≥ 0.95 and 100% below; Morpho Blue has no close factor (100%).
 
 ## 7.2 Scenario B: liquidity crisis
 
@@ -172,7 +179,7 @@ Each position impact reports `loss_components` that sum exactly to `conditional_
 |-----------------------|-------|-----------------------------------|----------------------------------|
 | market_repricing      | P2    | mark-to-market move               | 0 unless fundamental shock       |
 | backing_impairment    | P2    | from `backing_impairment_pct`     | 0                                |
-| liquidation_penalty   | P2    | only if liquidatable (bonus × seized collateral) | 0                  |
+| liquidation_penalty   | P2    | only if liquidatable (close factor × debt × incentive) | 0            |
 | execution_haircut     | P2 (stress) / P3 (decision) | 0 (no forced sale)    | haircut of a full exit           |
 
 ## 7.4 Uncertainty and defensibility
@@ -180,6 +187,20 @@ Each position impact reports `loss_components` that sum exactly to `conditional_
 The model computes conditional stress losses; it does not manufacture incident probabilities. A user may provide a scenario probability or range. Report sensitivity and break-even probabilities, with a prominent "assumption-driven" label. Missing oracle, market or liquidity data must produce warnings rather than invented precision.
 
 Every object that carries numbers has a `source_type` (observed / derived / assumed / fictional / user_scenario). When an object mixes origins, a `field_sources` map overrides `source_type` per field.
+
+## 7.5 Value for the fund: risk analytics
+
+`backend/risk/analytics` turns the scenario into money the fund can act on (contract `risk_analytics.json`). Every figure is conditional on the scenario, never a probability of it.
+
+| Analysis               | Question answered                                                   | Demo fixture value                                        |
+|------------------------|---------------------------------------------------------------------|-----------------------------------------------------------|
+| Factor exposure        | Am I really diversified?                                            | 4 protocols, 1 factor: \$10.0m USDe exposure = 1.61× NAV |
+| Breaking points        | At what shock do I lose a position, or 10/20/50% of NAV?            | Aave at −29.4% depeg; Morpho immune to depeg, breaks at −27.1% sUSDe rate cut; −10% NAV at a 6.2% depeg |
+| Targeted de-risking    | What is the cheapest way to halve the stress loss?                  | Same protection for less than cutting every position 50% (≈ \$6.7k saved at −5%) |
+| Liquidation protection | Is it worth deleveraging before the shock?                          | At −30%: spend ≈ \$0.4k to avoid a \$45k Aave penalty   |
+| Sensitivity            | Which assumption drives the result? Where is the liquidation frontier? | Tornado ranks assumptions by loss swing; heatmap of loss and liquidatable positions over any two scenario parameters |
+
+Targeted de-risking allocates exits greedily by marginal cost (fees, gas, joint price impact on shared venues, foregone yield) and is never worse than the uniform plan. Its break-even probability (cost ÷ protection) tells the PM when acting pays off.
 
 # 8. Decision and execution engine
 

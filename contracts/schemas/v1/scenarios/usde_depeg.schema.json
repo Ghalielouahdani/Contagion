@@ -25,7 +25,11 @@
         },
         "backing_impairment_pct": {
           "$ref": "../common.schema.json#/$defs/decimal",
-          "description": "Permanent backing loss; lowers the sUSDe exchange rate. Signed, 0 = none."
+          "description": "USDe backing loss, repriced by the market for USDe and sUSDe. Signed, 0 = none. An exchange-rate oracle with USDe hardcoded at 1 USD does not see it."
+        },
+        "susde_rate_cut_pct": {
+          "$ref": "../common.schema.json#/$defs/decimal",
+          "description": "Optional. Loss socialised to sUSDe stakers: the sUSDe exchange rate falls. Every sUSDe oracle sees it. Signed, default 0."
         },
         "oracle_pass_through_override": {
           "$ref": "../common.schema.json#/$defs/nullable_decimal",

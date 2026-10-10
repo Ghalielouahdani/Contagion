@@ -1,0 +1,534 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.defi-contagion.local/v1/risk_analytics.schema.json",
+  "title": "Risk analytics",
+  "description": "Dollar value the risk engine creates for the fund, for one scenario request. Owner: P2. All values conditional on the scenario, never probabilities of it.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schema_version"
+    },
+    "analytics_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "request_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "portfolio_id": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "scenario_id": {
+      "$ref": "common.schema.json#/$defs/scenario_id"
+    },
+    "horizon_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "currency": {
+      "const": "USD"
+    },
+    "headline": {
+      "type": "object",
+      "properties": {
+        "nav_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "scenario_loss_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "scenario_loss_pct_nav": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "usde_exposure_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "usde_effective_leverage": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "derisking_savings_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "derisking_savings_bps_nav": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "liquidation_protection_net_benefit_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "targeted_plan_break_even_probability": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "top_risk_driver": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "nav_usd",
+        "scenario_loss_usd",
+        "scenario_loss_pct_nav",
+        "usde_exposure_usd",
+        "usde_effective_leverage",
+        "derisking_savings_usd",
+        "derisking_savings_bps_nav",
+        "liquidation_protection_net_benefit_usd",
+        "targeted_plan_break_even_probability",
+        "top_risk_driver"
+      ],
+      "additionalProperties": false
+    },
+    "factor_exposure": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/factor"
+      }
+    },
+    "breaking_points": {
+      "type": "object",
+      "properties": {
+        "liquidation": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/liquidation_point"
+          }
+        },
+        "nav_drawdown": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nav_point"
+          }
+        }
+      },
+      "required": [
+        "liquidation",
+        "nav_drawdown"
+      ],
+      "additionalProperties": false
+    },
+    "derisking": {
+      "type": "object",
+      "properties": {
+        "target_loss_reduction_pct": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "stress_loss_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "uniform": {
+          "$ref": "#/$defs/plan"
+        },
+        "targeted": {
+          "$ref": "#/$defs/plan"
+        },
+        "full_exit": {
+          "$ref": "#/$defs/plan"
+        },
+        "savings_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "savings_pct_of_uniform_cost": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "savings_bps_nav": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "cost_per_usd_protected": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/nullable_decimal"
+          }
+        }
+      },
+      "required": [
+        "target_loss_reduction_pct",
+        "stress_loss_usd",
+        "uniform",
+        "targeted",
+        "full_exit",
+        "savings_usd",
+        "savings_pct_of_uniform_cost",
+        "savings_bps_nav",
+        "cost_per_usd_protected"
+      ],
+      "additionalProperties": false
+    },
+    "liquidation_protection": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/protection"
+      }
+    },
+    "sensitivity": {
+      "type": "object",
+      "properties": {
+        "tornado": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tornado_row"
+          }
+        },
+        "grid": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/grid"
+            }
+          ]
+        }
+      },
+      "required": [
+        "tornado",
+        "grid"
+      ],
+      "additionalProperties": false
+    },
+    "assumptions": {
+      "$ref": "common.schema.json#/$defs/warnings"
+    },
+    "warnings": {
+      "$ref": "common.schema.json#/$defs/warnings"
+    }
+  },
+  "required": [
+    "schema_version",
+    "analytics_id",
+    "request_id",
+    "portfolio_id",
+    "scenario_id",
+    "horizon_days",
+    "currency",
+    "headline",
+    "factor_exposure",
+    "breaking_points",
+    "derisking",
+    "liquidation_protection",
+    "sensitivity",
+    "assumptions",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "factor": {
+      "type": "object",
+      "properties": {
+        "factor": {
+          "enum": [
+            "usde_price",
+            "usde_backing",
+            "susde_exchange_rate",
+            "pt_implied_yield"
+          ]
+        },
+        "loss_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "exposure_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "effective_leverage": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "positions_exposed": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/position_id"
+          }
+        },
+        "loss_by_position_usd": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        }
+      },
+      "required": [
+        "factor",
+        "loss_usd",
+        "unit",
+        "exposure_usd",
+        "effective_leverage",
+        "positions_exposed",
+        "loss_by_position_usd"
+      ],
+      "additionalProperties": false
+    },
+    "liquidation_point": {
+      "type": "object",
+      "properties": {
+        "position_id": {
+          "$ref": "common.schema.json#/$defs/position_id"
+        },
+        "mechanism": {
+          "enum": [
+            "usde_market_depeg",
+            "usde_backing_loss",
+            "susde_rate_cut"
+          ]
+        },
+        "breaks_at_shock_pct": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "immune": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "position_id",
+        "mechanism",
+        "breaks_at_shock_pct",
+        "immune"
+      ],
+      "additionalProperties": false
+    },
+    "nav_point": {
+      "type": "object",
+      "properties": {
+        "nav_drawdown_pct": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "usde_depeg_pct": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        },
+        "usde_price": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        }
+      },
+      "required": [
+        "nav_drawdown_pct",
+        "usde_depeg_pct",
+        "usde_price"
+      ],
+      "additionalProperties": false
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "enum": [
+            "uniform",
+            "targeted",
+            "full_exit"
+          ]
+        },
+        "fractions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "loss_reduction_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "trading_cost_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "foregone_yield_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "total_cost_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "break_even_probability": {
+          "$ref": "common.schema.json#/$defs/nullable_decimal"
+        }
+      },
+      "required": [
+        "plan",
+        "fractions",
+        "loss_reduction_usd",
+        "trading_cost_usd",
+        "foregone_yield_usd",
+        "total_cost_usd",
+        "break_even_probability"
+      ],
+      "additionalProperties": false
+    },
+    "protection": {
+      "type": "object",
+      "properties": {
+        "position_id": {
+          "$ref": "common.schema.json#/$defs/position_id"
+        },
+        "liquidation_penalty_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "preemptive": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "deleverage_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "cost_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "penalty_avoided_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "mark_loss_avoided_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "net_benefit_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                }
+              },
+              "required": [
+                "deleverage_usd",
+                "cost_usd",
+                "penalty_avoided_usd",
+                "mark_loss_avoided_usd",
+                "net_benefit_usd"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "during_oracle_lag": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "window_hours": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "deleverage_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "cost_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "penalty_avoided_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                },
+                "net_benefit_usd": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                }
+              },
+              "required": [
+                "window_hours",
+                "deleverage_usd",
+                "cost_usd",
+                "penalty_avoided_usd",
+                "net_benefit_usd"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "position_id",
+        "liquidation_penalty_usd",
+        "preemptive",
+        "during_oracle_lag"
+      ],
+      "additionalProperties": false
+    },
+    "tornado_row": {
+      "type": "object",
+      "description": "One assumption moved alone to a low and a high value; rows sorted by swing.",
+      "properties": {
+        "assumption": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "low_value": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "high_value": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "loss_at_low_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "loss_at_high_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "swing_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        },
+        "base_loss_usd": {
+          "$ref": "common.schema.json#/$defs/decimal"
+        }
+      },
+      "required": [
+        "assumption",
+        "target",
+        "low_value",
+        "high_value",
+        "loss_at_low_usd",
+        "loss_at_high_usd",
+        "swing_usd",
+        "base_loss_usd"
+      ],
+      "additionalProperties": false
+    },
+    "grid": {
+      "type": "object",
+      "description": "loss_usd[i][j] and liquidatable_positions[i][j] at y_values[i], x_values[j].",
+      "properties": {
+        "x_param": {
+          "type": "string"
+        },
+        "x_values": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "y_param": {
+          "type": "string"
+        },
+        "y_values": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "loss_usd": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/decimal"
+            }
+          }
+        },
+        "liquidatable_positions": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "required": [
+        "x_param",
+        "x_values",
+        "y_param",
+        "y_values",
+        "loss_usd",
+        "liquidatable_positions"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
