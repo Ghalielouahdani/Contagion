@@ -47,7 +47,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import {
@@ -251,6 +251,7 @@ function App() {
   function selectScenario(kind: ScenarioKind, set = fixtureSet) {
     if (!availableScenarios(set).includes(kind)) return; // no preset in this data set: never show mock numbers
     const preset = presetInputs(kind, set);
+    draft.current = { scenario: kind, inputs: { ...draft.current.inputs, ...preset } };
     setScenario(kind);
     if (preset.shockPct !== undefined) setShockPct(preset.shockPct);
     if (preset.liquidityLossPct !== undefined) setLiquidityLossPct(preset.liquidityLossPct);
@@ -269,23 +270,20 @@ function App() {
   const [hasRun, setHasRun] = useState(true);
   const [assistantOpen, setAssistantOpen] = useState(false);
 
-  // Deferred so dragging a slider does not queue a request per pixel; the result follows the slider.
-  const deferredShock = useDeferredValue(shockPct);
-  const deferredHorizon = useDeferredValue(horizonDays);
-  const deferredLiquidity = useDeferredValue(liquidityLossPct);
-  const deferredExtra = useDeferredValue(extraInputs);
   const scenarioInputs: ScenarioInputs = { shockPct, horizonDays, liquidityLossPct, ...extraInputs };
+  const draft = useRef({ scenario, inputs: scenarioInputs });
+  draft.current = { scenario, inputs: scenarioInputs };
+  const [submitted, setSubmitted] = useState(() => ({
+    scenario: "usde_depeg" as ScenarioKind,
+    inputs: { shockPct: 5, horizonDays: 7, liquidityLossPct: 80, ...defaultExtraInputs,
+      ...presetInputs("usde_depeg", defaultFixtureSet) } as ScenarioInputs,
+    run: 0,
+  }));
+  const hasPendingChanges = scenario !== submitted.scenario ||
+    JSON.stringify(scenarioInputs) !== JSON.stringify(submitted.inputs);
   const appQuery = useQuery({
-    queryKey: ["app-data", mode, fixtureSet, scenario, deferredShock, deferredHorizon, deferredLiquidity, deferredExtra],
-    queryFn: () =>
-      loadAppData(mode, scenario, {
-        shockPct: deferredShock,
-        horizonDays: deferredHorizon,
-        liquidityLossPct: deferredLiquidity,
-        ...deferredExtra,
-      }, fixtureSet),
-    placeholderData: (previousData) =>
-      previousData?.health.fixtureSet === fixtureSet && previousData.risk.scenario_id === scenario ? previousData : undefined,
+    queryKey: ["app-data", mode, fixtureSet, submitted],
+    queryFn: () => loadAppData(mode, submitted.scenario, submitted.inputs, fixtureSet),
   });
 
   useEffect(() => {
@@ -318,6 +316,10 @@ function App() {
     data?.portfolio.positions.find((position) => position.position_id === selectedPosition) ?? data?.portfolio.positions[0];
 
   function runScenario() {
+    const next = draft.current;
+    if (!availableScenarios(fixtureSet).includes(next.scenario)) return;
+    setSubmitted((current) => ({ scenario: next.scenario, inputs: { ...next.inputs }, run: current.run + 1 }));
+    setInspectedExitFraction(null);
     setHasRun(true);
     setView("decision");
   }
@@ -332,21 +334,23 @@ function App() {
       selectScenario(action.scenario);
     }
     if (action.type === "set_shock") {
+      draft.current.inputs = { ...draft.current.inputs, shockPct: action.shockPct };
       setShockPct(action.shockPct);
       setView("scenario");
     }
     if (action.type === "set_horizon") {
+      draft.current.inputs = { ...draft.current.inputs, horizonDays: action.days };
       setHorizonDays(action.days);
       setView("scenario");
     }
     if (action.type === "set_liquidity_loss") {
+      draft.current.inputs = { ...draft.current.inputs, liquidityLossPct: action.percent };
       setLiquidityLossPct(action.percent);
       setView("scenario");
     }
     if (action.type === "run_simulation") {
-      if (action.scenario && action.scenario !== scenario) selectScenario(action.scenario);
-      setHasRun(true);
-      setView("decision");
+      if (action.scenario && action.scenario !== draft.current.scenario) selectScenario(action.scenario);
+      runScenario();
     }
     if (action.type === "open_graph_for_position") {
       setSelectedPosition(action.positionId);
@@ -366,11 +370,19 @@ function App() {
     setInspectedExitFraction(null);
     const kinds = availableScenarios(set);
     const next = kinds.includes(scenario) ? scenario : kinds[0];
-    if (next) selectScenario(next, set);
+    if (next) {
+      selectScenario(next, set);
+      const inputs = { ...scenarioInputs, ...presetInputs(next, set) };
+      setSubmitted((current) => ({ scenario: next, inputs, run: current.run + 1 }));
+    }
   }
 
   function reset() {
     selectScenario("usde_depeg");
+    setSubmitted((current) => ({ scenario: "usde_depeg", inputs: {
+      shockPct: 5, horizonDays: 7, liquidityLossPct: 80, ...defaultExtraInputs,
+      ...presetInputs("usde_depeg", fixtureSet),
+    }, run: current.run + 1 }));
     setMode("fixture");
     setSelectedPosition("aave_01");
     setSelectedEdge(null);
@@ -404,6 +416,8 @@ function App() {
             <p className="eyebrow">DeFi Contagion Explorer</p>
             <h1>{viewMeta[view].label}</h1>
             <p className="lead">{scenarioCopy[scenario].summary}</p>
+            <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.</p>
+            {hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {scenarioCopy[submitted.scenario].title}.</p> : null}
           </div>
           <div className="topbar-actions">
             <button className="icon-button text-button" onClick={() => setCommandOpen(true)}>
@@ -414,16 +428,16 @@ function App() {
               <RefreshCw size={15} />
               Reset
             </button>
-            <button className="run-button" onClick={runScenario}>
+            <button className="run-button" onClick={runScenario} disabled={appQuery.isFetching}>
               <Play size={15} />
-              Run scenario
+              {appQuery.isFetching ? "Running…" : "Run scenario"}
             </button>
           </div>
         </header>
 
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${view}-${scenario}-${mode}`}
+            key={`${view}-${mode}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -448,7 +462,7 @@ function App() {
                     <DependencyGraphView
                       graph={data.graph}
                       risk={data.risk}
-                      scenario={scenario}
+                      scenario={submitted.scenario}
                       selectedPosition={selectedPosition}
                       setSelectedPosition={setSelectedPosition}
                       selectedEdge={selectedEdge}
@@ -481,8 +495,8 @@ function App() {
                 {view === "decision" ? (
                   <DecisionEngine
                     data={data}
-                    scenario={scenario}
-                    scenarioInputs={scenarioInputs}
+                    scenario={submitted.scenario}
+                    scenarioInputs={submitted.inputs}
                     hasRun={hasRun}
                     selectedRisk={selectedRisk}
                     selectedPortfolio={selectedPortfolio}
@@ -516,10 +530,10 @@ function App() {
           stateData={data}
           mode={mode}
           view={view}
-          scenario={scenario}
+          scenario={submitted.scenario}
           selectedPosition={selectedPosition}
           inspectedExitFraction={inspectedExitFraction}
-          scenarioInputs={scenarioInputs}
+          scenarioInputs={submitted.inputs}
           executeAction={executeAction}
         />
       ) : null}
@@ -1033,7 +1047,7 @@ function ScenarioLab({
   const shockableNodes = data.graph.nodes.filter((node) => ["asset", "protocol", "market", "offchain_entity"].includes(node.type));
   const nodeLabel = (id: string) => data.graph.nodes.find((node) => node.id === id)?.label ?? id;
   const sourceCopy = {
-    engine: "Live risk engine result for the current inputs.",
+    engine: "Live risk engine result for the last submitted run.",
     surface: "Risk engine results precomputed for the main slider (offline mode).",
     fixture: "Static fixture result: inputs are not applied.",
   }[data.riskSource];
@@ -1135,6 +1149,7 @@ function ScenarioLab({
           <div>
             <p className="eyebrow">Animated before / after</p>
             <h2>Net equity under stress</h2>
+            <p className="microcopy">Last run: {scenarioCopy[data.risk.scenario_id as ScenarioKind]?.title ?? data.risk.scenario_id}</p>
             <p className="microcopy">
               {sourceCopy}
               {ignoredCopy}
@@ -1143,7 +1158,7 @@ function ScenarioLab({
           <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} aria-label="Select position">
             {data.portfolio.positions.map((position) => (
               <option key={position.position_id} value={position.position_id}>
-                {position.protocol}
+                {compactId(position.position_id)} · {position.protocol}
               </option>
             ))}
           </select>

@@ -29,11 +29,11 @@ Read: blueprint sections 5 (user journey), 11 (data shown), 16 P4.
 
 ## Data source
 
-Two modes, same screens. In both, the sliders drive real risk-engine results.
+Two modes, same screens. Choose a scenario, adjust its parameters, then click **Run scenario** to submit it against the selected portfolio. The demo portfolio is the default for all six scenarios. Editing controls keeps the last run visible with a pending-changes notice; graph paths, decisions and assistant context describe that last submitted run.
 
 | Mode | How | Risk numbers |
 |---|---|---|
-| Fixture (default, offline) | `VITE_USE_FIXTURES=true` or unset | Engine results precomputed for every slider value (`risk_surface.json`, loaded on demand), at a 7-day horizon |
+| Fixture (default, offline) | `VITE_USE_FIXTURES=true` or unset | Engine results precomputed for every slider value (`risk_surface.json`, loaded on demand), at each scenario preset's horizon |
 | API | `VITE_USE_FIXTURES=false`, backend running | Live engine on the exact slider values, plus live analytics and per-position decisions |
 
 `VITE_FIXTURE_SET` chooses the data set: `demo_ethena_01` (golden demo, default) or `verified_2026_10_10` (real markets verified on-chain, see `docs/verified_markets.md`).
