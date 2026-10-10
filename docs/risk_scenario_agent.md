@@ -1,6 +1,6 @@
 # Agent de scénarios de Risk
 
-L'agent Gemini est intégré **uniquement à la page Risk Engine**, dans le chatbot existant. Il crée de nouveaux cas nommés et personnalisés à partir d'un événement, des positions du portefeuille sélectionné et, lorsqu'un flux est configuré, de news fournies. Chaque cas est une nouvelle combinaison de paramètres d'un des sept mécanismes économiques existants ; le modèle ne crée pas une nouvelle formule de risque.
+L'agent Gemini est accessible dans le chatbot depuis **Portfolio, Dependency Graph, Scenario Lab et Risk Engine**. Le panneau de génération détaillé reste sur Risk Engine. Il crée de nouveaux cas nommés et personnalisés à partir d'un événement, des positions du portefeuille sélectionné et, lorsqu'un flux est configuré, de news fournies. Chaque cas est une nouvelle combinaison de paramètres d'un des sept mécanismes économiques existants ; le modèle ne crée pas une nouvelle formule de risque.
 
 ## Parcours
 
@@ -33,7 +33,7 @@ La clé reste dans le backend et n'est pas incluse dans le bundle, les réponses
 
 Le contexte envoyé à Gemini contient l'événement et les entrées économiques utiles du portefeuille et du snapshot choisi : actifs, quantités/valeurs, dette, taux, paramètres de liquidation, distribution des emprunteurs et dépendances par identifiant. Les wallets, adresses de contrat, preuves brutes et URLs de recordings ne sont pas nécessaires et sont exclus. Le portefeuille `stress_portfolio_01` actuel contient des quantités fictives sur des marchés publics documentés, voir [ses sources](stress_portfolio.md).
 
-Un échec d'authentification, de quota, de réseau ou de validation apparaît dans le chat. **Aucun repli silencieux vers le parseur local** dans Risk. Les autres pages gardent leur chatbot précédent.
+Un échec d'authentification, de quota, de réseau ou de validation apparaît dans le chat. **Aucun repli silencieux vers le parseur local** dans Risk. La page Execution conserve son chatbot précédent.
 
 ## Point de branchement pour la future API de news
 

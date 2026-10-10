@@ -254,4 +254,4 @@ Après un run, les questions sur le HF/LTV ou les positions continuent de lire l
 Vérification : `cd frontend && npm run check:assistant`.
 
 
-Le mode API de **Risk Engine** dispose maintenant d’un [agent Gemini de scénarios liés aux événements et news](risk_scenario_agent.md). Le traducteur local décrit ci-dessus reste celui des autres pages ; il ne sert pas de repli au modèle dans Risk.
+Le chatbot en mode API de **Portfolio, Dependency Graph, Scenario Lab et Risk Engine** dispose maintenant d’un [agent Gemini de scénarios liés aux événements et news](risk_scenario_agent.md). Le traducteur local décrit ci-dessus reste celui de la page Execution ; il ne sert pas de repli au modèle dans Risk.

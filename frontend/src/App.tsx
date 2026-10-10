@@ -629,6 +629,7 @@ function App() {
           seed={assistantSeed}
           onRiskBatch={batch => setRiskBatches(current => [batch, ...current].slice(0, 5))}
           onRunRiskProposal={runRiskProposal}
+          onApiMode={() => changeMode("api")}
           mode={mode}
           view={view}
           scenario={scenario}
@@ -1781,6 +1782,7 @@ function AssistantDock({
   seed,
   onRiskBatch,
   onRunRiskProposal,
+  onApiMode,
   fixtureSet,
   graph,
   open,
@@ -1800,6 +1802,7 @@ function AssistantDock({
   seed: RiskAssistantSeed | null;
   onRiskBatch: (batch: RiskAgentBatch) => void;
   onRunRiskProposal: (proposal: RiskScenarioProposal) => void;
+  onApiMode: () => void;
   fixtureSet: string;
   graph: AppData["graph"];
   mode: DataMode;
@@ -1810,6 +1813,7 @@ function AssistantDock({
   scenarioInputs: ScenarioInputs;
   executeAction: (action: DashboardAction) => void;
 }) {
+  const isRiskAssistant = view !== "decision";
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       id: "assistant-welcome",
@@ -2092,24 +2096,29 @@ function AssistantDock({
             <header className="assistant-header">
               <div>
                 <p className="eyebrow">Assistant</p>
-                <h2>{view === "engine" ? "Market event → portfolio stress" : "Describe your stress"}</h2>
-                {view === "engine" ? <small>Gemini API · event and portfolio exposure context · no automatic simulation</small> : null}
+                <h2>{isRiskAssistant ? "Market event → portfolio stress" : "Describe your stress"}</h2>
+                {isRiskAssistant ? <small>Gemini API · event and portfolio exposure context · no automatic simulation</small> : null}
               </div>
               <button className="icon-button" onClick={() => setOpen(false)} aria-label="Close assistant">
                 <X size={15} />
               </button>
             </header>
             <div className="assistant-messages" aria-live="polite">
+              {isRiskAssistant && mode !== "api" ? <div className="assistant-message" data-role="assistant"><p>Scenario generation requires Engine API mode.</p><button className="primary-button" onClick={onApiMode}>Switch to Engine API</button></div> : null}
               <div className="assistant-examples" aria-label="Scenario prompt examples">
-                {[
+                {(isRiskAssistant ? [
+                  ["US rate cut", "USD INTEREST RATE FALLS BY 3 PTN"],
+                  ["Weaker dollar", "Si le dollar se déprécie face à l’euro, comment mon portefeuille est-il exposé ?"],
+                  ["Challenge portfolio", "Propose trois scénarios adverses adaptés aux positions de mon portefeuille."],
+                ] : [
                   ["Depeg + liquidity", "USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours"],
                   ["Cascade", "Crée une cascade avec USDe -8 %, liquidité -60 %, sur 7 jours"],
                   ["Carry squeeze", "Rendement sUSDe 0 %, emprunt 60 % sur 30 jours"],
-                ].map(([label, prompt]) => <button key={label} onClick={() => setInput(prompt)}>{label}</button>)}
+                ]).map(([label, prompt]) => <button key={label} onClick={() => setInput(prompt)}>{label}</button>)}
               </div>
               {messages.map((message) => (
                 <div className="assistant-message" data-role={message.role} key={message.id}>
-                  <p>{message.content}</p>
+                  <p>{message.id === "assistant-welcome" && isRiskAssistant ? "Describe a market event in French or English, such as a US interest-rate cut or a weaker dollar. Gemini connects it to this portfolio and proposes named scenarios with explicit assumptions. No simulation runs until you click Run this stress case." : message.content}</p>
                   {message.riskBatch ? <RiskScenarioCards batch={message.riskBatch} onRun={onRunRiskProposal} canRun={mode === "api"} /> : null}
                   {message.proposal ? (
                     <div className="assistant-scenario-proposal">
@@ -2129,7 +2138,7 @@ function AssistantDock({
                   {message.caption && message.role === "assistant" ? <small>{message.caption}</small> : null}
                 </div>
               ))}
-              {assistantState === "thinking" ? <p role="status" className="microcopy">{view === "engine" ? "Gemini is designing scenarios for this portfolio…" : "Preparing your response…"}</p> : null}
+              {assistantState === "thinking" ? <p role="status" className="microcopy">{isRiskAssistant ? "Gemini is designing scenarios for this portfolio…" : "Preparing your response…"}</p> : null}
               {!voiceSupported ? <p className="speech-fallback">Voice is not available in this browser; typing still works.</p> : null}
             </div>
             <div className="assistant-voice-settings" aria-label="Speech settings">

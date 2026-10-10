@@ -29,11 +29,27 @@ try {
     assert.deepEqual(response.actions, []);
   }
   assert.equal(parse('Pourquoi le depeg USDe touche mon prêteur ?'), null);
-  const response = await api.postAssistantMessage({ message: 'USDe -10 %, liquidité -80 %, 7 jours', view: 'portfolio', scenario: 'usde_depeg', selectedPosition: 'aave_01', scenarioInputs: base, fixtureSet: set, graph: baseline.graph }, 'api');
-  assert.equal(response.proposal.engineScenario.parameters.usde_spot_shock_pct, '-0.10');
-  assert.equal(response.proposal.engineScenario.parameters.exit_liquidity_reduction_pct, '0.80');
-  assert.equal(response.proposal.engineScenario.horizon_days, 7);
-  const help = await api.postAssistantMessage({ message: 'Quelle est ma perte ?', view: 'portfolio', scenario: 'usde_depeg', selectedPosition: 'aave_01', scenarioInputs: base, fixtureSet: set, graph: baseline.graph }, 'api');
-  assert.ok(help.message.includes('Run a scenario'));
-  console.log('PASS: seven scenarios, FR/EN, distinct percentages, signed carry, decimal inputs, refused ambiguity and unsupported shocks, no automatic run, exact engine parameters before first run.');
+  const request = { message: 'USD INTEREST RATE FALLS BY 3 PTN', scenario: 'usde_depeg', selectedPosition: 'aave_01', scenarioInputs: base, fixtureSet: set, graph: baseline.graph };
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  try {
+    globalThis.fetch = async (url, options) => {
+      calls.push({ url, body: JSON.parse(options.body) });
+      return new Response(JSON.stringify({ message: 'Provider response', proposals: [], actions: [] }), { status: 200 });
+    };
+    for (const view of ['portfolio', 'graph', 'scenario', 'engine']) {
+      const response = await api.postAssistantMessage({ ...request, view, count: 2 }, 'api');
+      assert.equal(response.message, 'Provider response');
+      assert.ok(calls.at(-1).url.includes('/api/v1/risk/assistant?set=stress_portfolio_01'), view);
+      assert.deepEqual(calls.at(-1).body, { message: request.message, count: 2 });
+      await assert.rejects(api.postAssistantMessage({ ...request, view }, 'fixture'), /requires Engine API/);
+    }
+    assert.equal(calls.length, 4);
+    globalThis.fetch = async () => new Response(JSON.stringify({ detail: 'Gemini unavailable' }), { status: 503 });
+    await assert.rejects(api.postAssistantMessage({ ...request, view: 'scenario' }, 'api'), /Gemini unavailable/);
+    const execution = await api.postAssistantMessage({ ...request, message: 'USDe -10 %, liquidité -80 %, 7 jours', view: 'decision' }, 'api');
+    assert.equal(execution.proposal.engineScenario.parameters.usde_spot_shock_pct, '-0.10');
+    assert.deepEqual(execution.actions, []);
+  } finally { globalThis.fetch = originalFetch; }
+  console.log('PASS: seven scenarios, FR/EN, distinct percentages, signed carry, decimal inputs, refused ambiguity and unsupported shocks, no automatic run, Gemini routing from all four risk views before first run, no local fallback on errors, Engine API required, Execution behavior preserved.');
 } finally { await server.close(); }
