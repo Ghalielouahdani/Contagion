@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : étapes 0 à 7 terminées sur 8
+> État : les 8 étapes sont terminées
 
 ---
 
@@ -382,6 +382,43 @@ Comment lire le graphique que P4 en tirera :
 - Diviser la profondeur ne fait bouger **que le proxy**. Si un vrai devis est branché, un avertissement le signale.
 - Profondeur inconnue : les p\* sont vides et un avertissement explique pourquoi.
 
+Commit `a399922`.
+
+### Étape 8 : point d'entrée pour P4 et README
+
+**Le point d'entrée (`entrypoint.py`).** P4 construit l'API web. Il n'a qu'à brancher **une seule fonction**, `handle_decide_request(request)`, sur `POST /api/v1/decide`, en 3 lignes de FastAPI (l'exemple est dans le README). La fonction **ne plante jamais** : elle renvoie toujours un code HTTP et une réponse JSON.
+
+**Ce que P4 envoie** (exemple) :
+```json
+{ "schema_version": "1.0", "portfolio_id": "demo_ethena_01", "position_id": "aave_01",
+  "scenario_id": "usde_depeg", "probability": "0.15" }
+```
+- `probability` est la valeur du **curseur du dashboard**. Elle vient de l'utilisateur, jamais de nous. Sans ce champ, on prend celle de `scenario_request` (`null` dans les fixtures).
+- `include` (optionnel) : `"sensitivity"` et/ou `"portfolio_summary"` pour recevoir en plus les données de l'étape 7 et le résumé de l'étape 3.
+- `inputs` (optionnel) : les vrais JSON de P1/P2. C'est le **mode live**. Sans `inputs`, on charge les fixtures, c'est le **mode fixture**. Le README de l'API demande ce double mode pour que la démo marche dès le premier jour.
+
+**Ce que P3 renvoie :**
+- **200** : `{"status": "ok", "mode": "fixture", "decision": {...}}`. Avec p = 15 % pour aave_01, on obtient REDUCE 25 %. Sans probabilité, on obtient exactement le corrigé 11.8.
+- **Erreur** : `{"status": "error", "error": {"code": ..., "message": ...}}`, avec un code HTTP adapté :
+
+| HTTP | Code | Quand |
+|---|---|---|
+| 400 | `unsupported_schema_version` | Mauvaise version de schéma |
+| 404 | `unknown_portfolio` / `unknown_position` | Portefeuille ou position inconnus |
+| 422 | `invalid_request` | Champ manquant, scénario inconnu, probabilité qui n'est pas une chaîne décimale… |
+| 422 | `invalid_inputs` | Données incohérentes (ids, horizon), probabilité hors de 0 à 1 |
+
+**Pourquoi refuser `0.15` (nombre) et exiger `"0.15"` (chaîne) ?** En informatique, 0.15 écrit comme un nombre à virgule n'est pas exactement 0,15 mais 0,1499999999999999944… C'est pour ça que toute l'équipe a convenu de transmettre les nombres en chaînes. Le message d'erreur le dit clairement.
+
+**Le README.** Le contenu d'origine (les consignes) est **gardé tel quel**. La documentation a été **ajoutée en bas**, en anglais comme les autres README, pour l'équipe : organisation du module, format de requête et de réponse, erreurs, formules en une ligne, règles de recommandation, comment P1 branche un vrai prix, hypothèses, limites, points ouverts et lancement des tests.
+
+**Les limites documentées :**
+- le proxy **surestime** l'impact de prix sur les pools de stablecoins ;
+- la sortie de sUSDe **n'est pas instantanée** : convertir du sUSDe en USDe chez Ethena impose une période d'attente (« cooldown »). Une sortie rapide dépend donc de la liquidité de la pool de marché, et c'est elle que le modèle chiffre ;
+- les venues partagées sont chiffrées séparément ;
+- la perte résiduelle proportionnelle surestime le risque en crise de liquidité ;
+- les lignes sans prix sont retirées.
+
 ---
 
 ## 4. Organisation du code actuel
@@ -389,6 +426,7 @@ Comment lire le graphique que P4 en tirera :
 ```
 backend/execution/
 ├── __init__.py              (vide : fait du dossier un package)
+├── entrypoint.py            point d'entrée unique pour POST /api/v1/decide (P4)
 ├── decision.py              moteur de décision
 ├── exit_cost.py             estimateur de coût de sortie (sources de prix interchangeables)
 ├── sensitivity.py           données de sensibilité pour le curseur de P4
@@ -396,8 +434,9 @@ backend/execution/
 │   ├── test_decision.py     tests du moteur
 │   ├── test_exit_cost.py    tests de l'estimateur
 │   ├── test_section16.py    tests exigés par la section 16
-│   └── test_sensitivity.py  tests des données de sensibilité
-├── README.md                (consignes d'origine, sera réécrit à l'étape 8)
+│   ├── test_sensitivity.py  tests des données de sensibilité
+│   └── test_entrypoint.py   tests du point d'entrée
+├── README.md                consignes d'origine + documentation du module (en bas, pour l'équipe)
 └── JOURNAL_P3.md            ce fichier
 ```
 
@@ -474,7 +513,18 @@ Plus les 20 tests de `tests/test_section16.py`, détaillés dans la section « �
 | `test_output_is_plain_json_with_string_numbers` | La sortie est du JSON pur, avec l'avertissement « Assumption-driven » en tête |
 | `test_reason_says_no_exit_pays_when_every_p_star_exceeds_100pct` | Pool minuscule → tous les p\* > 100 %, et le texte dit qu'aucune sortie ne paie |
 
-Dernier résultat : **44 passed**.
+Et ceux de `tests/test_entrypoint.py` (étape 8) :
+
+| Test | Ce qu'il vérifie |
+|---|---|
+| `test_fixture_mode_returns_the_golden_decision` | Sans probabilité, l'API renvoie exactement le corrigé 11.8 |
+| `test_user_probability_drives_the_recommendation` | `probability: "0.15"` → `expected_cost`, REDUCE |
+| `test_liquidity_scenario_and_optional_blocks` | Scénario liquidité + sensibilité + résumé du portefeuille dans la même réponse |
+| `test_live_mode_uses_the_inputs_sent_by_p4` | En mode live, on utilise bien les données envoyées (perte doublée → 300 000 $) |
+| `test_bad_requests_get_a_clear_error_not_a_crash` (× 10) | Chaque mauvaise requête donne le bon code HTTP, le bon code d'erreur et un message |
+| `test_non_object_body_is_rejected` | Un corps qui n'est pas un objet JSON est refusé proprement |
+
+Dernier résultat : **59 passed**.
 
 On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : le script affiche « IDENTIQUE » puis le JSON complet.
 
@@ -483,7 +533,8 @@ On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : 
 ## 6. Historique git (branche `feat/p3`)
 
 ```
-(étape 7) P3: sensitivity data for the dashboard slider  ← étape 7
+(étape 8) P3: entry point for POST /api/v1/decide + README  ← étape 8
+a399922  P3: sensitivity data for the dashboard slider  ← étape 7
 57b39ed  P3: section 16 test suite  ← étape 6
 f98ae3f  P3: complete section 8 recommendation rules + liquidity check  ← étape 5
 20d31e4  P3: pluggable exit cost estimator (executable → pool → proxy)  ← étape 4
@@ -513,6 +564,11 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 
 ## 8. La suite
 
-| Étape | Contenu |
+Les 8 étapes sont terminées. Ce qui reste relève de l'intégration avec l'équipe :
+
+| Qui | Action |
 |---|---|
-| 8 | Point d'entrée pour l'API `POST /api/v1/decide` + README |
+| P4 | Brancher `handle_decide_request` sur `POST /api/v1/decide` (3 lignes, exemple dans le README) |
+| P1 | Brancher un vrai devis via `ExitCostEstimator(executable=...)` ; corriger le rendement de la garantie morpho_01 |
+| P2 | Vérifier que le `risk_result` de `feat/risk-engine` a le format lu par P3 ; discuter la perte résiduelle en crise de liquidité |
+| Équipe | Trancher les points ouverts (schéma nullable, STAY par dominance) ; ouvrir la PR `feat/p3` → `main` |
