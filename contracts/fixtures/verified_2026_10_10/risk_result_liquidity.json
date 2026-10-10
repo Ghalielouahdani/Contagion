@@ -157,18 +157,20 @@
       "executable_value_after_usd": "1743987.63",
       "debt_after_usd": "1799760.78",
       "net_equity_before_usd": "1199030.22",
-      "net_equity_after_usd": "-55773.15",
-      "conditional_loss_usd": "1254803.37",
+      "net_equity_after_usd": "0.00",
+      "conditional_loss_usd": "1199030.22",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "1254803.37"
+        "execution_haircut": "1254803.37",
+        "limited_liability": "-55773.15"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
+        "Losses exceed the position's net equity by 55,773 USD: the position is lost (loss capped at its net equity); the shortfall falls on the lenders.",
         "Priced on executable quotes; standalone exit."
       ],
       "contagion": {
@@ -257,6 +259,30 @@
           ]
         },
         {
+          "id": "limited_liability",
+          "label": "Limited liability: the debt is non-recourse",
+          "formula": "min(net equity before - every other loss component, 0)",
+          "inputs": [
+            {
+              "name": "net equity before",
+              "value": "1199030.22",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "losses before the cap",
+              "value": "1254803.37",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-55773.15",
+            "unit": "usd"
+          },
+          "note": "The borrower walks away: it loses its net equity, the shortfall is the lenders'."
+        },
+        {
           "id": "loss",
           "label": "Conditional loss of the position",
           "formula": "sum of the loss components",
@@ -284,10 +310,16 @@
               "value": "1254803.37",
               "unit": "usd",
               "source": "derived"
+            },
+            {
+              "name": "limited liability",
+              "value": "-55773.15",
+              "unit": "usd",
+              "source": "derived"
             }
           ],
           "result": {
-            "value": "1254803.37",
+            "value": "1199030.22",
             "unit": "usd"
           }
         }
@@ -300,18 +332,20 @@
       "executable_value_after_usd": "970084.95",
       "debt_after_usd": "2000134.00",
       "net_equity_before_usd": "1004280.33",
-      "net_equity_after_usd": "-1030049.05",
-      "conditional_loss_usd": "2034329.38",
+      "net_equity_after_usd": "0.00",
+      "conditional_loss_usd": "1004280.33",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "2034329.38"
+        "execution_haircut": "2034329.38",
+        "limited_liability": "-1030049.05"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
+        "Losses exceed the position's net equity by 1,030,049 USD: the position is lost (loss capped at its net equity); the shortfall falls on the lenders.",
         "Priced on executable quotes; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
       ],
       "contagion": {
@@ -400,6 +434,30 @@
           ]
         },
         {
+          "id": "limited_liability",
+          "label": "Limited liability: the debt is non-recourse",
+          "formula": "min(net equity before - every other loss component, 0)",
+          "inputs": [
+            {
+              "name": "net equity before",
+              "value": "1004280.33",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "losses before the cap",
+              "value": "2034329.38",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-1030049.05",
+            "unit": "usd"
+          },
+          "note": "The borrower walks away: it loses its net equity, the shortfall is the lenders'."
+        },
+        {
           "id": "loss",
           "label": "Conditional loss of the position",
           "formula": "sum of the loss components",
@@ -427,10 +485,16 @@
               "value": "2034329.38",
               "unit": "usd",
               "source": "derived"
+            },
+            {
+              "name": "limited liability",
+              "value": "-1030049.05",
+              "unit": "usd",
+              "source": "derived"
             }
           ],
           "result": {
-            "value": "2034329.38",
+            "value": "1004280.33",
             "unit": "usd"
           }
         }
@@ -550,8 +614,8 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6202968.85",
-    "net_equity_after_usd": "-909665.03",
-    "total_conditional_loss_usd": "7112633.88",
+    "net_equity_after_usd": "176157.17",
+    "total_conditional_loss_usd": "6026811.68",
     "shared_liquidity_penalty_usd": "1228485.04",
     "aggregation_status": "complete"
   },
@@ -601,13 +665,13 @@
         },
         {
           "name": "aave_01",
-          "value": "1254803.37",
+          "value": "1199030.22",
           "unit": "usd",
           "source": "derived"
         },
         {
           "name": "morpho_01",
-          "value": "2034329.38",
+          "value": "1004280.33",
           "unit": "usd",
           "source": "derived"
         },
@@ -625,10 +689,10 @@
         }
       ],
       "result": {
-        "value": "7112633.88",
+        "value": "6026811.68",
         "unit": "usd"
       },
-      "note": "114.66% of net equity (6202968.85 USD)."
+      "note": "97.16% of net equity (6202968.85 USD)."
     }
   ],
   "contagion": {

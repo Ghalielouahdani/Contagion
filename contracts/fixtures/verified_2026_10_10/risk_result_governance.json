@@ -491,7 +491,7 @@
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Liquidatable: liquidators may repay 100% of the debt; penalty = repaid debt x incentive."
+        "Liquidatable: 1 liquidation call(s) repay 2,000,134 USD of debt; penalty = collateral seized at market value - debt repaid."
       ],
       "contagion": {
         "paths": [
@@ -774,10 +774,10 @@
         {
           "id": "liquidation_penalty",
           "label": "Liquidation penalty",
-          "formula": "close factor x debt after x liquidation incentive",
+          "formula": "repeat while liquidatable: repay close factor x debt, seize repaid x (1 + incentive) at the oracle price (capped at the collateral left); penalty = collateral seized at market value - debt repaid",
           "inputs": [
             {
-              "name": "close factor",
+              "name": "close factor at the breach",
               "value": "1.000000",
               "unit": "ratio",
               "source": "protocol_rule"
@@ -793,13 +793,37 @@
               "value": "0.026200",
               "unit": "ratio",
               "source": "verified"
+            },
+            {
+              "name": "liquidation calls",
+              "value": "1.000000",
+              "unit": "count",
+              "source": "derived"
+            },
+            {
+              "name": "debt repaid",
+              "value": "2000134.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "collateral seized (market value)",
+              "value": "2052537.51",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "debt written off (collateral exhausted)",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
             }
           ],
           "result": {
             "value": "52403.51",
             "unit": "usd"
           },
-          "note": "Liquidators repay this share of the debt and keep the incentive as a bonus taken from the collateral."
+          "note": "Liquidators keep the incentive as a bonus taken from the collateral; a position whose collateral runs out loses all of it and its remaining debt becomes the lenders' bad debt."
         },
         {
           "id": "loss",

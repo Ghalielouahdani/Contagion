@@ -31,13 +31,9 @@ def queued_haircut(venue, size, forced, depth_factor):
 
 
 def seized_collateral(impact) -> float:
-    """Market value liquidators take from a liquidatable position: repaid debt plus their incentive."""
-    penalty = impact.loss_components["liquidation_penalty"]
-    if penalty <= 0:
-        return 0.0
-    metric = impact.internals["metric"]
-    repaid = metric.close_factor * impact.debt_after
-    return min(repaid * (1 + metric.liquidation_incentive), impact.gross_after)
+    """Market value of the collateral liquidators take from a liquidated position (and sell)."""
+    liq = impact.internals.get("liquidation")
+    return 0.0 if liq is None else liq.seized_market
 
 
 @scenario("combined_crisis")
@@ -91,8 +87,11 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
             impact.insufficient_data = True
             impact.warnings.append(f"No exit venue data for {position.exit_venue_id}; executable value not computed.")
             continue
-        # A liquidated borrow only has the collateral the liquidators left to sell.
+        # A liquidated borrow only has the collateral the liquidators left to sell; an underwater one is
+        # abandoned to its lenders (limited liability), so the fund sells nothing.
         size = impact.gross_after - seized_collateral(impact)
+        if position.is_borrow and impact.loss_components.get("limited_liability", 0.0) < 0:
+            size = 0.0
         ahead = forced.get(venue.venue_id, 0.0)
         cost = queued_haircut(venue, size, ahead, k)
         trace_exit(impact.trace, venue, size, k, T.venue_source(snapshot, venue.venue_id), ahead)
@@ -101,6 +100,8 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
             impact.warnings.append(extrapolated)
         impact.loss_components["execution_haircut"] = cost
         impact.executable_after = impact.gross_after - cost
+        if position.is_borrow:
+            usde_depeg.cap_loss(impact)
         standalone += cost
         exits[venue.venue_id] = exits.get(venue.venue_id, 0.0) + size
         if ahead > 0:

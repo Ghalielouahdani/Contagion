@@ -63,6 +63,7 @@ const COMPONENT_COPY: Record<string, string> = {
   bad_debt: "Bad debt (realised)",
   undercollateralized_debt: "Underwater debt (not yet realised)",
   protocol_failure: "Protocol failure",
+  limited_liability: "Loss above equity (left to lenders)",
   shared_liquidity_penalty: "Shared exit venues (portfolio only)",
 };
 

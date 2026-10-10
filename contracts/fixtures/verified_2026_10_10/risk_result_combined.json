@@ -276,13 +276,14 @@
       "executable_value_after_usd": "1554405.90",
       "debt_after_usd": "1799760.78",
       "net_equity_before_usd": "1199030.22",
-      "net_equity_after_usd": "-245354.88",
-      "conditional_loss_usd": "1444385.10",
+      "net_equity_after_usd": "0.00",
+      "conditional_loss_usd": "1199030.22",
       "loss_components": {
         "market_repricing": "899637.30",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "544747.80"
+        "execution_haircut": "544747.80",
+        "limited_liability": "-245354.88"
       },
       "risk_metric": {
         "type": "health_factor",
@@ -296,7 +297,8 @@
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Oracle assumed to pass through 0 of the market move; if it fully follows the market, health_factor becomes 1.0847 (liquidatable: False)."
+        "Oracle assumed to pass through 0 of the market move; if it fully follows the market, health_factor becomes 1.0847 (liquidatable: False).",
+        "Losses exceed the position's net equity by 245,355 USD: the position is lost (loss capped at its net equity); the shortfall falls on the lenders."
       ],
       "contagion": {
         "paths": [
@@ -592,6 +594,30 @@
           ]
         },
         {
+          "id": "limited_liability",
+          "label": "Limited liability: the debt is non-recourse",
+          "formula": "min(net equity before - every other loss component, 0)",
+          "inputs": [
+            {
+              "name": "net equity before",
+              "value": "1199030.22",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "losses before the cap",
+              "value": "1444385.10",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-245354.88",
+            "unit": "usd"
+          },
+          "note": "The borrower walks away: it loses its net equity, the shortfall is the lenders'."
+        },
+        {
           "id": "loss",
           "label": "Conditional loss of the position",
           "formula": "sum of the loss components",
@@ -619,10 +645,16 @@
               "value": "544747.80",
               "unit": "usd",
               "source": "derived"
+            },
+            {
+              "name": "limited liability",
+              "value": "-245354.88",
+              "unit": "usd",
+              "source": "derived"
             }
           ],
           "result": {
-            "value": "1444385.10",
+            "value": "1199030.22",
             "unit": "usd"
           }
         }
@@ -655,7 +687,7 @@
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Liquidatable: liquidators may repay 100% of the debt; penalty = repaid debt x incentive.",
+        "Liquidatable: 1 liquidation call(s) repay 2,000,134 USD of debt; penalty = collateral seized at market value - debt repaid.",
         "Exit queued behind 2,052,538 USD of liquidation selling on venue:susde_usdc; without it the haircut would be 8 USD."
       ],
       "contagion": {
@@ -955,10 +987,10 @@
         {
           "id": "liquidation_penalty",
           "label": "Liquidation penalty",
-          "formula": "close factor x debt after x liquidation incentive",
+          "formula": "repeat while liquidatable: repay close factor x debt, seize repaid x (1 + incentive) at the oracle price (capped at the collateral left); penalty = collateral seized at market value - debt repaid",
           "inputs": [
             {
-              "name": "close factor",
+              "name": "close factor at the breach",
               "value": "1.000000",
               "unit": "ratio",
               "source": "protocol_rule"
@@ -974,13 +1006,37 @@
               "value": "0.026200",
               "unit": "ratio",
               "source": "verified"
+            },
+            {
+              "name": "liquidation calls",
+              "value": "1.000000",
+              "unit": "count",
+              "source": "derived"
+            },
+            {
+              "name": "debt repaid",
+              "value": "2000134.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "collateral seized (market value)",
+              "value": "2052537.51",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "debt written off (collateral exhausted)",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
             }
           ],
           "result": {
             "value": "52403.51",
             "unit": "usd"
           },
-          "note": "Liquidators repay this share of the debt and keep the incentive as a bonus taken from the collateral."
+          "note": "Liquidators keep the incentive as a bonus taken from the collateral; a position whose collateral runs out loses all of it and its remaining debt becomes the lenders' bad debt."
         },
         {
           "id": "exit:venue:susde_usdc",
@@ -1326,8 +1382,8 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6202968.85",
-    "net_equity_after_usd": "337476.46",
-    "total_conditional_loss_usd": "5865492.39",
+    "net_equity_after_usd": "582831.34",
+    "total_conditional_loss_usd": "5620137.51",
     "shared_liquidity_penalty_usd": "14508.19",
     "aggregation_status": "complete"
   },
@@ -1339,7 +1395,7 @@
   "warnings": [
     "Portfolio total uses a joint exit per shared venue, behind the liquidation selling; it exceeds the sum of position losses by shared_liquidity_penalty_usd.",
     "Liquidators sell seized collateral into the crisis venues before the fund exits (one round; the price impact does not feed back into oracles).",
-    "Running the depeg (3,058,270 USD) and the liquidity crisis (7,112,634 USD) separately and adding them gives 10,170,903 USD, overstating the joint loss by 4,305,411 USD: the separate liquidity run sells pre-depeg values."
+    "Running the depeg (3,058,270 USD) and the liquidity crisis (6,026,812 USD) separately and adding them gives 9,085,081 USD, overstating the joint loss by 3,464,944 USD: the separate liquidity run sells pre-depeg values."
   ],
   "trace": [
     {
@@ -1379,7 +1435,7 @@
         },
         {
           "name": "aave_01",
-          "value": "1444385.10",
+          "value": "1199030.22",
           "unit": "usd",
           "source": "derived"
         },
@@ -1403,10 +1459,10 @@
         }
       ],
       "result": {
-        "value": "5865492.39",
+        "value": "5620137.51",
         "unit": "usd"
       },
-      "note": "94.56% of net equity (6202968.85 USD)."
+      "note": "90.60% of net equity (6202968.85 USD)."
     }
   ],
   "comparison": {
@@ -1414,10 +1470,10 @@
       {
         "run_id": "without_liquidation_selling",
         "description": "Same depeg and liquidity loss, liquidators' sales not queued ahead of the fund's exit.",
-        "total_conditional_loss_usd": "4984418.35"
+        "total_conditional_loss_usd": "4739063.48"
       }
     ],
-    "excess_loss_usd": "881074.04",
+    "excess_loss_usd": "881074.03",
     "excess_meaning": "Contagion through liquidity: extra exit cost because liquidations sell into the same venues first."
   },
   "contagion": {

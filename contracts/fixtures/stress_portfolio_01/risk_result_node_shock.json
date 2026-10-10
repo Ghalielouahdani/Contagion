@@ -479,13 +479,14 @@
       "executable_value_after_usd": null,
       "debt_after_usd": "440655.77",
       "net_equity_before_usd": "60089.55",
-      "net_equity_after_usd": "-1530.16",
-      "conditional_loss_usd": "61619.71",
+      "net_equity_after_usd": "0.01",
+      "conditional_loss_usd": "60089.54",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "50074.53",
-        "liquidation_penalty": "11545.18",
-        "execution_haircut": "0.00"
+        "liquidation_penalty": "11506.11",
+        "execution_haircut": "0.00",
+        "limited_liability": "-1491.10"
       },
       "risk_metric": {
         "type": "ltv",
@@ -499,7 +500,8 @@
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Liquidatable: liquidators may repay 100% of the debt; penalty = repaid debt x incentive."
+        "Liquidatable: 1 liquidation call(s) repay 439,165 USD of debt; collateral exhausted, 1,491 USD of debt written off; penalty = collateral seized at market value - debt repaid.",
+        "Losses exceed the position's net equity by 1,491 USD: the position is lost (loss capped at its net equity); the shortfall falls on the lenders."
       ],
       "contagion": {
         "paths": [
@@ -791,10 +793,10 @@
         {
           "id": "liquidation_penalty",
           "label": "Liquidation penalty",
-          "formula": "close factor x debt after x liquidation incentive",
+          "formula": "repeat while liquidatable: repay close factor x debt, seize repaid x (1 + incentive) at the oracle price (capped at the collateral left); penalty = collateral seized at market value - debt repaid",
           "inputs": [
             {
-              "name": "close factor",
+              "name": "close factor at the breach",
               "value": "1.000000",
               "unit": "ratio",
               "source": "protocol_rule"
@@ -810,13 +812,61 @@
               "value": "0.026200",
               "unit": "ratio",
               "source": "verified"
+            },
+            {
+              "name": "liquidation calls",
+              "value": "1.000000",
+              "unit": "count",
+              "source": "derived"
+            },
+            {
+              "name": "debt repaid",
+              "value": "439164.67",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "collateral seized (market value)",
+              "value": "450670.79",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "debt written off (collateral exhausted)",
+              "value": "1491.10",
+              "unit": "usd",
+              "source": "derived"
             }
           ],
           "result": {
-            "value": "11545.18",
+            "value": "11506.11",
             "unit": "usd"
           },
-          "note": "Liquidators repay this share of the debt and keep the incentive as a bonus taken from the collateral."
+          "note": "Liquidators keep the incentive as a bonus taken from the collateral; a position whose collateral runs out loses all of it and its remaining debt becomes the lenders' bad debt."
+        },
+        {
+          "id": "limited_liability",
+          "label": "Limited liability: the debt is non-recourse",
+          "formula": "min(net equity before - every other loss component, 0)",
+          "inputs": [
+            {
+              "name": "net equity before",
+              "value": "60089.55",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "losses before the cap",
+              "value": "61580.65",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-1491.10",
+            "unit": "usd"
+          },
+          "note": "The borrower walks away: it loses its net equity, the shortfall is the lenders'."
         },
         {
           "id": "loss",
@@ -837,7 +887,7 @@
             },
             {
               "name": "liquidation penalty",
-              "value": "11545.18",
+              "value": "11506.11",
               "unit": "usd",
               "source": "derived"
             },
@@ -846,10 +896,16 @@
               "value": "0.00",
               "unit": "usd",
               "source": "derived"
+            },
+            {
+              "name": "limited liability",
+              "value": "-1491.10",
+              "unit": "usd",
+              "source": "derived"
             }
           ],
           "result": {
-            "value": "61619.71",
+            "value": "60089.54",
             "unit": "usd"
           }
         }
@@ -1630,8 +1686,8 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "2538636.07",
-    "net_equity_after_usd": "2291947.22",
-    "total_conditional_loss_usd": "246688.85",
+    "net_equity_after_usd": "2293477.39",
+    "total_conditional_loss_usd": "245158.68",
     "shared_liquidity_penalty_usd": "0.00",
     "aggregation_status": "complete"
   },
@@ -1686,7 +1742,7 @@
         },
         {
           "name": "morpho_01",
-          "value": "61619.71",
+          "value": "60089.54",
           "unit": "usd",
           "source": "derived"
         },
@@ -1716,10 +1772,10 @@
         }
       ],
       "result": {
-        "value": "246688.85",
+        "value": "245158.68",
         "unit": "usd"
       },
-      "note": "9.72% of net equity (2538636.07 USD)."
+      "note": "9.66% of net equity (2538636.07 USD)."
     }
   ],
   "contagion": {

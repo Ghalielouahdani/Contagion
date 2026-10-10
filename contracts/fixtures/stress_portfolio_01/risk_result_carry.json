@@ -318,7 +318,8 @@
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Liquidatable from accrued debt alone: liquidators may repay 100% of the debt.",
+        "Liquidatable: 1 liquidation call(s) repay 462,387 USD of debt; penalty = collateral seized at market value - debt repaid.",
+        "Liquidatable from accrued debt alone, without any price move.",
         "At these rates the position becomes liquidatable after about 25 days."
       ],
       "contagion": {
@@ -458,6 +459,60 @@
             "unit": "usd"
           },
           "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "liquidation_penalty",
+          "label": "Liquidation penalty",
+          "formula": "repeat while liquidatable: repay close factor x debt, seize repaid x (1 + incentive) at the oracle price (capped at the collateral left); penalty = collateral seized at market value - debt repaid",
+          "inputs": [
+            {
+              "name": "close factor at the breach",
+              "value": "1.000000",
+              "unit": "ratio",
+              "source": "protocol_rule"
+            },
+            {
+              "name": "debt after",
+              "value": "462386.74",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation incentive",
+              "value": "0.026200",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "liquidation calls",
+              "value": "1.000000",
+              "unit": "count",
+              "source": "derived"
+            },
+            {
+              "name": "debt repaid",
+              "value": "462386.74",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "collateral seized (market value)",
+              "value": "474501.27",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "debt written off (collateral exhausted)",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "12114.53",
+            "unit": "usd"
+          },
+          "note": "Liquidators keep the incentive as a bonus taken from the collateral; a position whose collateral runs out loses all of it and its remaining debt becomes the lenders' bad debt."
         },
         {
           "id": "loss",
