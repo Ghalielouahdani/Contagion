@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : les 8 étapes sont terminées
+> État : les 8 étapes du mode prévention sont terminées ; nouveau mode « crise en cours » : étape 9 faite (branche `feat/p3-crisis-advisor`)
 
 ---
 
@@ -572,3 +572,54 @@ Les 8 étapes sont terminées. Ce qui reste relève de l'intégration avec l'éq
 | P1 | Brancher un vrai devis via `ExitCostEstimator(executable=...)` ; corriger le rendement de la garantie morpho_01 |
 | P2 | Vérifier que le `risk_result` de `feat/risk-engine` a le format lu par P3 ; discuter la perte résiduelle en crise de liquidité |
 | Équipe | Trancher les points ouverts (schéma nullable, STAY par dominance) ; ouvrir la PR `feat/p3` → `main` |
+
+---
+
+## 9. Nouveau mode : « crise en cours » (branche `feat/p3-crisis-advisor`)
+
+**Pourquoi ce mode.** Le mode prévention répond à « dois-je agir au cas où ? » avec un seuil de probabilité p\*. Le nouveau mode répond à la question d'un risk analyst : **« ce scénario arrive, que faire de chaque position pour perdre le moins ? »**. Il n'y a **aucune probabilité** : le scénario est supposé certain. Le mode prévention reste intact.
+
+**Base de travail.** La branche part de `feat/risk-engine` (P2), qui contient déjà `feat/p3`, P1, le portefeuille `stress_portfolio_01` (6 positions sur marchés réels, dont 2 prêteurs) et les 7 scénarios. Son lien de suivi vers la branche de P2 a été retiré, pour ne jamais pousser chez lui par erreur.
+
+### Étape 9 : le moteur déterministe (`crisis.py`)
+
+**L'idée centrale : séparer deux montants.**
+- **Perte de garder** = la perte du scénario calculée par P2, **sans** la composante `execution_haircut`. Cette composante est le coût d'une vente forcée : on ne le paie que si l'on vend.
+- **Coût de vendre** = frais + gas + impact de prix, avec la profondeur **du scénario** : `k = 1 − exit_liquidity_reduction_pct`. Ça donne 20 % de la normale en crise de liquidité ou combinée, 50 % en cascade, 100 % sinon. Aucune valeur n'est inventée.
+
+Total d'une action = coût de vendre + rendement perdu + perte encore subie sur ce qu'on garde. On choisit le total le plus petit. En cas d'égalité, on garde.
+
+**Deux moments de réaction :**
+
+| | Tôt | Tard |
+|---|---|---|
+| Prix de vente | d'avant le choc | déjà tombé |
+| Ce qu'on peut éviter | perte de prix, pénalité de liquidation, mauvaise dette (prêteurs) | la pénalité de liquidation seulement |
+| Actions | garder, vendre 25 / 50 / 75 / 100 %, désendetter juste assez (emprunts), retirer (prêteurs, dans la limite de la liquidité du marché) | garder, vendre, désendetter (fenêtre de l'oracle) |
+| Perte déjà subie | – | affichée à part, **jamais** comme évitable |
+
+**Réutilisé de P2 :** `exit_cost` (vraies courbes KyberSwap), `deleverage_needed` (désendettement jusqu'à HF 1,05 ou 95 % du LLTV) et `lending.withdrawable` (liquidité retirable par un prêteur).
+
+**Résultats marquants sur `stress_portfolio_01` :**
+- **Crise de liquidité pure** : garder ne perd rien, donc **garder** partout. Vendre ne ferait que payer la pool mince.
+- **Pendle en depeg** : la pool ne fait que 3,8 M$, donc vendre **25 %** est optimal et tout vendre coûterait plus.
+- **Cascade** : les prêteurs perdraient 846 000 $ de mauvaise dette ; **retirer tôt** les sauve presque entièrement.
+- **Réaction tardive** : sur une simple détention, rien à sauver (garder). Sur un emprunt liquidable (Morpho en depeg, Aave en gouvernance), désendetter ou vendre sauve la pénalité : environ 11 700 $ et 17 000 $.
+- **Totaux négatifs** (Aave) : l'emprunt coûte 4,65 %/an et la garantie rapporte 0,24 %. Vendre **économise** des intérêts : c'est un gain.
+
+**Garde-fous :**
+- dans `carry_squeeze`, le carry est déjà dans la perte (`negative_carry`), donc il n'est pas recompté ;
+- un `risk_result` d'un autre scénario est refusé ;
+- sans `risk_result`, le moteur le recalcule avec P2.
+
+**Tests (`tests/test_crisis.py`, 17 tests) :** les 8 scénarios × 6 positions sont chiffrés, et total = coût + rendement + perte restante. Ils vérifient aussi : crise de liquidité → garder ; profondeur du scénario respectée ; sortie partielle dans une pool mince ; perte subie jamais évitable en réaction tardive ; pénalité sauvée en désendettant ; pas de double comptage du carry ; prêteurs (retrait tôt, rien tard) ; rejet d'un `risk_result` étranger.
+
+Suite complète du repo : **415 tests verts**.
+
+### Suite prévue
+
+| Étape | Contenu |
+|---|---|
+| 10 | Stratégies au niveau portefeuille (vente groupée sur pool partagée) + univers de couverture chiffrable (KyberSwap : USDC, USDT, PYUSD, RLUSD ; remplacement de garantie), actifs choqués par le scénario exclus |
+| 11 | Conseiller IA (Gemini, sur le modèle de `backend/api/risk_assistant.py` de P2) : il explique le calcul et compose 3 stratégies **sans chiffres** ; le code calcule leurs résultats |
+| 12 | Point d'entrée API, README, journal |
