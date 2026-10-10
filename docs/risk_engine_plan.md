@@ -174,14 +174,14 @@ Sur `live_ethena_01` :
 
 ## Cascade de liquidations (fait, étape 4)
 
-`backend/risk/cascade.py` + scénario G `liquidation_cascade`. Inspiré des simulations multi-agents (Gauntlet) et des moniteurs de cascades, réduit à des règles déterministes : choc initial → emprunteurs liquidables (vus à travers l'oracle de chaque marché) → les liquidateurs vendent la collatérale sur son venue → impact de prix (courbe de cotations ou proxy) → nouvelles liquidations, jusqu'au point fixe. Chaque tranche n'est liquidée qu'une fois : convergence garantie. La mauvaise dette est comptée au prix du tour où la tranche est liquidée.
+`backend/risk/cascade.py` + scénario G `liquidation_cascade`. Inspiré des simulations multi-agents (Gauntlet) et des moniteurs de cascades, réduit à des règles déterministes : choc initial → emprunteurs liquidables (vus à travers l'oracle de chaque marché) → les liquidateurs vendent la collatérale sur son venue → impact de prix (courbe de cotations ou proxy) → nouvelles liquidations, jusqu'au point fixe. La dette est liquidée par morceaux de 5 % de la dette initiale, avec mise à jour du prix après chaque morceau. La mauvaise dette est comptée au prix de chaque morceau. Un seuil numérique fixe et des limites de tranches/tours évitent une boucle infinie ; une limite atteinte marque le résultat incomplet. Voir le [guide des scénarios](risk_scenarios.md).
 
 Résultats sur `demo_lending_01` (−5 %, profondeur 50 %, absorption 80 %, liquidateurs preneurs de prix) :
-- le −5 % seul ne coûte **rien** au prêteur ; avec la cascade : 85 M$ liquidés, point bas USDe **−44 %**, prix final −12 % (amplification ×2,4), **377 k$** de mauvaise dette pour notre part ;
+- le −5 % seul ne coûte **rien** au prêteur ; avec la cascade : 100 M$ liquidés, point bas USDe **−59,64 %**, prix final −22,45 % (amplification ×4,49), **912,69 k$** de mauvaise dette pour notre part ;
 - l'**oracle taux de change est un disjoncteur** : le marché sUSDe ne voit pas la cascade, rien n'y est liquidé ;
 - pour un prêteur, la perte dépend d'abord du type d'oracle puis de la profondeur du venue ; l'absorption par l'arbitrage pèse surtout sur le prix final.
 
-**Limite majeure, à dire** : sur le même choc, le prix final va de −6 % à −63 % selon la part de l'impact absorbée par l'arbitrage entre deux tours (pour l'USDe : mint/redeem au pair tant que le backing tient). C'est un paramètre explicite (`arbitrage_absorption_pct`), pas un défaut caché. Le second choix structurant est le comportement des liquidateurs : preneurs de prix (cascade classique, pire cas) ou attentifs à leur impact (la spirale est alors bornée par le bonus de liquidation, ~2,5 %). **À calibrer sur l'épisode d'octobre 2025 avant de montrer un chiffre de cascade comme réaliste.**
+**Limite majeure, à dire** : sur le même choc, le prix final dépend fortement de la part de l'impact absorbée par l'arbitrage entre deux tours (pour l'USDe : mint/redeem au pair tant que le backing tient). C'est un paramètre explicite (`arbitrage_absorption_pct`), pas un défaut caché. Le second choix structurant est le comportement des liquidateurs : preneurs de prix (cascade classique, pire cas) ou attentifs à leur impact (la spirale est alors bornée par le bonus de liquidation, ~2,5 %). **À calibrer sur l'épisode d'octobre 2025 avant de montrer un chiffre de cascade comme réaliste.**
 
 ## Niveau 3 : la finition qui fait pro
 

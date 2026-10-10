@@ -12,7 +12,7 @@ deterministic rules that run in milliseconds:
 - liquidators, two behaviours (`impact_aware`):
   * price takers (default, the classic cascade and the worst case): they liquidate whatever is
     profitable at the current price (seized > repaid) and the market absorbs their selling; the
-    price impact of a round's selling hits the next round;
+    price is updated after each slice of selling;
   * impact aware: they act only while it pays. A bucket is many borrowers, so it is liquidated in part:
   liquidators keep going while the next dollar of collateral they sell (behind the forced selling
   already queued on the venue) still earns more than the debt it repays, i.e. while the venue's
@@ -27,9 +27,11 @@ deterministic rules that run in milliseconds:
   (arbitrageurs buy the discount; for USDe, minting/redeeming at par while the backing holds).
   0 = nothing is absorbed (cumulative impact, worst case), 1 = each round's impact fully recovers
   before the next. This is the cascade's least known parameter: calibrate it on a real episode;
-- bad debt is measured at the price of the round in which a bucket is liquidated.
-Each bucket is liquidated at most once, so the loop ends after at most (number of buckets + 1)
-rounds; MAX_ROUNDS is a safety net. USDe and sUSDe move on their own venues; arbitrage between
+- bad debt is measured at the price of each liquidation slice.
+Within a round, buckets are liquidated in slices (SLICE of their debt), most underwater first, and the
+price is updated after every slice, so a liquidation never escapes the impact of the ones before it.
+Between rounds, arbitrage absorbs part of the selling. Debt is liquidated at most once, so the loop
+ends; MAX_ROUNDS is a safety net. USDe and sUSDe move on their own venues; arbitrage between
 them is not modeled (initial sUSDe move = beta x USDe move). A model, labelled as such.
 """
 
@@ -43,6 +45,9 @@ from backend.risk.metrics import RULES
 from backend.risk.model import Portfolio, Snapshot, Venue
 
 MAX_ROUNDS = 50
+SLICE = 0.05  # share of a bucket's debt liquidated before the price is updated
+MIN_SLICE = 1e-4  # minimum share of the ORIGINAL slice, never of a shrinking remainder
+MAX_SLICES_PER_BUCKET = 2000  # numerical safety net; exhausting it marks the result incomplete
 MAX_DISCOUNT = 0.99
 CASCADE_ASSETS = ("USDe", "sUSDe")
 
@@ -149,50 +154,67 @@ def run(portfolio: Portfolio, snapshot: Snapshot, initial_moves: dict[str, float
     sold = {asset: 0.0 for asset in CASCADE_ASSETS}  # forced selling still weighing on each price
 
     for round_no in range(1, MAX_ROUNDS + 1):
+        if round_no > 1:  # between rounds, arbitrage absorbs part of the selling and prices partly recover
+            for asset in CASCADE_ASSETS:
+                sold[asset] *= 1 - absorption
+                _reprice(result, venues, sold, initial_moves, asset, depth_factor)
         liquidated_debt = 0.0
         sold_this_round = {asset: 0.0 for asset in CASCADE_ASSETS}
-        for b in buckets:
-            if b.remaining <= 0:
-                continue
+        skipped: set[int] = set()
+        slices = 0
+        # Within a round, liquidate slice by slice, most underwater borrowers first, repricing after every
+        # slice: each liquidation sees the price already pushed down by the ones before it.
+        while True:
+            candidates = [b for b in buckets if b.remaining > 1e-6 and _oracle_ltv(b, result.moves[b.asset]) > b.lltv
+                          and id(b) not in skipped]
+            if not candidates:
+                break
+            if slices >= MAX_SLICES_PER_BUCKET * max(len(buckets), 1):
+                result.converged = False
+                result.warnings.append("Cascade slice limit reached: stopped, result incomplete.")
+                break
+            slices += 1
+            b = max(candidates, key=lambda x: _oracle_ltv(x, result.moves[x.asset]))
             move = result.moves[b.asset]
-            per_debt_collateral = b.collateral0 / b.debt  # oracle = market before the shock
-            oracle_per_debt = per_debt_collateral * (1 + b.pass_through * move)
-            if oracle_per_debt > 0 and 1 / oracle_per_debt <= b.lltv:
-                continue  # not liquidatable at this oracle price
+            oracle_per_debt = b.collateral0 / b.debt * (1 + b.pass_through * move)
             # Per dollar of debt liquidated: collateral seized (oracle, then market value) and debt repaid.
             seized_oracle = min(b.lif, max(oracle_per_debt, 0.0))
             repaid = seized_oracle / b.lif
             seized = seized_oracle * (1 + move) / (1 + b.pass_through * move) if oracle_per_debt > 0 else 0.0
+            piece = min(b.remaining, b.debt * SLICE)
             if not impact_aware:
-                amount = b.remaining if seized > repaid else 0.0
+                amount = piece if seized > repaid else 0.0
             else:
-                amount = _profitable_amount(venues[b.asset], sold[b.asset] + sold_this_round[b.asset], b.remaining,
-                                            seized, repaid, depth_factor)
-            b.stuck = amount < b.remaining
-            if amount <= 0:
+                amount = _profitable_amount(venues[b.asset], sold[b.asset], piece, seized, repaid, depth_factor)
+            # Impact-aware liquidators shrink each profitable amount as the price falls; without a floor the
+            # Keep the floor tied to the original debt: a shrinking remainder must not shrink it.
+            # Also reject floating-point updates that cannot change the liquidated balance.
+            minimum = max(1e-6, b.debt * SLICE * MIN_SLICE)
+            if amount <= 0 or (amount < minimum and amount < piece) or b.liquidated + amount <= b.liquidated:
+                b.stuck = True
+                skipped.add(id(b))  # unprofitable at this price: no further slice this round
                 continue
+            b.stuck = False
             b.liquidated += amount
             b.bad_debt += amount * max(1 - repaid, 0.0)
             liquidated_debt += amount
+            sold[b.asset] += amount * seized
             sold_this_round[b.asset] += amount * seized
-
-        for asset, amount in sold_this_round.items():
-            sold[asset] = sold[asset] * (1 - absorption) + amount
-            if venues[asset] is not None and sold[asset] > 0:
-                discount = marginal_discount(venues[asset], sold[asset], depth_factor)
-                result.moves[asset] = (1 + initial_moves[asset]) * (1 - discount) - 1
-                result.troughs[asset] = min(result.troughs[asset], result.moves[asset])
+            _reprice(result, venues, sold, initial_moves, b.asset, depth_factor)
         result.rounds.append({
             "round": round_no,
             "liquidated_debt_usd": liquidated_debt,
             "collateral_sold_usd": sum(sold_this_round.values()),
             "moves": dict(result.moves),
         })
-        if liquidated_debt <= 1.0:  # nothing (or dust) liquidated: fixed point reached
+        if not result.converged or liquidated_debt <= 1.0:  # nothing (or dust) liquidated: fixed point reached
             break
     else:
         result.converged = False
         result.warnings.append(f"Cascade still liquidating after {MAX_ROUNDS} rounds: stopped, result incomplete.")
+    # Recovered prices may make a previously stuck bucket safe again.
+    for b in buckets:
+        b.stuck = b.stuck and b.remaining > 1e-6 and _oracle_ltv(b, result.moves[b.asset]) > b.lltv
     stuck = sum(b.remaining for b in buckets if b.stuck)
     if stuck > 0:
         result.warnings.append(
@@ -200,6 +222,19 @@ def run(portfolio: Portfolio, snapshot: Snapshot, initial_moves: dict[str, float
             "seized collateral would cost more than the incentive): it stops the cascade and stays with the lenders "
             "as underwater or at-risk debt.")
     return result
+
+
+def _oracle_ltv(b: Bucket, move: float) -> float:
+    oracle_value = b.collateral0 * (1 + b.pass_through * move)
+    return b.debt / oracle_value if oracle_value > 0 else float("inf")
+
+
+def _reprice(result: CascadeResult, venues: dict, sold: dict, initial_moves: dict, asset: str, depth_factor: float) -> None:
+    if venues[asset] is None:
+        return
+    discount = marginal_discount(venues[asset], sold[asset], depth_factor) if sold[asset] > 0 else 0.0
+    result.moves[asset] = (1 + initial_moves[asset]) * (1 - discount) - 1
+    result.troughs[asset] = min(result.troughs[asset], result.moves[asset])
 
 
 def _profitable_amount(venue: Venue | None, queued: float, remaining: float, seized: float, repaid: float,

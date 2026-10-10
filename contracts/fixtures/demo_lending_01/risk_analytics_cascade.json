@@ -8,8 +8,8 @@
   "currency": "USD",
   "headline": {
     "nav_usd": "10000000.00",
-    "scenario_loss_usd": "377264.65",
-    "scenario_loss_pct_nav": "0.0377",
+    "scenario_loss_usd": "912689.99",
+    "scenario_loss_pct_nav": "0.0913",
     "usde_exposure_usd": "0.00",
     "usde_effective_leverage": "0.0000",
     "derisking_savings_usd": "4794.52",
@@ -90,18 +90,18 @@
   },
   "derisking": {
     "target_loss_reduction_pct": "0.5000",
-    "stress_loss_usd": "377264.65",
+    "stress_loss_usd": "912689.99",
     "uniform": {
       "plan": "uniform",
       "fractions": {
         "lend_usde_01": "0.5000",
         "lend_susde_01": "0.5000"
       },
-      "loss_reduction_usd": "188632.32",
+      "loss_reduction_usd": "456344.99",
       "trading_cost_usd": "0.00",
       "foregone_yield_usd": "4794.52",
       "total_cost_usd": "4794.52",
-      "break_even_probability": "0.0254"
+      "break_even_probability": "0.0105"
     },
     "targeted": {
       "plan": "targeted",
@@ -121,17 +121,17 @@
         "lend_usde_01": "1.0000",
         "lend_susde_01": "1.0000"
       },
-      "loss_reduction_usd": "377264.65",
+      "loss_reduction_usd": "912689.99",
       "trading_cost_usd": "0.00",
       "foregone_yield_usd": "9589.04",
       "total_cost_usd": "9589.04",
-      "break_even_probability": "0.0254"
+      "break_even_probability": "0.0105"
     },
     "savings_usd": "4794.52",
     "savings_pct_of_uniform_cost": "1.0000",
     "savings_bps_nav": "4.7945",
     "cost_per_usd_protected": {
-      "lend_usde_01": "0.0127",
+      "lend_usde_01": "0.0053",
       "lend_susde_01": null
     }
   },
@@ -144,119 +144,119 @@
         "low_value": "0.0000",
         "high_value": "1.0000",
         "loss_at_low_usd": "0.00",
-        "loss_at_high_usd": "892037.67",
-        "swing_usd": "892037.67",
-        "base_loss_usd": "377264.65"
+        "loss_at_high_usd": "2233178.37",
+        "swing_usd": "2233178.37",
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "venue:usde_usdc depth",
         "target": "venue:usde_usdc",
         "low_value": "2.0000",
         "high_value": "0.5000",
-        "loss_at_low_usd": "43459.06",
-        "loss_at_high_usd": "798931.94",
-        "swing_usd": "755472.89",
-        "base_loss_usd": "377264.65"
-      },
-      {
-        "assumption": "USDe depeg size",
-        "target": "usde_spot_shock_pct",
-        "low_value": "-0.0250",
-        "high_value": "-0.1000",
-        "loss_at_low_usd": "319877.99",
-        "loss_at_high_usd": "499171.92",
-        "swing_usd": "179293.93",
-        "base_loss_usd": "377264.65"
+        "loss_at_low_usd": "329770.52",
+        "loss_at_high_usd": "1607822.23",
+        "swing_usd": "1278051.71",
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "Liquidity lost in the crisis",
         "target": "exit_liquidity_reduction_pct",
         "low_value": "0.3750",
         "high_value": "0.5750",
-        "loss_at_low_usd": "242129.10",
-        "loss_at_high_usd": "343186.18",
-        "swing_usd": "101057.08",
-        "base_loss_usd": "377264.65"
+        "loss_at_low_usd": "693221.42",
+        "loss_at_high_usd": "1075530.89",
+        "swing_usd": "382309.47",
+        "base_loss_usd": "912689.99"
       },
       {
-        "assumption": "Arbitrage absorption between rounds",
-        "target": "arbitrage_absorption_pct",
-        "low_value": "0.5000",
-        "high_value": "0.9500",
-        "loss_at_low_usd": "414166.69",
-        "loss_at_high_usd": "357814.48",
-        "swing_usd": "56352.21",
-        "base_loss_usd": "377264.65"
-      },
-      {
-        "assumption": "lend_usde_01 LLTV",
-        "target": "lend_usde_01.lltv",
-        "low_value": "0.8650",
-        "high_value": "0.9450",
-        "loss_at_low_usd": "401523.56",
-        "loss_at_high_usd": "377264.65",
-        "swing_usd": "24258.91",
-        "base_loss_usd": "377264.65"
+        "assumption": "USDe depeg size",
+        "target": "usde_spot_shock_pct",
+        "low_value": "-0.0250",
+        "high_value": "-0.1000",
+        "loss_at_low_usd": "855276.17",
+        "loss_at_high_usd": "1032315.77",
+        "swing_usd": "177039.59",
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "sUSDe beta to USDe",
         "target": "susde_market_beta",
         "low_value": "0.5000",
         "high_value": "1.5000",
-        "loss_at_low_usd": "377264.65",
-        "loss_at_high_usd": "377264.65",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
         "swing_usd": "0.00",
-        "base_loss_usd": "377264.65"
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "PT implied yield shock",
         "target": "pt_implied_apy_shock",
         "low_value": "0.0000",
         "high_value": "0.0600",
-        "loss_at_low_usd": "377264.65",
-        "loss_at_high_usd": "377264.65",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
         "swing_usd": "0.00",
-        "base_loss_usd": "377264.65"
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "USDe backing loss",
         "target": "backing_impairment_pct",
         "low_value": "0.0000",
         "high_value": "-0.0500",
-        "loss_at_low_usd": "377264.65",
-        "loss_at_high_usd": "377264.65",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
         "swing_usd": "0.00",
-        "base_loss_usd": "377264.65"
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "sUSDe exchange-rate cut",
         "target": "susde_rate_cut_pct",
         "low_value": "0.0000",
         "high_value": "-0.0500",
-        "loss_at_low_usd": "377264.65",
-        "loss_at_high_usd": "377264.65",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
         "swing_usd": "0.00",
-        "base_loss_usd": "377264.65"
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "venue:susde_usdc depth",
         "target": "venue:susde_usdc",
         "low_value": "2.0000",
         "high_value": "0.5000",
-        "loss_at_low_usd": "377264.65",
-        "loss_at_high_usd": "377264.65",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
         "swing_usd": "0.00",
-        "base_loss_usd": "377264.65"
+        "base_loss_usd": "912689.99"
+      },
+      {
+        "assumption": "Arbitrage absorption between rounds",
+        "target": "arbitrage_absorption_pct",
+        "low_value": "0.5000",
+        "high_value": "0.9500",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
+        "swing_usd": "0.00",
+        "base_loss_usd": "912689.99"
+      },
+      {
+        "assumption": "lend_usde_01 LLTV",
+        "target": "lend_usde_01.lltv",
+        "low_value": "0.8650",
+        "high_value": "0.9450",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
+        "swing_usd": "0.00",
+        "base_loss_usd": "912689.99"
       },
       {
         "assumption": "lend_susde_01 LLTV",
         "target": "lend_susde_01.lltv",
         "low_value": "0.8650",
         "high_value": "0.9450",
-        "loss_at_low_usd": "377264.65",
-        "loss_at_high_usd": "377264.65",
+        "loss_at_low_usd": "912689.99",
+        "loss_at_high_usd": "912689.99",
         "swing_usd": "0.00",
-        "base_loss_usd": "377264.65"
+        "base_loss_usd": "912689.99"
       }
     ],
     "grid": {
@@ -296,117 +296,117 @@
         [
           "0.00",
           "0.00",
-          "414444.59",
-          "440642.69",
-          "466922.04",
-          "493283.47",
-          "519727.84",
-          "564805.96",
-          "587122.89",
-          "611771.74",
-          "636505.02",
-          "668267.84",
-          "701276.72",
-          "555074.93",
-          "587357.61",
-          "629408.38",
-          "671538.01",
-          "713747.20",
-          "756779.84",
-          "808455.44",
-          "860242.46"
+          "843976.68",
+          "866622.48",
+          "889525.51",
+          "912689.99",
+          "936120.25",
+          "959820.76",
+          "983796.08",
+          "1007992.64",
+          "1032315.77",
+          "1063711.58",
+          "1095237.32",
+          "1126894.75",
+          "1158685.63",
+          "1200301.70",
+          "1242054.90",
+          "1283947.12",
+          "1325980.30",
+          "1368156.43",
+          "1410477.53"
         ],
         [
           "0.00",
           "0.00",
-          "374924.36",
-          "397578.10",
-          "420278.13",
-          "443103.94",
-          "469750.96",
-          "522913.88",
-          "545487.71",
-          "570495.84",
-          "595589.72",
-          "627714.46",
-          "661135.62",
-          "555074.93",
-          "587357.61",
-          "629408.38",
-          "671538.01",
-          "713747.20",
-          "756779.84",
-          "808455.44",
-          "860242.46"
+          "843976.68",
+          "866622.48",
+          "889525.51",
+          "912689.99",
+          "936120.25",
+          "959820.76",
+          "983796.08",
+          "1007992.64",
+          "1032315.77",
+          "1063711.58",
+          "1095237.32",
+          "1126894.75",
+          "1158685.63",
+          "1200301.70",
+          "1242054.90",
+          "1283947.12",
+          "1325980.30",
+          "1368156.43",
+          "1410477.53"
         ],
         [
           "0.00",
           "0.00",
-          "345741.12",
-          "368500.90",
-          "391309.25",
-          "414166.69",
-          "437073.73",
-          "475494.47",
-          "498356.11",
-          "523784.85",
-          "549300.60",
-          "581848.51",
-          "615757.78",
-          "555074.93",
-          "587357.61",
-          "629408.38",
-          "671538.01",
-          "713747.20",
-          "756779.84",
-          "808455.44",
-          "860242.46"
+          "843976.68",
+          "866622.48",
+          "889525.51",
+          "912689.99",
+          "936120.25",
+          "959820.76",
+          "983796.08",
+          "1007992.64",
+          "1032315.77",
+          "1063711.58",
+          "1095237.32",
+          "1126894.75",
+          "1158685.63",
+          "1200301.70",
+          "1242054.90",
+          "1283947.12",
+          "1325980.30",
+          "1368156.43",
+          "1410477.53"
         ],
         [
           "0.00",
           "0.00",
-          "308439.35",
-          "331329.44",
-          "354271.02",
-          "377264.65",
-          "400310.89",
-          "436930.08",
-          "455941.25",
-          "477528.63",
-          "499171.92",
-          "527815.79",
-          "557813.80",
-          "555074.93",
-          "587357.61",
-          "629408.38",
-          "671538.01",
-          "713747.20",
-          "756779.84",
-          "808455.44",
-          "860242.46"
+          "843976.68",
+          "866622.48",
+          "889525.51",
+          "912689.99",
+          "936120.25",
+          "959820.76",
+          "983796.08",
+          "1007992.64",
+          "1032315.77",
+          "1063711.58",
+          "1095237.32",
+          "1126894.75",
+          "1158685.63",
+          "1200301.70",
+          "1242054.90",
+          "1283947.12",
+          "1325980.30",
+          "1368156.43",
+          "1410477.53"
         ],
         [
           "0.00",
           "0.00",
-          "288785.51",
-          "311741.95",
-          "334751.41",
-          "357814.48",
-          "380931.75",
-          "436930.08",
-          "455941.25",
-          "477528.63",
-          "499171.92",
-          "527815.79",
-          "557813.80",
-          "555074.93",
-          "587357.61",
-          "629408.38",
-          "671538.01",
-          "713747.20",
-          "756779.84",
-          "808455.44",
-          "860242.46"
+          "843976.68",
+          "866622.48",
+          "889525.51",
+          "912689.99",
+          "936120.25",
+          "959820.76",
+          "983796.08",
+          "1007992.64",
+          "1032315.77",
+          "1063711.58",
+          "1095237.32",
+          "1126894.75",
+          "1158685.63",
+          "1200301.70",
+          "1242054.90",
+          "1283947.12",
+          "1325980.30",
+          "1368156.43",
+          "1410477.53"
         ]
       ],
       "liquidatable_positions": [
@@ -536,11 +536,11 @@
       "p05_usd": "0.00",
       "p25_usd": "0.00",
       "p50_usd": "0.00",
-      "p75_usd": "41206.94",
-      "p95_usd": "250119.12",
+      "p75_usd": "13419.11",
+      "p95_usd": "503428.44",
       "min_usd": "0.00",
-      "max_usd": "1208042.82",
-      "base_usd": "377264.65"
+      "max_usd": "2225625.02",
+      "base_usd": "912689.99"
     },
     "positions": {
       "lend_usde_01": {
@@ -548,96 +548,96 @@
         "p25_usd": "0.00",
         "p50_usd": "0.00",
         "p75_usd": "0.00",
-        "p95_usd": "127541.17",
+        "p95_usd": "332242.50",
         "min_usd": "0.00",
-        "max_usd": "771008.72",
-        "base_usd": "377264.65"
+        "max_usd": "1395393.17",
+        "base_usd": "912689.99"
       },
       "lend_susde_01": {
         "p05_usd": "0.00",
         "p25_usd": "0.00",
         "p50_usd": "0.00",
         "p75_usd": "0.00",
-        "p95_usd": "122506.60",
+        "p95_usd": "159689.52",
         "min_usd": "0.00",
-        "max_usd": "1208042.82",
+        "max_usd": "1360649.01",
         "base_usd": "0.00"
       }
     },
     "histogram": [
       {
         "from_usd": "0.00",
-        "to_usd": "80536.19",
-        "draws": 210
+        "to_usd": "148375.00",
+        "draws": 224
       },
       {
-        "from_usd": "80536.19",
-        "to_usd": "161072.38",
-        "draws": 22
+        "from_usd": "148375.00",
+        "to_usd": "296750.00",
+        "draws": 8
       },
       {
-        "from_usd": "161072.38",
-        "to_usd": "241608.56",
-        "draws": 11
+        "from_usd": "296750.00",
+        "to_usd": "445125.00",
+        "draws": 7
       },
       {
-        "from_usd": "241608.56",
-        "to_usd": "322144.75",
+        "from_usd": "445125.00",
+        "to_usd": "593500.00",
+        "draws": 6
+      },
+      {
+        "from_usd": "593500.00",
+        "to_usd": "741875.01",
+        "draws": 3
+      },
+      {
+        "from_usd": "741875.01",
+        "to_usd": "890250.01",
+        "draws": 3
+      },
+      {
+        "from_usd": "890250.01",
+        "to_usd": "1038625.01",
         "draws": 2
       },
       {
-        "from_usd": "322144.75",
-        "to_usd": "402680.94",
-        "draws": 4
-      },
-      {
-        "from_usd": "402680.94",
-        "to_usd": "483217.13",
-        "draws": 2
-      },
-      {
-        "from_usd": "483217.13",
-        "to_usd": "563753.32",
-        "draws": 2
-      },
-      {
-        "from_usd": "563753.32",
-        "to_usd": "644289.51",
-        "draws": 0
-      },
-      {
-        "from_usd": "644289.51",
-        "to_usd": "724825.69",
+        "from_usd": "1038625.01",
+        "to_usd": "1187000.01",
         "draws": 1
       },
       {
-        "from_usd": "724825.69",
-        "to_usd": "805361.88",
+        "from_usd": "1187000.01",
+        "to_usd": "1335375.01",
         "draws": 0
       },
       {
-        "from_usd": "805361.88",
-        "to_usd": "885898.07",
+        "from_usd": "1335375.01",
+        "to_usd": "1483750.01",
         "draws": 1
       },
       {
-        "from_usd": "885898.07",
-        "to_usd": "966434.26",
+        "from_usd": "1483750.01",
+        "to_usd": "1632125.01",
         "draws": 0
       },
       {
-        "from_usd": "966434.26",
-        "to_usd": "1046970.45",
+        "from_usd": "1632125.01",
+        "to_usd": "1780500.01",
         "draws": 0
       },
       {
-        "from_usd": "1046970.45",
-        "to_usd": "1127506.64",
+        "from_usd": "1780500.01",
+        "to_usd": "1928875.02",
         "draws": 0
       },
       {
-        "from_usd": "1127506.64",
-        "to_usd": "1208042.82",
+        "from_usd": "1928875.02",
+        "to_usd": "2077250.02",
+        "draws": 0
+      },
+      {
+        "from_usd": "2077250.02",
+        "to_usd": "2225625.02",
         "draws": 1
       }
     ],
@@ -646,52 +646,52 @@
     },
     "drivers": [
       {
-        "assumption": "lend_susde_01 oracle pass-through",
-        "low": "0.0000",
-        "high": "1.0000",
-        "rank_correlation": "0.4043"
-      },
-      {
-        "assumption": "arbitrage absorption between rounds",
-        "low": "0.5000",
-        "high": "0.9500",
-        "rank_correlation": "-0.3219"
-      },
-      {
         "assumption": "lend_usde_01 oracle pass-through",
         "low": "0.0000",
         "high": "1.0000",
-        "rank_correlation": "0.3015"
+        "rank_correlation": "0.5676"
       },
       {
-        "assumption": "venue:susde_usdc depth (assumed)",
-        "low": "0.5000",
-        "high": "2.0000",
-        "rank_correlation": "-0.1658"
-      },
-      {
-        "assumption": "lend_usde_01 LLTV",
-        "low": "0.8650",
-        "high": "0.9450",
-        "rank_correlation": "-0.0867"
-      },
-      {
-        "assumption": "lend_susde_01 LLTV",
-        "low": "0.8650",
-        "high": "0.9450",
-        "rank_correlation": "-0.0468"
-      },
-      {
-        "assumption": "venue:usde_usdc depth (assumed)",
-        "low": "0.5000",
-        "high": "2.0000",
-        "rank_correlation": "-0.0415"
+        "assumption": "lend_susde_01 oracle pass-through",
+        "low": "0.0000",
+        "high": "1.0000",
+        "rank_correlation": "0.4829"
       },
       {
         "assumption": "sUSDe beta to USDe",
         "low": "0.5000",
         "high": "1.5000",
-        "rank_correlation": "-0.0086"
+        "rank_correlation": "-0.1201"
+      },
+      {
+        "assumption": "venue:susde_usdc depth (assumed)",
+        "low": "0.5000",
+        "high": "2.0000",
+        "rank_correlation": "0.0891"
+      },
+      {
+        "assumption": "lend_usde_01 LLTV",
+        "low": "0.8650",
+        "high": "0.9450",
+        "rank_correlation": "-0.0481"
+      },
+      {
+        "assumption": "lend_susde_01 LLTV",
+        "low": "0.8650",
+        "high": "0.9450",
+        "rank_correlation": "-0.0396"
+      },
+      {
+        "assumption": "venue:usde_usdc depth (assumed)",
+        "low": "0.5000",
+        "high": "2.0000",
+        "rank_correlation": "0.0310"
+      },
+      {
+        "assumption": "arbitrage absorption between rounds",
+        "low": "0.5000",
+        "high": "0.9500",
+        "rank_correlation": "-0.0079"
       }
     ],
     "fixed_because_verified": []
@@ -725,25 +725,25 @@
       "lend_usde_01": [
         "0.00",
         "0.00",
-        "308439.35",
-        "331329.44",
-        "354271.02",
-        "377264.65",
-        "400310.89",
-        "436930.08",
-        "455941.25",
-        "477528.63",
-        "499171.92",
-        "520871.35",
-        "543924.92",
-        "534241.60",
-        "559579.83",
-        "584996.24",
-        "610491.50",
-        "636066.33",
-        "662464.59",
-        "697505.83",
-        "732658.48"
+        "843976.68",
+        "866622.48",
+        "889525.51",
+        "912689.99",
+        "936120.25",
+        "959820.76",
+        "983796.08",
+        "1007992.64",
+        "1032315.77",
+        "1056767.13",
+        "1081348.43",
+        "1106061.41",
+        "1130907.85",
+        "1155889.55",
+        "1181008.39",
+        "1206266.24",
+        "1231665.06",
+        "1257206.82",
+        "1282893.55"
       ],
       "lend_susde_01": [
         "0.00",
@@ -772,25 +772,25 @@
     "total_usd": [
       "0.00",
       "0.00",
-      "308439.35",
-      "331329.44",
-      "354271.02",
-      "377264.65",
-      "400310.89",
-      "436930.08",
-      "455941.25",
-      "477528.63",
-      "499171.92",
-      "527815.79",
-      "557813.80",
-      "555074.93",
-      "587357.61",
-      "629408.38",
-      "671538.01",
-      "713747.20",
-      "756779.84",
-      "808455.44",
-      "860242.46"
+      "843976.68",
+      "866622.48",
+      "889525.51",
+      "912689.99",
+      "936120.25",
+      "959820.76",
+      "983796.08",
+      "1007992.64",
+      "1032315.77",
+      "1063711.58",
+      "1095237.32",
+      "1126894.75",
+      "1158685.63",
+      "1200301.70",
+      "1242054.90",
+      "1283947.12",
+      "1325980.30",
+      "1368156.43",
+      "1410477.53"
     ]
   },
   "assumptions": [

@@ -10,25 +10,25 @@
     {
       "position_id": "lend_usde_01",
       "gross_value_before_usd": "5000000.00",
-      "gross_value_after_usd": "4622735.35",
+      "gross_value_after_usd": "4087310.01",
       "executable_value_after_usd": null,
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "5000000.00",
-      "net_equity_after_usd": "4622735.35",
-      "conditional_loss_usd": "377264.65",
+      "net_equity_after_usd": "4087310.01",
+      "conditional_loss_usd": "912689.99",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
         "execution_haircut": "0.00",
-        "bad_debt": "377264.65",
+        "bad_debt": "912689.99",
         "undercollateralized_debt": "0.00"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "illustrative",
       "warnings": [
-        "Lender share 4.17% of the market; 35% of borrower debt becomes liquidatable (USDe oracle pass-through 1).",
+        "Lender share 4.17% of the market; 60% of borrower debt becomes liquidatable (USDe oracle pass-through 1).",
         "Borrower LTV distribution is an assumption, not indexed borrower positions.",
         "Lender loss counted round by round in the cascade (bad debt at liquidation-time prices).",
         "Linked to asset:USDe (usde_price) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
@@ -172,7 +172,7 @@
             },
             {
               "name": "USDe market move",
-              "value": "-0.119582",
+              "value": "-0.224550",
               "unit": "pct",
               "source": "derived"
             },
@@ -196,7 +196,7 @@
             },
             {
               "name": "market bad debt",
-              "value": "742231.23",
+              "value": "6207871.25",
               "unit": "usd",
               "source": "derived"
             },
@@ -208,7 +208,7 @@
             }
           ],
           "result": {
-            "value": "30926.30",
+            "value": "258661.30",
             "unit": "usd"
           },
           "note": "Borrower distribution: assumed.",
@@ -216,7 +216,7 @@
             {
               "debt_usd": "15000000.00",
               "oracle_ltv_before": "0.500000",
-              "oracle_ltv_after": "0.567912",
+              "oracle_ltv_after": "0.644787",
               "outcome": "safe",
               "bad_debt_usd": "0.00",
               "underwater_usd": "0.00"
@@ -224,7 +224,7 @@
             {
               "debt_usd": "25000000.00",
               "oracle_ltv_before": "0.700000",
-              "oracle_ltv_after": "0.795077",
+              "oracle_ltv_after": "0.902701",
               "outcome": "safe",
               "bad_debt_usd": "0.00",
               "underwater_usd": "0.00"
@@ -232,25 +232,25 @@
             {
               "debt_usd": "25000000.00",
               "oracle_ltv_before": "0.800000",
-              "oracle_ltv_after": "0.908659",
-              "outcome": "safe",
-              "bad_debt_usd": "0.00",
+              "oracle_ltv_after": "1.031659",
+              "outcome": "liquidated",
+              "bad_debt_usd": "1381264.10",
               "underwater_usd": "0.00"
             },
             {
               "debt_usd": "20000000.00",
               "oracle_ltv_before": "0.860000",
-              "oracle_ltv_after": "0.976809",
+              "oracle_ltv_after": "1.109033",
               "outcome": "liquidated",
-              "bad_debt_usd": "44018.19",
+              "bad_debt_usd": "2423266.30",
               "underwater_usd": "0.00"
             },
             {
               "debt_usd": "15000000.00",
               "oracle_ltv_before": "0.900000",
-              "oracle_ltv_after": "1.022242",
+              "oracle_ltv_after": "1.160616",
               "outcome": "liquidated",
-              "bad_debt_usd": "698213.04",
+              "bad_debt_usd": "2403340.85",
               "underwater_usd": "0.00"
             }
           ]
@@ -262,7 +262,7 @@
           "inputs": [
             {
               "name": "bad debt (our share)",
-              "value": "377264.65",
+              "value": "912689.99",
               "unit": "usd",
               "source": "derived"
             },
@@ -274,7 +274,7 @@
             }
           ],
           "result": {
-            "value": "377264.65",
+            "value": "912689.99",
             "unit": "usd"
           },
           "note": "Replaces the single-price lender loss above."
@@ -310,7 +310,7 @@
             },
             {
               "name": "bad debt",
-              "value": "377264.65",
+              "value": "912689.99",
               "unit": "usd",
               "source": "derived"
             },
@@ -322,7 +322,7 @@
             }
           ],
           "result": {
-            "value": "377264.65",
+            "value": "912689.99",
             "unit": "usd"
           }
         }
@@ -658,8 +658,8 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "10000000.00",
-    "net_equity_after_usd": "9622735.35",
-    "total_conditional_loss_usd": "377264.65",
+    "net_equity_after_usd": "9087310.01",
+    "total_conditional_loss_usd": "912689.99",
     "shared_liquidity_penalty_usd": "0.00",
     "aggregation_status": "complete"
   },
@@ -678,54 +678,36 @@
       "sUSDe": "-0.0500"
     },
     "final_moves": {
-      "USDe": "-0.1196",
+      "USDe": "-0.2245",
       "sUSDe": "-0.0500"
     },
     "trough_moves": {
-      "USDe": "-0.4417",
+      "USDe": "-0.5964",
       "sUSDe": "-0.0500"
     },
-    "amplification": "2.3916",
+    "amplification": "4.4910",
     "rounds": [
       {
         "round": 1,
-        "liquidated_debt_usd": "15000000.00",
-        "collateral_sold_usd": "15390000.00",
+        "liquidated_debt_usd": "100000000.00",
+        "collateral_sold_usd": "80125921.80",
         "moves": {
-          "USDe": "-0.2186",
+          "USDe": "-0.5964",
           "sUSDe": "-0.0500"
         }
       },
       {
         "round": 2,
-        "liquidated_debt_usd": "45000000.00",
-        "collateral_sold_usd": "42591841.47",
-        "moves": {
-          "USDe": "-0.4417",
-          "sUSDe": "-0.0500"
-        }
-      },
-      {
-        "round": 3,
-        "liquidated_debt_usd": "25000000.00",
-        "collateral_sold_usd": "19938393.80",
-        "moves": {
-          "USDe": "-0.3334",
-          "sUSDe": "-0.0500"
-        }
-      },
-      {
-        "round": 4,
         "liquidated_debt_usd": "0.00",
         "collateral_sold_usd": "0.00",
         "moves": {
-          "USDe": "-0.1196",
+          "USDe": "-0.2245",
           "sUSDe": "-0.0500"
         }
       }
     ],
-    "liquidated_debt_usd": "85000000.00",
-    "bad_debt_usd": "9054351.60",
+    "liquidated_debt_usd": "100000000.00",
+    "bad_debt_usd": "21904559.65",
     "stuck_debt_usd": "0.00",
     "converged": true
   },
@@ -767,37 +749,23 @@
         }
       ],
       "result": {
-        "value": "-0.119582",
+        "value": "-0.224550",
         "unit": "pct"
       },
       "note": "Final sUSDe move -5.00%; positions are priced at these final moves.",
       "rows": [
         {
           "round": "1.000000",
-          "liquidated_debt_usd": "15000000.00",
-          "collateral_sold_usd": "15390000.00",
-          "usde_move": "-0.218582",
+          "liquidated_debt_usd": "100000000.00",
+          "collateral_sold_usd": "80125921.80",
+          "usde_move": "-0.596392",
           "susde_move": "-0.050000"
         },
         {
           "round": "2.000000",
-          "liquidated_debt_usd": "45000000.00",
-          "collateral_sold_usd": "42591841.47",
-          "usde_move": "-0.441725",
-          "susde_move": "-0.050000"
-        },
-        {
-          "round": "3.000000",
-          "liquidated_debt_usd": "25000000.00",
-          "collateral_sold_usd": "19938393.80",
-          "usde_move": "-0.333436",
-          "susde_move": "-0.050000"
-        },
-        {
-          "round": "4.000000",
           "liquidated_debt_usd": "0.00",
           "collateral_sold_usd": "0.00",
-          "usde_move": "-0.119582",
+          "usde_move": "-0.224550",
           "susde_move": "-0.050000"
         }
       ]
@@ -809,7 +777,7 @@
       "inputs": [
         {
           "name": "lend_usde_01",
-          "value": "377264.65",
+          "value": "912689.99",
           "unit": "usd",
           "source": "derived"
         },
@@ -827,10 +795,10 @@
         }
       ],
       "result": {
-        "value": "377264.65",
+        "value": "912689.99",
         "unit": "usd"
       },
-      "note": "3.77% of net equity (10000000.00 USD)."
+      "note": "9.13% of net equity (10000000.00 USD)."
     }
   ],
   "comparison": {
@@ -841,7 +809,7 @@
         "total_conditional_loss_usd": "0.00"
       }
     ],
-    "excess_loss_usd": "377264.65",
+    "excess_loss_usd": "912689.99",
     "excess_meaning": "Loss added by the cascade: forced selling pushes prices further and triggers new liquidations."
   },
   "contagion": {

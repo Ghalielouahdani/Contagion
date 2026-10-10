@@ -25,6 +25,8 @@ cd frontend && npm run dev     # http://localhost:5173
 | `VITE_DISCOVERY` (API mode) | `stored` (default): the set's saved graph · `replay`: P1 discovery re-run from its recording (offline, ~1 s; sets with a recording) · `live`: P1 discovery on Ethereum now (`ETH_RPC_URL`, slower) |
 | Portfolio (`VITE_FIXTURE_SET`) | `stress_portfolio_01` (default): six synthetic positions on recorded real Ethereum markets, shared by all seven scenarios; [composition and sources](docs/stress_portfolio.md). Archived sets are explicit developer overrides. |
 
+[Detailed scenario guide: mechanisms, formulas and result interpretation](docs/risk_scenarios.md).
+
 Scenarios, each with its own controls: A USDe depeg · B liquidity crisis · C both together · D carry squeeze · E governance or oracle change · F dependency-node failure · G liquidation cascade.
 
 ## The whole chain without the dashboard

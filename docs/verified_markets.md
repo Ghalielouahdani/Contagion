@@ -154,6 +154,6 @@ KyberSwap executable quotes (`backend/discovery/exit_quotes.py`), all-in loss ve
 
 USDT as the output gives the same cliff. On-chain liquidity covers a few million; the loopers above hold more than 140m of debt against this collateral. In a depeg, permissionless liquidators sell into this curve; Ethena's direct redemption is reserved to whitelisted minters, and sUSDe has a 1-day cooldown.
 
-Consequence in the engine (scenario G, liquidation cascade, verified lending set): a -5% USDe depeg liquidates 110.7m in round 1. The forced selling then crushes sUSDe to -70%, liquidates 32m more, and leaves **31.7m of bad debt** across both markets. Our fictional 8m of supply loses **1.48m**.
+With the slice-by-slice cascade model (scenario G, verified lending set, recorded preset), a -5% initial depeg liquidates **142.66m USD** in round 1, reaches a modeled trough of **-99.05%** on both collateral assets and creates **130.14m USD of bad debt**. Our fictional 8m of supply loses **6.50m USD**. The subsequent arbitrage step recovers final prices to approximately -5.1%; it does not erase bad debt already realised. These extreme numbers are outputs of the price-taker stress model, not evidence that real liquidators would execute those trades; compare impact-aware mode and review the [scenario guide](risk_scenarios.md).
 
 The same curves now price the exits of `verified_2026_10_10`; until then they were assumed depths of 200m and 300m.

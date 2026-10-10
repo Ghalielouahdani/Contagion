@@ -42,4 +42,7 @@ def test_cascade_amplification_is_measured_on_the_most_hit_asset():
     cascade = json.loads((FIXTURES / "verified_lending_2026_10_10" / "risk_result_cascade.json").read_text())["cascade"]
     ratios = [D(cascade["final_moves"][a]) / D(m) for a, m in cascade["initial_moves"].items() if D(m) != 0]
     assert abs(D(cascade["amplification"]) - max(ratios)) < D("0.001")
-    assert D(cascade["amplification"]) > 2  # real loopers + thin on-chain exit: the shock is amplified, not damped
+    assert D(cascade["amplification"]) > 1
+    # Amplification uses final prices, after arbitrage; do not confuse it with
+    # the within-round trough, which can be much deeper despite a later rebound.
+    assert any(D(cascade["trough_moves"][a]) < D(cascade["final_moves"][a]) for a in cascade["initial_moves"])

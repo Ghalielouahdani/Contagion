@@ -39,21 +39,35 @@ def test_reproduces_golden():
     assert_same(result, load("risk_result_cascade"))
 
 
-def test_first_round_by_hand(models):
-    # -5%: bucket 0.90 -> LTV 0.947 > 0.915: 15M liquidated, 15M x 1.026 = 15.39M USDe sold into 300M x 50% depth.
-    # Marginal discount 1 - (150 / 165.39)^2 = 17.75% -> USDe 0.95 x (1 - 0.1775) - 1 = -21.86%.
+def test_price_impact_by_hand(models):
+    # -5%: bucket 0.90 -> LTV 0.947 > 0.915. Liquidating its 15M sells 15M x 1.026 = 15.39M USDe into
+    # 300M x 50% depth: marginal discount 1 - (150 / 165.39)^2 = 17.75% (constant product), the price the
+    # next slice is liquidated at.
+    from backend.risk.cascade import marginal_discount
+    _, snapshot = models
+    assert marginal_discount(snapshot.venues["venue:usde_usdc"], 15.39e6, 0.5) == pytest.approx(1 - (150 / 165.39) ** 2, rel=1e-3)
     first = run(models).rounds[0]
-    assert first["liquidated_debt_usd"] == pytest.approx(15e6)
-    assert first["collateral_sold_usd"] == pytest.approx(15.39e6)
-    assert first["moves"]["USDe"] == pytest.approx(0.95 * (150 / 165.39) ** 2 - 1, rel=1e-4)
+    assert first["moves"]["USDe"] < 0.95 * (150 / 165.39) ** 2 - 1  # deeper: later slices push it further
+
+
+@pytest.mark.parametrize("set_name", ["demo_lending_01", "stress_portfolio_01"])
+def test_cascade_loss_never_falls_when_the_shock_grows(set_name):
+    # Regression: liquidating a whole round at the round's opening price let bigger shocks escape the crash.
+    fixtures = Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / set_name
+    read = lambda n: json.loads((fixtures / f"{n}.json").read_text())  # noqa: E731
+    losses = []
+    for shock in (-0.02, -0.03, -0.04, -0.05, -0.07, -0.10, -0.20):
+        result = simulate(read("portfolio"), read("market_snapshot"), with_params(read("scenario_request_cascade"), usde_spot_shock_pct=shock))
+        losses.append(Decimal(result["portfolio"]["total_conditional_loss_usd"]))
+    assert losses == sorted(losses)
 
 
 def test_lender_bad_debt_appears_only_with_the_cascade():
     request = load("scenario_request_cascade")
     result = simulate(load("portfolio"), load("market_snapshot"), request)
     assert Decimal(result["comparison"]["runs"][0]["total_conditional_loss_usd"]) == 0  # -5% alone: no lender loss
-    # Market bad debt 9.054M; our supply share 5 / 120.
-    assert Decimal(by_id(result)["lend_usde_01"]["loss_components"]["bad_debt"]) == Decimal("377264.65")
+    # Market bad debt 21.90M (every USDe bucket liquidated into a falling price); our supply share 5 / 120.
+    assert Decimal(by_id(result)["lend_usde_01"]["loss_components"]["bad_debt"]) == Decimal("912689.99")
 
 
 def test_exchange_rate_oracle_is_a_circuit_breaker(models):
@@ -93,6 +107,31 @@ def test_impact_aware_liquidators_bound_the_spiral_by_the_incentive(models):
     assert result.moves["USDe"] < -0.05
 
 
+def test_impact_aware_shrinking_remainder_terminates(models, monkeypatch):
+    # At the profitability boundary, partial fills can approach zero without ever
+    # exhausting the borrower. Bound calls so a regression fails instead of hanging.
+    calls = 0
+
+    def partial_fill(venue, queued, remaining, seized, repaid, depth_factor):
+        nonlocal calls
+        calls += 1
+        assert calls < 1000, "Cascade keeps chasing a shrinking liquidation remainder"
+        return remaining / 2
+
+    monkeypatch.setattr(cascade, "_profitable_amount", partial_fill)
+    result = run(models, impact_aware=True)
+    assert result.converged
+    assert any(b.stuck and b.remaining > 0 for b in result.buckets)
+    assert all(0 <= b.liquidated <= b.debt for b in result.buckets)
+
+
+def test_slice_limit_reports_incomplete_result(models, monkeypatch):
+    monkeypatch.setattr(cascade, "MAX_SLICES_PER_BUCKET", 1)
+    result = run(models)
+    assert not result.converged
+    assert any("slice limit" in warning for warning in result.warnings)
+
+
 def test_missing_venue_is_flagged(models):
     portfolio, snapshot = models
     from dataclasses import replace
@@ -114,10 +153,14 @@ def test_borrow_positions_feed_the_cascade_without_market_data():
     assert Decimal(result["cascade"]["liquidated_debt_usd"]) > 0
 
 
-def test_lender_cascade_loss_is_driven_by_oracle_and_depth():
+def test_lender_cascade_loss_is_driven_by_oracle_and_depth(models):
     # Bad debt is fixed when a bucket is liquidated, so for a lender the oracle (does the market see the
     # cascade?) and the venue depth (how far each round pushes the price) dominate; arbitrage absorption
     # mostly moves the final price, i.e. holders' mark losses.
     rows = analyze(load("portfolio"), load("market_snapshot"), load("scenario_request_cascade"))["sensitivity"]["tornado"]
     assert [r["assumption"] for r in rows[:2]] == ["Oracle pass-through (all markets)", "venue:usde_usdc depth"]
-    assert any(r["assumption"] == "Arbitrage absorption between rounds" and float(r["swing_usd"]) > 0 for r in rows)
+    # This portfolio holds only lenders. Their bad debt is realised in the first
+    # round, before absorption, so a later rebound must not erase that loss.
+    finals = [run(models, absorption=a) for a in (0.0, 0.8)]
+    assert finals[0].moves["USDe"] < finals[1].moves["USDe"]
+    assert cascade.lender_losses(finals[0], *models) == cascade.lender_losses(finals[1], *models)

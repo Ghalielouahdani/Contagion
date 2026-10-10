@@ -20,7 +20,7 @@ They remain hypothetical positions, not additional debt injected into the real
 market borrower distribution. The cascade uses that distribution once through
 the lender market entries; the portfolio borrower is valued separately.
 
-All seven scenarios use these same six positions. At the presets, the -5% depeg
+All seven scenarios use these same six positions. See the [scenario guide](risk_scenarios.md) for parameters, formulas and result interpretation. At the presets, the -5% depeg
 liquidates the Morpho borrow, leaves Aave non-liquidatable, and creates no lender
 bad debt. The 30-day carry squeeze also crosses the Morpho threshold. The cascade
 adds forced-selling feedback and positive losses for both lenders. Do not sum
