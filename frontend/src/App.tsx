@@ -86,10 +86,12 @@ type SpeechRecognitionLike = {
   interimResults: boolean;
   lang: string;
   onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
+  onstart: (() => void) | null;
   onend: (() => void) | null;
   onerror: ((event: { error?: string }) => void) | null;
   start: () => void;
   stop: () => void;
+  abort: () => void;
 };
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
@@ -2150,21 +2152,18 @@ function AssistantDock({
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(() => typeof window !== "undefined" && Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition));
   const [voiceIssue, setVoiceIssue] = useState("");
-  const [audioMuted, setAudioMuted] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
   const [amplitude, setAmplitude] = useState(0.12);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionFinalRef = useRef(false);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
+  const recognitionActiveRef = useRef(false);
+  const recognitionWantedRef = useRef(false);
+  const recognitionManualStopRef = useRef(false);
+  const recognitionHadErrorRef = useRef(false);
+  const recognitionRestartCountRef = useRef(0);
+  const amplitudeIntervalRef = useRef<number | null>(null);
   const speechRunRef = useRef(0);
   const activeSpeechMessageRef = useRef<string | null>(null);
-  const preferredVoice = useMemo(() => pickPreferredVoice(voices), [voices]);
-  const selectedSpeechVoice = voices.find((voice) => voice.voiceURI === selectedVoiceURI) ?? preferredVoice;
   const latestAssistantMessage = useMemo(() => [...messages].reverse().find((message) => message.role === "assistant"), [messages]);
 
   useEffect(() => {
@@ -2176,7 +2175,7 @@ function AssistantDock({
     const first = panelRef.current?.querySelector<HTMLElement>("input, button");
     first?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") closeAssistant();
       if (event.key !== "Tab" || !panelRef.current) return;
       const focusables = Array.from(panelRef.current.querySelectorAll<HTMLElement>("button, input, textarea, [tabindex]:not([tabindex='-1'])")).filter(
         (element) => !element.hasAttribute("disabled"),
@@ -2195,18 +2194,6 @@ function AssistantDock({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, setOpen]);
-
-  useEffect(() => {
-    if (!("speechSynthesis" in window)) return;
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-      setSelectedVoiceURI((current) => current || pickPreferredVoice(availableVoices)?.voiceURI || "");
-    };
-    loadVoices();
-    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -2249,11 +2236,7 @@ function AssistantDock({
           await new Promise((resolve) => window.setTimeout(resolve, action.type === "run_simulation" ? 520 : 300));
         }
       }
-      if (inputMode === "voice" && !audioMuted) {
-        speak(response.message, assistantMessage.id);
-      } else {
-        setAssistantState("idle");
-      }
+      setAssistantState("idle");
     } catch {
       setMessages((current) => [
         ...current,
@@ -2307,13 +2290,12 @@ function AssistantDock({
       }
       setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: chunk } : message)));
       const utterance = new SpeechSynthesisUtterance(chunk);
-      if (selectedSpeechVoice) utterance.voice = selectedSpeechVoice;
       utterance.rate = 0.98;
       utterance.pitch = 1;
       utterance.onend = () => speakChunk(index + 1);
       utterance.onerror = () => {
         activeSpeechMessageRef.current = null;
-        setVoiceIssue("The browser stopped spoken playback. Try another voice from the list.");
+        setVoiceIssue("The browser stopped spoken playback. Try pressing the speaker again.");
         setAssistantState("idle");
       };
       window.speechSynthesis.speak(utterance);
@@ -2325,18 +2307,26 @@ function AssistantDock({
   function speakLatestReply() {
     if (assistantState === "speaking") {
       cancelSpeech();
-      setAudioMuted(true);
       return;
     }
     if (!latestAssistantMessage) {
       setVoiceIssue("There is no assistant reply to read yet.");
       return;
     }
-    setAudioMuted(false);
     speak(latestAssistantMessage.content, latestAssistantMessage.id);
   }
 
+  function closeAssistant() {
+    stopListening();
+    cancelSpeech();
+    setOpen(false);
+  }
+
   async function startListening() {
+    if (recognitionWantedRef.current || recognitionActiveRef.current) {
+      console.info("[Assistant voice] start ignored: recognition is already active");
+      return;
+    }
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Recognition) {
       setVoiceSupported(false);
@@ -2349,42 +2339,61 @@ function AssistantDock({
     setListening(true);
     setAssistantState("listening");
     recognitionFinalRef.current = false;
+    recognitionHadErrorRef.current = false;
+    recognitionManualStopRef.current = false;
+    recognitionRestartCountRef.current = 0;
+    recognitionWantedRef.current = true;
     try {
-      const stream = await navigator.mediaDevices?.getUserMedia({ audio: true });
-      if (stream) {
-        micStreamRef.current = stream;
-        const context = new AudioContext();
-        audioContextRef.current = context;
-        const source = context.createMediaStreamSource(stream);
-        const analyser = context.createAnalyser();
-        analyser.fftSize = 128;
-        source.connect(analyser);
-        analyserRef.current = analyser;
-        const values = new Uint8Array(analyser.frequencyBinCount);
-        const tick = () => {
-          analyser.getByteFrequencyData(values);
-          const avg = values.reduce((sum, value) => sum + value, 0) / values.length / 255;
-          setAmplitude(Math.max(0.08, Math.min(1, avg * 1.8)));
-          rafRef.current = requestAnimationFrame(tick);
-        };
-        tick();
-      }
+      await confirmMicrophonePermission();
     } catch (error) {
       const name = error instanceof DOMException ? error.name : "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setListening(false);
         setAssistantState("idle");
+        recognitionWantedRef.current = false;
         setVoiceIssue("Microphone permission was denied. Allow microphone access for this localhost page, then try again.");
         return;
       }
-      setVoiceIssue("Microphone level animation is unavailable, but speech recognition can still try to listen.");
-      setAmplitude(0.28);
+      if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setListening(false);
+        setAssistantState("idle");
+        recognitionWantedRef.current = false;
+        setVoiceIssue("No microphone was found. Connect or enable a microphone, then try again.");
+        return;
+      }
+      setListening(false);
+      setAssistantState("idle");
+      recognitionWantedRef.current = false;
+      setVoiceIssue(`Microphone permission could not be confirmed (${name || "unknown"}). Typing still works.`);
+      return;
     }
 
+    startAmbientListeningMotion();
+    beginSpeechRecognition(Recognition);
+  }
+
+  async function confirmMicrophonePermission() {
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Chrome's SpeechRecognition owns the real capture. Holding this stream open
+    // can make recognition abort immediately on some systems.
+    stream.getTracks().forEach((track) => track.stop());
+  }
+
+  function beginSpeechRecognition(Recognition: SpeechRecognitionCtor) {
+    if (!recognitionWantedRef.current || recognitionActiveRef.current) return;
     const recognition = new Recognition();
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = "en-US";
+    recognition.onstart = () => {
+      recognitionActiveRef.current = true;
+      recognitionHadErrorRef.current = false;
+      setListening(true);
+      setAssistantState("listening");
+      setVoiceIssue("");
+      console.info("[Assistant voice] SpeechRecognition started");
+    };
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map((result) => result[0].transcript)
@@ -2393,55 +2402,100 @@ function AssistantDock({
       const last = event.results[event.results.length - 1];
       if (last?.isFinal) {
         recognitionFinalRef.current = true;
+        recognitionWantedRef.current = false;
+        recognitionManualStopRef.current = true;
         submitMessage(transcript, "voice");
+        recognition.stop();
       }
     };
     recognition.onend = () => {
+      recognitionActiveRef.current = false;
+      recognitionRef.current = null;
+      console.info("[Assistant voice] SpeechRecognition ended", {
+        wanted: recognitionWantedRef.current,
+        final: recognitionFinalRef.current,
+        hadError: recognitionHadErrorRef.current,
+        manualStop: recognitionManualStopRef.current,
+      });
+      if (recognitionWantedRef.current && !recognitionFinalRef.current && !recognitionManualStopRef.current && recognitionRestartCountRef.current < 2) {
+        recognitionRestartCountRef.current += 1;
+        window.setTimeout(() => beginSpeechRecognition(Recognition), 220);
+        return;
+      }
+      recognitionWantedRef.current = false;
       setListening(false);
       if (!recognitionFinalRef.current) setAssistantState("idle");
-      stopMicLevel();
+      stopAmbientListeningMotion();
     };
     recognition.onerror = (event) => {
-      setListening(false);
-      setAssistantState("idle");
-      stopMicLevel();
       const error = event.error ?? "unknown";
+      recognitionHadErrorRef.current = true;
+      console.warn("[Assistant voice] SpeechRecognition error", event);
       if (error === "not-allowed" || error === "service-not-allowed") {
+        recognitionWantedRef.current = false;
         setVoiceIssue("Microphone permission was denied. Allow microphone access for this localhost page, then try again.");
       } else if (error === "no-speech") {
         setVoiceIssue("I did not catch speech. Try again, or type the request.");
+      } else if (error === "audio-capture") {
+        recognitionWantedRef.current = false;
+        setVoiceIssue("The browser could not capture microphone audio. Check the selected input device and browser permission.");
       } else if (error === "network") {
+        recognitionWantedRef.current = false;
         setVoiceIssue("Speech recognition could not reach the browser speech service. Typing still works.");
+      } else if (error === "aborted") {
+        setVoiceIssue("Speech recognition was aborted by the browser. I logged the exact event; try pressing the mic once and keep this tab focused.");
       } else {
         setVoiceIssue(`Speech recognition stopped (${error}). Typing still works.`);
       }
     };
     recognitionRef.current = recognition;
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (error) {
+      recognitionWantedRef.current = false;
+      recognitionActiveRef.current = false;
+      recognitionRef.current = null;
+      setListening(false);
+      setAssistantState("idle");
+      stopAmbientListeningMotion();
+      console.warn("[Assistant voice] SpeechRecognition start failed", error);
+      setVoiceIssue("Speech recognition could not start. It may already be running in this tab.");
+    }
   }
 
   function stopListening() {
-    recognitionRef.current?.stop();
+    recognitionWantedRef.current = false;
+    recognitionManualStopRef.current = true;
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      recognitionRef.current?.abort?.();
+    }
     recognitionRef.current = null;
-    stopMicLevel();
+    recognitionActiveRef.current = false;
+    stopAmbientListeningMotion();
     setListening(false);
     setAssistantState("idle");
     setAmplitude(0.12);
   }
 
-  function stopMicLevel() {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-    micStreamRef.current?.getTracks().forEach((track) => track.stop());
-    micStreamRef.current = null;
-    void audioContextRef.current?.close().catch(() => undefined);
-    audioContextRef.current = null;
-    analyserRef.current = null;
+  function startAmbientListeningMotion() {
+    stopAmbientListeningMotion();
+    let phase = 0;
+    amplitudeIntervalRef.current = window.setInterval(() => {
+      phase += 0.28;
+      setAmplitude(0.22 + Math.abs(Math.sin(phase)) * 0.18);
+    }, 120);
+  }
+
+  function stopAmbientListeningMotion() {
+    if (amplitudeIntervalRef.current) window.clearInterval(amplitudeIntervalRef.current);
+    amplitudeIntervalRef.current = null;
   }
 
   return (
     <>
-      <button className="assistant-orb-button" onClick={() => setOpen(!open)} aria-label={open ? "Close assistant" : "Open assistant"}>
+      <button className="assistant-orb-button" onClick={() => (open ? closeAssistant() : setOpen(true))} aria-label={open ? "Close assistant" : "Open assistant"}>
         <AssistantOrb state={assistantState} amplitude={amplitude} />
       </button>
       <AnimatePresence>
@@ -2462,7 +2516,7 @@ function AssistantDock({
                 <p className="eyebrow">Assistant</p>
                 <h2>Ask from visible data</h2>
               </div>
-              <button className="icon-button" onClick={() => setOpen(false)} aria-label="Close assistant">
+              <button className="icon-button" onClick={closeAssistant} aria-label="Close assistant">
                 <X size={15} />
               </button>
             </header>
@@ -2475,19 +2529,6 @@ function AssistantDock({
               ))}
               {!voiceSupported ? <p className="speech-fallback">Voice input is not supported in this browser; typing still works.</p> : null}
               {voiceIssue ? <p className="speech-fallback">{voiceIssue}</p> : null}
-            </div>
-            <div className="assistant-voice-settings" aria-label="Speech settings">
-              <label>
-                <span>Voice</span>
-                <select value={selectedSpeechVoice?.voiceURI ?? ""} onChange={(event) => setSelectedVoiceURI(event.target.value)} disabled={!voices.length || audioMuted}>
-                  {!voices.length ? <option value="">Browser default</option> : null}
-                  {voices.map((voice) => (
-                    <option key={voice.voiceURI} value={voice.voiceURI}>
-                      {voice.name} · {voice.lang}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </div>
             <form
               className="assistant-input"
@@ -2510,7 +2551,7 @@ function AssistantDock({
                 aria-label={assistantState === "speaking" ? "Stop spoken reply" : "Read latest assistant reply aloud"}
                 aria-pressed={assistantState === "speaking"}
               >
-                {assistantState === "speaking" || !audioMuted ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                {assistantState === "speaking" ? <VolumeX size={15} /> : <Volume2 size={15} />}
               </button>
             </form>
           </motion.aside>
@@ -2518,23 +2559,6 @@ function AssistantDock({
       </AnimatePresence>
     </>
   );
-}
-
-function pickPreferredVoice(voices: SpeechSynthesisVoice[]) {
-  return [...voices].sort((a, b) => voiceScore(b) - voiceScore(a))[0] ?? null;
-}
-
-function voiceScore(voice: SpeechSynthesisVoice) {
-  const name = voice.name.toLowerCase();
-  const lang = voice.lang.toLowerCase();
-  let score = 0;
-  if (lang.startsWith("en-us")) score += 70;
-  if (lang.startsWith("en-gb")) score += 62;
-  if (lang.startsWith("en")) score += 45;
-  if (/(google|microsoft|neural|online|premium|natural|samantha|ava|jenny|aria|sonia|daniel)/.test(name)) score += 28;
-  if (voice.localService) score += 4;
-  if (/compact|robot|basic/.test(name)) score -= 12;
-  return score;
 }
 
 function splitSpeechChunks(text: string) {

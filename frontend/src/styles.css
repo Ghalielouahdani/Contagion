@@ -1763,27 +1763,6 @@ tbody tr[data-highlighted="true"] {
   font-size: var(--np-size-0);
 }
 
-.assistant-voice-settings {
-  padding: 0 12px 10px;
-}
-
-.assistant-voice-settings label {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  color: var(--np-muted);
-  font-size: var(--np-size-0);
-}
-
-.assistant-voice-settings select {
-  width: 100%;
-  min-width: 0;
-  min-height: 30px;
-  border-color: var(--np-line);
-  font-size: var(--np-size-0);
-}
-
 .assistant-input {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
