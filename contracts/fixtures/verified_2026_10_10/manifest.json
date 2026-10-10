@@ -83,6 +83,18 @@
     "risk_result_node_shock": {
       "path": "risk_result_node_shock.json",
       "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "scenario_request_cascade": {
+      "path": "scenario_request_cascade.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_result_cascade": {
+      "path": "risk_result_cascade.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_result_severe": {
+      "path": "risk_result_severe.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
     }
   },
   "golden": false

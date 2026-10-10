@@ -30,6 +30,7 @@ SLIDERS = {
     "governance_change": ("scenario_request_governance", "usde_spot_shock_pct", DEPEG_SHOCKS),
     "carry_squeeze": ("scenario_request_carry", "borrow_apy_override", [i / 20 for i in range(0, 21)]),  # 0% .. 100%
     "node_shock": ("scenario_request_node_shock", "loss_pct", [i / 20 for i in range(0, 11)]),  # 0% .. 50%
+    "liquidation_cascade": ("scenario_request_cascade", "usde_spot_shock_pct", DEPEG_SHOCKS),
 }
 
 

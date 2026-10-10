@@ -11,22 +11,22 @@
       "position_id": "ethena_susde_01",
       "gross_value_before_usd": "2002942.89",
       "gross_value_after_usd": "1402060.02",
-      "executable_value_after_usd": "1227605.00",
+      "executable_value_after_usd": "93575.47",
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "2002942.89",
-      "net_equity_after_usd": "1227605.00",
-      "conditional_loss_usd": "775337.89",
+      "net_equity_after_usd": "93575.47",
+      "conditional_loss_usd": "1909367.42",
       "loss_components": {
         "market_repricing": "600882.87",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "174455.02"
+        "execution_haircut": "1308484.55"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Exit queued behind 2,052,538 USD of liquidation selling on venue:susde_usdc; without it the haircut would be 47,480 USD."
+        "Exit queued behind 2,052,538 USD of liquidation selling on venue:susde_usdc; without it the haircut would be 433,937 USD."
       ],
       "contagion": {
         "paths": [
@@ -75,16 +75,16 @@
       "position_id": "aave_01",
       "gross_value_before_usd": "2998791.00",
       "gross_value_after_usd": "2099153.70",
-      "executable_value_after_usd": "2028195.47",
+      "executable_value_after_usd": "1554405.90",
       "debt_after_usd": "1799760.78",
       "net_equity_before_usd": "1199030.22",
-      "net_equity_after_usd": "228434.69",
-      "conditional_loss_usd": "970595.53",
+      "net_equity_after_usd": "-245354.88",
+      "conditional_loss_usd": "1444385.10",
       "loss_components": {
         "market_repricing": "899637.30",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "70958.23"
+        "execution_haircut": "544747.80"
       },
       "risk_metric": {
         "type": "health_factor",
@@ -147,16 +147,16 @@
       "position_id": "morpho_01",
       "gross_value_before_usd": "3004414.33",
       "gross_value_after_usd": "2103090.03",
-      "executable_value_after_usd": "2098220.72",
+      "executable_value_after_usd": "2062904.00",
       "debt_after_usd": "2000134.00",
       "net_equity_before_usd": "1004280.33",
-      "net_equity_after_usd": "45683.21",
-      "conditional_loss_usd": "958597.12",
+      "net_equity_after_usd": "10366.49",
+      "conditional_loss_usd": "993913.84",
       "loss_components": {
         "market_repricing": "901324.30",
         "backing_impairment": "0.00",
         "liquidation_penalty": "52403.51",
-        "execution_haircut": "4869.31"
+        "execution_haircut": "40186.03"
       },
       "risk_metric": {
         "type": "ltv",
@@ -171,7 +171,7 @@
       "calculation_status": "computed",
       "warnings": [
         "Liquidatable: liquidators may repay 100% of the debt; penalty = repaid debt x incentive.",
-        "Exit queued behind 2,052,538 USD of liquidation selling on venue:susde_usdc; without it the haircut would be 64 USD."
+        "Exit queued behind 2,052,538 USD of liquidation selling on venue:susde_usdc; without it the haircut would be 8 USD."
       ],
       "contagion": {
         "paths": [
@@ -352,9 +352,9 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6202968.85",
-    "net_equity_after_usd": "1992221.75",
-    "total_conditional_loss_usd": "4210747.10",
-    "shared_liquidity_penalty_usd": "2898.72",
+    "net_equity_after_usd": "337476.46",
+    "total_conditional_loss_usd": "5865492.39",
+    "shared_liquidity_penalty_usd": "14508.19",
     "aggregation_status": "complete"
   },
   "provenance": {
@@ -365,17 +365,17 @@
   "warnings": [
     "Portfolio total uses a joint exit per shared venue, behind the liquidation selling; it exceeds the sum of position losses by shared_liquidity_penalty_usd.",
     "Liquidators sell seized collateral into the crisis venues before the fund exits (one round; the price impact does not feed back into oracles).",
-    "Running the depeg (3,058,270 USD) and the liquidity crisis (2,143,938 USD) separately and adding them gives 5,202,208 USD, overstating the joint loss by 991,460 USD: the separate liquidity run sells pre-depeg values."
+    "Running the depeg (3,058,270 USD) and the liquidity crisis (7,112,634 USD) separately and adding them gives 10,170,903 USD, overstating the joint loss by 4,305,411 USD: the separate liquidity run sells pre-depeg values."
   ],
   "comparison": {
     "runs": [
       {
         "run_id": "without_liquidation_selling",
         "description": "Same depeg and liquidity loss, liquidators' sales not queued ahead of the fund's exit.",
-        "total_conditional_loss_usd": "4079427.56"
+        "total_conditional_loss_usd": "4984418.35"
       }
     ],
-    "excess_loss_usd": "131319.54",
+    "excess_loss_usd": "881074.04",
     "excess_meaning": "Contagion through liquidity: extra exit cost because liquidations sell into the same venues first."
   },
   "contagion": {

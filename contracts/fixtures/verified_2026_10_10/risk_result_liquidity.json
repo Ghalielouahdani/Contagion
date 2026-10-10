@@ -11,22 +11,22 @@
       "position_id": "ethena_susde_01",
       "gross_value_before_usd": "2002942.89",
       "gross_value_after_usd": "2002942.89",
-      "executable_value_after_usd": "1907431.01",
+      "executable_value_after_usd": "852019.47",
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "2002942.89",
-      "net_equity_after_usd": "1907431.01",
-      "conditional_loss_usd": "95511.88",
+      "net_equity_after_usd": "852019.47",
+      "conditional_loss_usd": "1150923.42",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "95511.88"
+        "execution_haircut": "1150923.42"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Proxy depth; standalone exit. Shares venue:susde_usdc with morpho_01."
+        "Priced on executable quotes; standalone exit. Shares venue:susde_usdc with morpho_01."
       ],
       "contagion": {
         "paths": [
@@ -56,22 +56,22 @@
       "position_id": "aave_01",
       "gross_value_before_usd": "2998791.00",
       "gross_value_after_usd": "2998791.00",
-      "executable_value_after_usd": "2856046.24",
+      "executable_value_after_usd": "1743987.63",
       "debt_after_usd": "1799760.78",
       "net_equity_before_usd": "1199030.22",
-      "net_equity_after_usd": "1056285.46",
-      "conditional_loss_usd": "142744.76",
+      "net_equity_after_usd": "-55773.15",
+      "conditional_loss_usd": "1254803.37",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "142744.76"
+        "execution_haircut": "1254803.37"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Proxy depth; standalone exit."
+        "Priced on executable quotes; standalone exit."
       ],
       "contagion": {
         "paths": [
@@ -101,22 +101,22 @@
       "position_id": "morpho_01",
       "gross_value_before_usd": "3004414.33",
       "gross_value_after_usd": "3004414.33",
-      "executable_value_after_usd": "2794517.15",
+      "executable_value_after_usd": "970084.95",
       "debt_after_usd": "2000134.00",
       "net_equity_before_usd": "1004280.33",
-      "net_equity_after_usd": "794383.15",
-      "conditional_loss_usd": "209897.18",
+      "net_equity_after_usd": "-1030049.05",
+      "conditional_loss_usd": "2034329.38",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "209897.18"
+        "execution_haircut": "2034329.38"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Proxy depth; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
+        "Priced on executable quotes; standalone exit. Shares venue:susde_usdc with ethena_susde_01."
       ],
       "contagion": {
         "paths": [
@@ -161,7 +161,7 @@
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Standalone exit."
+        "Proxy depth; standalone exit."
       ],
       "contagion": {
         "paths": [
@@ -190,9 +190,9 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6202968.85",
-    "net_equity_after_usd": "4059030.81",
-    "total_conditional_loss_usd": "2143938.04",
-    "shared_liquidity_penalty_usd": "251691.55",
+    "net_equity_after_usd": "-909665.03",
+    "total_conditional_loss_usd": "7112633.88",
+    "shared_liquidity_penalty_usd": "1228485.04",
     "aggregation_status": "complete"
   },
   "provenance": {

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "fixture_set_id": "verified_lending_2026_10_10",
-  "description": "Fictional lender holdings on real Morpho Blue markets read at block 26162438 (2026-10-10T13:49:35Z), with the real borrower LTV distribution. Built by backend/discovery/build_lending_set.py.",
+  "description": "Fictional lender holdings on real Morpho Blue markets read at block 26162896 (2026-10-10T15:21:47Z), with the real borrower LTV distribution. Built by backend/discovery/build_lending_set.py.",
   "ids": {
     "portfolio_id": "verified_lending_2026_10_10_portfolio",
     "graph_id": "graph_verified_lending_2026_10_10",
@@ -44,16 +44,20 @@
       "path": "scenario_request_node_shock.json",
       "schema": "../../schemas/v1/scenario_request.schema.json"
     },
+    "scenario_request_cascade": {
+      "path": "scenario_request_cascade.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
     "risk_result": {
       "path": "risk_result.json",
       "schema": "../../schemas/v1/risk_result.schema.json"
     },
-    "risk_result_liquidity": {
-      "path": "risk_result_liquidity.json",
-      "schema": "../../schemas/v1/risk_result.schema.json"
-    },
     "risk_result_carry": {
       "path": "risk_result_carry.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_result_cascade": {
+      "path": "risk_result_cascade.json",
       "schema": "../../schemas/v1/risk_result.schema.json"
     },
     "risk_result_combined": {
@@ -62,6 +66,10 @@
     },
     "risk_result_governance": {
       "path": "risk_result_governance.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_result_liquidity": {
+      "path": "risk_result_liquidity.json",
       "schema": "../../schemas/v1/risk_result.schema.json"
     },
     "risk_result_node_shock": {

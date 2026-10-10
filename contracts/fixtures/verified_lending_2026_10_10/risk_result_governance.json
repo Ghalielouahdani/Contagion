@@ -67,7 +67,7 @@
             "edges": [
               "edge:5",
               "edge:8",
-              "edge:12"
+              "edge:13"
             ],
             "channels": [
               "borrower_default",
@@ -90,7 +90,7 @@
             "edges": [
               "edge:5",
               "edge:8",
-              "edge:11",
+              "edge:12",
               "edge:3"
             ],
             "channels": [
@@ -143,8 +143,8 @@
               "asset:USDe"
             ],
             "edges": [
-              "edge:13",
-              "edge:14"
+              "edge:14",
+              "edge:15"
             ],
             "channels": [
               "borrower_default",
@@ -163,9 +163,9 @@
               "asset:USDe"
             ],
             "edges": [
-              "edge:13",
-              "edge:16",
-              "edge:19"
+              "edge:14",
+              "edge:17",
+              "edge:21"
             ],
             "channels": [
               "borrower_default",

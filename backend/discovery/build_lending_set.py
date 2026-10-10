@@ -16,7 +16,7 @@ import json
 import sys
 from pathlib import Path
 
-from backend.discovery import morpho
+from backend.discovery import exit_quotes, morpho
 from backend.discovery.onchain import as_uint, call, latest_block, post_json, uint_arg
 
 SUSDE = "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497"
@@ -35,7 +35,10 @@ REQUEST_PRESETS = {
     "scenario_request_combined": ("demo_ethena_01", "scenario_request_combined"),
     "scenario_request_governance": ("demo_ethena_01", "scenario_request_governance"),
     "scenario_request_node_shock": ("demo_ethena_01", "scenario_request_node_shock"),
+    "scenario_request_cascade": ("demo_lending_01", "scenario_request_cascade"),
 }
+# Where liquidators sell seized collateral: one venue per collateral asset, quoted up to cascade sizes.
+COLLATERAL_VENUES = {"USDe": "venue:usde_usdc", "sUSDe": "venue:susde_usdc"}
 
 
 def market_apys(market_id: str) -> dict:
@@ -115,6 +118,7 @@ def build(folder: Path) -> None:
             loan_node: ("asset", m.loan_symbol),
             venue: ("venue", f"{m.loan_symbol} withdrawal from idle market liquidity"),
         })
+        liquidation_venue = COLLATERAL_VENUES.get(m.collateral_symbol)
         params_ref = f"Morpho {morpho.MORPHO_BLUE}.idToMarketParams({market_id})"
         edges += [
             (f"position:{position_id}", market_node, "position_in", "borrower_default", "verified", "portfolio input (fictional holdings, data_origin=fictional)"),
@@ -124,6 +128,9 @@ def build(folder: Path) -> None:
             (market_node, "protocol:morpho", "part_of_protocol", "smart_contract", "verified", f"market created on Morpho Blue {morpho.MORPHO_BLUE}"),
             (f"position:{position_id}", venue, "exits_via", "exit_liquidity", "verified", "portfolio input (fictional holdings, data_origin=fictional)"),
         ]
+        if liquidation_venue:  # liquidators sell this market's seized collateral there (cascade channel)
+            edges.append((market_node, liquidation_venue, "routes_through", "exit_liquidity", "verified",
+                          f"liquidation route for {m.collateral_symbol} collateral: KyberSwap executable quotes"))
         vault = m.oracle_feeds.get("BASE_VAULT")
         if vault:
             edges.append((oracle_node, f"asset:{vault['symbol']}", "reads_price_of", "exchange_rate", "verified", f"{m.oracle}.BASE_VAULT() = {vault['address']}"))
@@ -134,6 +141,11 @@ def build(folder: Path) -> None:
                               f"{m.oracle}.{name}() = {f['address']} ('{f['description']}')"))
 
     stable_prices = {k: v for k, v in prices.items() if k != "USDe"}
+    usde_price = prices.get("USDe", 1.0)
+    collateral_prices = {"USDe": usde_price, "sUSDe": susde_rate * usde_price}
+    exit_venues = {venue_id: exit_quotes.quote_curve(asset, collateral_prices[asset]) for asset, venue_id in COLLATERAL_VENUES.items()}
+    for asset, venue_id in COLLATERAL_VENUES.items():
+        nodes[venue_id] = ("venue", f"{asset} -> USDC on-chain liquidity (aggregator)")
     portfolio = {
         "schema_version": "1.0", "portfolio_id": ids["portfolio_id"], "as_of": as_of, "quote_currency": "USD", "positions": positions,
         "totals": {"gross_value_usd": f"{sum(p[2] for p in LENDERS):.2f}", "debt_value_usd": "0.00", "net_equity_usd": f"{sum(p[2] for p in LENDERS):.2f}"},
@@ -144,9 +156,11 @@ def build(folder: Path) -> None:
                        "sUSDe": {"value": f"{susde_rate * prices.get('USDe', 1.0):.6f}", "source_type": "derived"},
                        **{k: {"value": f"{v:.6f}", "source_type": "observed"} for k, v in stable_prices.items()}},
         "exchange_rates": {"sUSDe_USDe": {"value": f"{susde_rate:.6f}", "source_type": "observed"}},
-        "markets": markets, "yields": yields, "exit_venues": {},
+        "markets": markets, "yields": yields, "exit_venues": exit_venues,
         "warnings": ["Markets, oracles, prices, APYs and borrower distributions observed on Ethereum mainnet at the block above; "
-                     "lender holdings are fictional. Lenders exit through the market's idle liquidity, not a DEX."],
+                     "lender holdings are fictional. Lenders exit through the market's idle liquidity, not a DEX.",
+                     "Collateral exit venues: KyberSwap executable quotes from 0.5m to 150m USD at build time (not block-pinned); "
+                     "they price the liquidators' forced selling in the liquidation cascade."],
     }
     graph = {
         "schema_version": "1.0", "graph_id": ids["graph_id"], "portfolio_id": ids["portfolio_id"], "as_of": as_of,

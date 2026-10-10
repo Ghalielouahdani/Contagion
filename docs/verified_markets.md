@@ -131,3 +131,29 @@ rerun live to refresh. Holdings are fictional; everything below is real.
 |---|---|---|
 | `morpho_susde_pyusd` | Morpho `0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5` sUSDe/PYUSD, LLTV 0.915 | oracle `0xe6212d05…` = sUSDe vault × Chainlink USDe/USD ÷ PYUSD/USD → pass-through **1** |
 | `pendle_pt_susds` | Pendle `0x9c560ebaf78e596cbcc27411d633a74d628dd7dc` PT-sUSDS-26NOV2026 | sUSDS → USDS verified as ERC-4626; issuer/yield source unresolved (no adapter); three Morpho markets accept the PT |
+
+## 6. Lending markets: the real borrowers (verified_lending_2026_10_10)
+
+Built by `backend/discovery/build_lending_set.py` (block 26162896). Market parameters and totals come from on-chain calls. Every borrower position comes from the Morpho indexer, valued at the oracle price read on-chain.
+
+| Market | Supply / borrow | Oracle | Borrowers | Debt by oracle LTV (LLTV 0.915) |
+|---|---|---|---|---|
+| sUSDe / PYUSD `0x90ef…c0d5` | 109.0m / 97.0m | sUSDe vault × Chainlink USDe/USD ÷ PYUSD/USD (pass-through 1) | 31, 100.0% of on-chain debt indexed | 69% at 0.879, 31% at 0.850 |
+| USDe / RLUSD `0xd9d2…14bf` | 50.0m / 45.7m | Chainlink USDe/USD ÷ RLUSD/USD (pass-through 1) | 10, 100.0% indexed | 90% at 0.883 |
+
+These borrowers are loopers: an oracle drop of roughly 3.5 to 4% makes most of the debt liquidatable.
+
+## 7. Exit liquidity at liquidation sizes
+
+KyberSwap executable quotes (`backend/discovery/exit_quotes.py`), all-in loss versus the oracle price:
+
+| Sell | 2m | 5m | 10m | 25m | 50m | 100m |
+|---|---|---|---|---|---|---|
+| USDe → USDC | 0.0% | 0.05% | **24.2%** | 77.2% | 89.9% | 94.7% |
+| sUSDe → USDC | 0.07% | **13.1%** | 57.4% | 88.1% | 94.6% | 97.7% |
+
+USDT as the output gives the same cliff. On-chain liquidity covers a few million; the loopers above hold more than 140m of debt against this collateral. In a depeg, permissionless liquidators sell into this curve; Ethena's direct redemption is reserved to whitelisted minters, and sUSDe has a 1-day cooldown.
+
+Consequence in the engine (scenario G, liquidation cascade, verified lending set): a -5% USDe depeg liquidates 110.7m in round 1. The forced selling then crushes sUSDe to -70%, liquidates 32m more, and leaves **31.7m of bad debt** across both markets. Our fictional 8m of supply loses **1.48m**.
+
+The same curves now price the exits of `verified_2026_10_10`; until then they were assumed depths of 200m and 300m.

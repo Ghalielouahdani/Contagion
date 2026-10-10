@@ -1,16 +1,16 @@
 {
   "schema_version": "1.0",
   "snapshot_id": "snapshot_verified_lending_2026_10_10",
-  "as_of": "2026-10-10T13:49:35Z",
+  "as_of": "2026-10-10T15:21:47Z",
   "chain_id": 1,
-  "block_number": 26162438,
+  "block_number": 26162896,
   "prices_usd": {
     "USDe": {
       "value": "0.999597",
       "source_type": "observed"
     },
     "sUSDe": {
-      "value": "1.251853",
+      "value": "1.251863",
       "source_type": "derived"
     },
     "PYUSD": {
@@ -24,7 +24,7 @@
   },
   "exchange_rates": {
     "sUSDe_USDe": {
-      "value": "1.252358",
+      "value": "1.252368",
       "source_type": "observed"
     }
   },
@@ -63,7 +63,7 @@
         "borrower_ltv_buckets": "derived"
       },
       "warnings": [
-        "Borrower distribution from 31 indexed positions (Morpho API) at oracle prices; 100.00% of on-chain debt covered."
+        "Borrower distribution from 31 indexed positions (Morpho API) at oracle prices; 100.01% of on-chain debt covered."
       ]
     },
     "lend_usde_01": {
@@ -118,8 +118,166 @@
       "source_type": "observed"
     }
   },
-  "exit_venues": {},
+  "exit_venues": {
+    "venue:usde_usdc": {
+      "asset": "USDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "31528929.05",
+      "fee_rate": "0",
+      "gas_usd": "83.33",
+      "venue_address": null,
+      "source_type": "observed",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived"
+      },
+      "quotes": [
+        {
+          "size_tokens": "500201.67",
+          "size_usd": "500000.00",
+          "proceeds_usd": "500075.18",
+          "loss_pct": "0.0000",
+          "positions": []
+        },
+        {
+          "size_tokens": "1000403.34",
+          "size_usd": "1000000.00",
+          "proceeds_usd": "1000100.45",
+          "loss_pct": "0.0000",
+          "positions": []
+        },
+        {
+          "size_tokens": "2000806.69",
+          "size_usd": "2000000.00",
+          "proceeds_usd": "1999908.93",
+          "loss_pct": "0.0046",
+          "positions": []
+        },
+        {
+          "size_tokens": "5002016.71",
+          "size_usd": "5000000.00",
+          "proceeds_usd": "4997428.21",
+          "loss_pct": "0.0514",
+          "positions": []
+        },
+        {
+          "size_tokens": "10004033.43",
+          "size_usd": "10000000.00",
+          "proceeds_usd": "7592043.44",
+          "loss_pct": "24.0796",
+          "positions": []
+        },
+        {
+          "size_tokens": "25010083.57",
+          "size_usd": "25000000.00",
+          "proceeds_usd": "5686697.84",
+          "loss_pct": "77.2532",
+          "positions": []
+        },
+        {
+          "size_tokens": "50020167.13",
+          "size_usd": "50000000.00",
+          "proceeds_usd": "5034128.64",
+          "loss_pct": "89.9317",
+          "positions": []
+        },
+        {
+          "size_tokens": "100040334.26",
+          "size_usd": "100000000.00",
+          "proceeds_usd": "5324035.83",
+          "loss_pct": "94.6760",
+          "positions": []
+        },
+        {
+          "size_tokens": "150060501.39",
+          "size_usd": "150000000.00",
+          "proceeds_usd": "4125023.68",
+          "loss_pct": "97.2500",
+          "positions": []
+        }
+      ]
+    },
+    "venue:susde_usdc": {
+      "asset": "sUSDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "33039012.81",
+      "fee_rate": "0",
+      "gas_usd": "75.93",
+      "venue_address": null,
+      "source_type": "observed",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived"
+      },
+      "quotes": [
+        {
+          "size_tokens": "399404.66",
+          "size_usd": "500000.00",
+          "proceeds_usd": "499830.62",
+          "loss_pct": "0.0339",
+          "positions": []
+        },
+        {
+          "size_tokens": "798809.31",
+          "size_usd": "1000000.00",
+          "proceeds_usd": "999530.02",
+          "loss_pct": "0.0470",
+          "positions": []
+        },
+        {
+          "size_tokens": "1597618.63",
+          "size_usd": "2000000.00",
+          "proceeds_usd": "1998493.20",
+          "loss_pct": "0.0753",
+          "positions": []
+        },
+        {
+          "size_tokens": "3994046.57",
+          "size_usd": "5000000.00",
+          "proceeds_usd": "4342778.31",
+          "loss_pct": "13.1444",
+          "positions": []
+        },
+        {
+          "size_tokens": "7988093.15",
+          "size_usd": "10000000.00",
+          "proceeds_usd": "4256831.25",
+          "loss_pct": "57.4317",
+          "positions": []
+        },
+        {
+          "size_tokens": "19970232.87",
+          "size_usd": "25000000.00",
+          "proceeds_usd": "3150469.19",
+          "loss_pct": "87.3981",
+          "positions": []
+        },
+        {
+          "size_tokens": "39940465.75",
+          "size_usd": "50000000.00",
+          "proceeds_usd": "2998843.88",
+          "loss_pct": "94.0023",
+          "positions": []
+        },
+        {
+          "size_tokens": "79880931.49",
+          "size_usd": "100000000.00",
+          "proceeds_usd": "2340492.89",
+          "loss_pct": "97.6595",
+          "positions": []
+        },
+        {
+          "size_tokens": "119821397.24",
+          "size_usd": "150000000.00",
+          "proceeds_usd": "2340508.18",
+          "loss_pct": "98.4397",
+          "positions": []
+        }
+      ]
+    }
+  },
   "warnings": [
-    "Markets, oracles, prices, APYs and borrower distributions observed on Ethereum mainnet at the block above; lender holdings are fictional. Lenders exit through the market's idle liquidity, not a DEX."
+    "Markets, oracles, prices, APYs and borrower distributions observed on Ethereum mainnet at the block above; lender holdings are fictional. Lenders exit through the market's idle liquidity, not a DEX.",
+    "Collateral exit venues: KyberSwap executable quotes from 0.5m to 150m USD at build time (not block-pinned); they price the liquidators' forced selling in the liquidation cascade."
   ]
 }

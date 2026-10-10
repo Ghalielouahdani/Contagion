@@ -1,0 +1,311 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_verified_lending_2026_10_10_cascade",
+  "request_id": "verified_lending_2026_10_10_cascade",
+  "portfolio_id": "verified_lending_2026_10_10_portfolio",
+  "scenario_id": "liquidation_cascade",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_susde_01",
+      "gross_value_before_usd": "5000335.00",
+      "gross_value_after_usd": "3641452.81",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000335.00",
+      "net_equity_after_usd": "3641452.81",
+      "conditional_loss_usd": "1358882.19",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "bad_debt": "1358882.19",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Lender share 4.59% of the market; 100% of borrower debt becomes liquidatable (sUSDe oracle pass-through 1).",
+        "Lender loss counted round by round in the cascade (bad debt at liquidation-time prices).",
+        "Linked to asset:USDe (usde_price) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:6",
+              "edge:3"
+            ],
+            "channels": [
+              "borrower_default",
+              "mark_to_market",
+              "exchange_rate"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "oracle:lend_susde_01",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:8",
+              "edge:13"
+            ],
+            "channels": [
+              "borrower_default",
+              "oracle_repricing",
+              "oracle_repricing"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "oracle:lend_susde_01",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:8",
+              "edge:12",
+              "edge:3"
+            ],
+            "channels": [
+              "borrower_default",
+              "oracle_repricing",
+              "exchange_rate",
+              "exchange_rate"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    },
+    {
+      "position_id": "lend_usde_01",
+      "gross_value_before_usd": "3000066.00",
+      "gross_value_after_usd": "2878424.02",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "3000066.00",
+      "net_equity_after_usd": "2878424.02",
+      "conditional_loss_usd": "121641.98",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "bad_debt": "121641.98",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Lender share 6.00% of the market; 96% of borrower debt becomes liquidatable (USDe oracle pass-through 1).",
+        "Lender loss counted round by round in the cascade (bad debt at liquidation-time prices).",
+        "Linked to asset:USDe (usde_price) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_usde_01",
+              "market:lend_usde_01",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:14",
+              "edge:15"
+            ],
+            "channels": [
+              "borrower_default",
+              "mark_to_market"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_usde_01",
+              "market:lend_usde_01",
+              "oracle:lend_usde_01",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:14",
+              "edge:17",
+              "edge:21"
+            ],
+            "channels": [
+              "borrower_default",
+              "oracle_repricing",
+              "oracle_repricing"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "8000401.00",
+    "net_equity_after_usd": "6519876.83",
+    "total_conditional_loss_usd": "1480524.17",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_verified_lending_2026_10_10",
+    "input_graph_id": "graph_verified_lending_2026_10_10"
+  },
+  "warnings": [
+    "Cascade model: liquidators are price takers (liquidate whenever profitable at the current price: worst case); one exit venue per collateral, no USDe/sUSDe arbitrage, borrower distribution as given in the snapshot."
+  ],
+  "cascade": {
+    "initial_moves": {
+      "USDe": "-0.0500",
+      "sUSDe": "-0.0500"
+    },
+    "final_moves": {
+      "USDe": "-0.0508",
+      "sUSDe": "-0.7026"
+    },
+    "trough_moves": {
+      "USDe": "-0.9905",
+      "sUSDe": "-0.9905"
+    },
+    "amplification": "14.0515",
+    "rounds": [
+      {
+        "round": 1,
+        "liquidated_debt_usd": "110660625.38",
+        "collateral_sold_usd": "113559933.76",
+        "moves": {
+          "USDe": "-0.9905",
+          "sUSDe": "-0.9905"
+        }
+      },
+      {
+        "round": 2,
+        "liquidated_debt_usd": "32004036.12",
+        "collateral_sold_usd": "359498.78",
+        "moves": {
+          "USDe": "-0.9905",
+          "sUSDe": "-0.9590"
+        }
+      },
+      {
+        "round": 3,
+        "liquidated_debt_usd": "0.00",
+        "collateral_sold_usd": "0.00",
+        "moves": {
+          "USDe": "-0.0508",
+          "sUSDe": "-0.7026"
+        }
+      }
+    ],
+    "liquidated_debt_usd": "142664661.50",
+    "bad_debt_usd": "31653715.74",
+    "stuck_debt_usd": "0.00",
+    "converged": true
+  },
+  "comparison": {
+    "runs": [
+      {
+        "run_id": "initial_shock_only",
+        "description": "Same initial shock, no liquidation feedback.",
+        "total_conditional_loss_usd": "0.00"
+      }
+    ],
+    "excess_loss_usd": "1480524.17",
+    "excess_meaning": "Loss added by the cascade: forced selling pushes prices further and triggers new liquidations."
+  },
+  "contagion": {
+    "graph_id": "graph_verified_lending_2026_10_10",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "protocol:morpho",
+        "label": "Morpho Blue",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      }
+    ],
+    "warnings": []
+  }
+}

@@ -62,12 +62,13 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
 
 
 def _summary(result: cascade.CascadeResult) -> dict:
-    initial, final = result.initial_moves["USDe"], result.moves["USDe"]
+    # Amplification on the most-hit asset: forced selling can crush sUSDe while USDe barely moves.
+    ratios = [result.moves[a] / result.initial_moves[a] for a in result.initial_moves if result.initial_moves[a]]
     return {
         "initial_moves": result.initial_moves,
         "final_moves": result.moves,
         "trough_moves": result.troughs,
-        "amplification": final / initial if initial else None,
+        "amplification": max(ratios) if ratios else None,
         "rounds": result.rounds,
         "liquidated_debt": sum(b.liquidated for b in result.buckets),
         "bad_debt": sum(b.bad_debt for b in result.buckets if b.origin == "market"),

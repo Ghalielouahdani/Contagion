@@ -83,7 +83,7 @@
               "venue:morpho_usde_rlusd_supply"
             ],
             "edges": [
-              "edge:18"
+              "edge:19"
             ],
             "channels": [
               "exit_liquidity"

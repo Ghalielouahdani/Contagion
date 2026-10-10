@@ -39,6 +39,14 @@
     "risk_surface": {
       "path": "risk_surface.json",
       "schema": "../../schemas/v1/risk_surface.schema.json"
+    },
+    "scenario_request_cascade": {
+      "path": "scenario_request_cascade.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_result_cascade": {
+      "path": "risk_result_cascade.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
     }
   },
   "golden": false
