@@ -16,6 +16,7 @@ import { compactId, labelize, money, percent } from "./lib/format";
 import type { AppData, RiskPosition } from "./lib/types";
 import "./risk-engine.css";
 import { AssumptionRegister, PositionSheets } from "./RiskPositions";
+import { RiskCausalChain } from "./RiskCausalChain";
 
 type TraceInput = { name: string; value: string | boolean | null; unit: string; source: string };
 type TraceStep = {
@@ -148,6 +149,11 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
           <small>{Object.entries(provenance.counts).map(([s, n]) => `${n} ${SOURCE_COPY[s] ?? s}`).join(" · ")}</small></div>
       </section>
 
+      <RiskCausalChain key={risk.simulation_id} data={data} onInspect={position => {
+        setSelected(position);
+        document.getElementById("engine-calculation-trace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }} />
+
       <UncertaintyPanel uncertainty={analytics?.uncertainty ?? null} />
 
       <section className="visual-panel">
@@ -201,7 +207,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
       </section>
 
       <section className="visual-panel">
-        <p className="eyebrow">Step 5 · Every number, from its inputs</p>
+        <p id="engine-calculation-trace" className="eyebrow">Step 5 · Every number, from its inputs</p>
         <div className="panel-heading">
           <h2>Calculation trace</h2>
           <select value={selected} onChange={(e) => setSelected(e.target.value)} aria-label="Trace of">
