@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
 
-from backend.risk.analytics import breaking_points, derisking, exposure, liquidation, sensitivity
+from backend.risk.analytics import breaking_points, derisking, exposure, liquidation, sensitivity, uncertainty
 from backend.risk.analytics.runner import run, total_loss
 from backend.risk.engine import _check_ids
 from backend.risk.model import Portfolio, ScenarioRequest, Snapshot
@@ -80,6 +80,8 @@ def analyze(portfolio: dict, snapshot: dict, request: dict, target_loss_reductio
         "derisking": plan,
         "liquidation_protection": protection,
         "sensitivity": {"tornado": tornado, "grid": sensitivity.default_grid(p, s, r)},
+        "uncertainty": uncertainty.uncertainty(p, s, r),
+        "position_curves": uncertainty.position_curves(p, s, r),
         "assumptions": ASSUMPTIONS,
         "warnings": warnings,
     }

@@ -190,6 +190,154 @@
     },
     "warnings": {
       "$ref": "common.schema.json#/$defs/warnings"
+    },
+    "uncertainty": {
+      "type": "object",
+      "description": "Optional. Conditional loss distribution given the scenario when unverified model assumptions vary within their ranges (backend/risk/analytics/uncertainty.py). Not a probability of the scenario.",
+      "properties": {
+        "draws": {
+          "type": "integer"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "method": {
+          "type": "string"
+        },
+        "portfolio": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "positions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "common.schema.json#/$defs/decimal"
+            }
+          }
+        },
+        "histogram": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from_usd": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "to_usd": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "draws": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "from_usd",
+              "to_usd",
+              "draws"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "liquidatable_positions_share": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/decimal"
+          }
+        },
+        "drivers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "assumption": {
+                "type": "string"
+              },
+              "low": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "high": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              },
+              "rank_correlation": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              }
+            },
+            "required": [
+              "assumption",
+              "low",
+              "high",
+              "rank_correlation"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "fixed_because_verified": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "draws",
+        "seed",
+        "method",
+        "portfolio",
+        "positions",
+        "histogram",
+        "liquidatable_positions_share",
+        "drivers",
+        "fixed_because_verified"
+      ],
+      "additionalProperties": false
+    },
+    "position_curves": {
+      "description": "Optional. Loss of each position along the scenario's main severity axis.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "x_param": {
+              "type": "string"
+            },
+            "x_values": {
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              }
+            },
+            "positions_usd": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/decimal"
+                }
+              }
+            },
+            "total_usd": {
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/decimal"
+              }
+            }
+          },
+          "required": [
+            "x_param",
+            "x_values",
+            "positions_usd",
+            "total_usd"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   },
   "required": [

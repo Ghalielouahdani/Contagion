@@ -10,7 +10,7 @@
  * probability-weighted statistics, which are explicit arithmetic on the engine's loss curve.
  */
 import { useMemo, useState } from "react";
-import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
 import { compactId, labelize, money, percent } from "./lib/format";
 import type { AppData, RiskPosition } from "./lib/types";
@@ -27,6 +27,18 @@ type TraceStep = {
   rows?: Array<Record<string, string | boolean | null>>;
 };
 type Tornado = { assumption: string; low_value: string; high_value: string; loss_at_low_usd: string; loss_at_high_usd: string; swing_usd: string; base_loss_usd: string };
+type Summary = { p05_usd: string; p25_usd: string; p50_usd: string; p75_usd: string; p95_usd: string; min_usd: string; max_usd: string; base_usd: string };
+type Uncertainty = {
+  draws: number;
+  method: string;
+  portfolio: Summary;
+  positions: Record<string, Summary>;
+  histogram: Array<{ from_usd: string; to_usd: string; draws: number }>;
+  liquidatable_positions_share: Record<string, string>;
+  drivers: Array<{ assumption: string; low: string; high: string; rank_correlation: string }>;
+  fixed_because_verified: string[];
+};
+type PositionCurves = { x_param: string; x_values: string[]; positions_usd: Record<string, string[]>; total_usd: string[] };
 type Grid = { x_param: string; x_values: string[]; y_param: string; y_values: string[]; loss_usd: string[][]; liquidatable_positions: number[][] };
 
 const SOURCE_COPY: Record<string, string> = {
@@ -68,6 +80,8 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
   const risk = data.risk;
   const analytics = data.analytics as (AppData["analytics"] & {
     sensitivity?: { tornado: Tornado[]; grid: Grid | null };
+    uncertainty?: Uncertainty;
+    position_curves?: PositionCurves | null;
     factor_exposure?: Array<{ factor: string; loss_usd: string; unit: string; exposure_usd: string; effective_leverage: string }>;
   }) | null;
   const portfolioTrace = ((risk as unknown as { trace?: TraceStep[] }).trace ?? []);
@@ -115,7 +129,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
         <h2>{labelize(String(risk.scenario_id))} · {risk.horizon_days}-day horizon</h2>
         <p className="microcopy">
           A conditional stress: what happens <em>if</em> this scenario occurs. The engine never assumes how likely it is; probabilities only
-          appear in step 6, from weights you enter.
+          appear in step 7, from weights you enter.
         </p>
         <div className="engine-params">
           {parameters.length ? parameters.map((p) => (
@@ -133,8 +147,10 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
           <small>{Object.entries(provenance.counts).map(([s, n]) => `${n} ${SOURCE_COPY[s] ?? s}`).join(" · ")}</small></div>
       </section>
 
+      <UncertaintyPanel uncertainty={analytics?.uncertainty ?? null} />
+
       <section className="visual-panel">
-        <p className="eyebrow">Step 2 · Where the portfolio loss comes from</p>
+        <p className="eyebrow">Step 3 · Where the portfolio loss comes from</p>
         <h2>Loss by mechanism, whole portfolio</h2>
         <p className="microcopy">Each mechanism is computed once and never double counted; the shared exit-venue penalty exists only for the portfolio.</p>
         <div className="engine-bars">
@@ -150,7 +166,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
       </section>
 
       <section className="visual-panel">
-        <p className="eyebrow">Step 3 · Which positions carry it</p>
+        <p className="eyebrow">Step 4 · Which positions carry it</p>
         <h2>Breakdown by position</h2>
         <table className="engine-table">
           <thead><tr><th>Position</th><th>Loss</th><th>Share of loss</th><th>Main mechanism</th><th>Liquidation metric</th><th>Evidence</th><th /></tr></thead>
@@ -182,7 +198,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
       </section>
 
       <section className="visual-panel">
-        <p className="eyebrow">Step 4 · Every number, from its inputs</p>
+        <p className="eyebrow">Step 5 · Every number, from its inputs</p>
         <div className="panel-heading">
           <h2>Calculation trace</h2>
           <select value={selected} onChange={(e) => setSelected(e.target.value)} aria-label="Trace of">
@@ -210,7 +226,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
 
       <section className="visual-panel engine-handoff">
         <div>
-          <p className="eyebrow">Step 7 · From analysis to action</p>
+          <p className="eyebrow">Step 8 · From analysis to action</p>
           <h2>Execution gives the verdict: what to do, and how</h2>
           <p className="microcopy">The decision engine uses exactly these losses, the snapshot's exit liquidity and the horizon above.</p>
         </div>
@@ -265,8 +281,13 @@ function StepCard({ step, index }: { step: TraceStep; index: number }) {
 
 function Simulations({ data, analytics }: {
   data: AppData;
-  analytics: (AppData["analytics"] & { sensitivity?: { tornado: Tornado[]; grid: Grid | null } }) | null;
+  analytics: (AppData["analytics"] & { sensitivity?: { tornado: Tornado[]; grid: Grid | null }; position_curves?: PositionCurves | null }) | null;
 }) {
+  const curves = analytics?.position_curves ?? null;
+  const byPosition = curves
+    ? curves.x_values.map((x, j) => Object.fromEntries([["x", Number(x)], ["portfolio", Number(curves.total_usd[j])],
+        ...Object.entries(curves.positions_usd).map(([pid, values]) => [compactId(pid), Number(values[j])])]))
+    : [];
   const risk = data.risk;
   const grid = analytics?.sensitivity?.grid ?? null;
   const tornado = (analytics?.sensitivity?.tornado ?? []).slice(0, 6);
@@ -278,7 +299,7 @@ function Simulations({ data, analytics }: {
 
   return (
     <section className="visual-panel">
-      <p className="eyebrow">Step 5 · The family of simulations around this run</p>
+      <p className="eyebrow">Step 6 · The family of simulations around this run</p>
       <h2>How the loss moves when the scenario changes</h2>
       {!analytics ? <p className="muted">Analytics are not available for this scenario in offline mode: switch to the live API to see curves and sensitivities.</p> : null}
 
@@ -298,6 +319,28 @@ function Simulations({ data, analytics }: {
                   <Line key={y} dataKey={`${labelize(grid.y_param)} ${Number(y)}`} stroke={palette[i % palette.length]} dot={false} strokeWidth={2} />
                 ))}
                 {total(risk) !== null ? <ReferenceLine y={total(risk) as number} stroke="var(--np-soft)" strokeDasharray="4 4" label="this run" /> : null}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      ) : null}
+
+      {curves ? (
+        <>
+          <h3>Loss by position along {labelize(curves.x_param)}</h3>
+          <p className="microcopy">Each position's loss for every severity of this scenario (same engine, one run per point). The dashed line is the portfolio.</p>
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={byPosition}>
+                <CartesianGrid stroke="var(--np-line)" vertical={false} />
+                <XAxis dataKey="x" tickFormatter={(v) => percent(v, 0)} />
+                <YAxis tickFormatter={(v) => money(v)} width={80} />
+                <Tooltip formatter={(v) => money(Number(v))} labelFormatter={(v) => `${labelize(curves.x_param)} ${percent(Number(v), 0)}`} />
+                <Legend />
+                {Object.keys(curves.positions_usd).map((pid, i) => (
+                  <Line key={pid} dataKey={compactId(pid)} stroke={palette[i % palette.length]} dot={false} strokeWidth={2} />
+                ))}
+                <Line dataKey="portfolio" stroke="var(--np-strong)" strokeDasharray="5 4" dot={false} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -391,7 +434,7 @@ function Probabilities({ grid, navBefore, breakEven }: { grid: Grid | null; navB
   if (!grid) {
     return (
       <section className="visual-panel">
-        <p className="eyebrow">Step 6 · Probabilities</p>
+        <p className="eyebrow">Step 7 · Probabilities</p>
         <h2>No loss curve to weight for this run</h2>
         <p className="muted">Probabilities need the engine's loss curve (analytics). The engine itself never assumes a probability.</p>
       </section>
@@ -419,7 +462,7 @@ function Probabilities({ grid, navBefore, breakEven }: { grid: Grid | null; navB
 
   return (
     <section className="visual-panel">
-      <p className="eyebrow">Step 6 · Probabilities (your assumptions)</p>
+      <p className="eyebrow">Step 7 · Probabilities (your assumptions)</p>
       <h2>Weight the scenarios you believe in</h2>
       <p className="microcopy">
         Enter the probability you give to each shock size over the horizon. The engine supplies the loss at each point; expected loss,
@@ -457,5 +500,88 @@ function Probabilities({ grid, navBefore, breakEven }: { grid: Grid | null; navB
         </p>
       ) : null}
     </section>
+  );
+}
+
+
+/** One scenario, many plausible model assumptions: the range around the single number. */
+function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) {
+  if (!uncertainty) {
+    return (
+      <section className="visual-panel">
+        <p className="eyebrow">Step 2 · How sure is this number?</p>
+        <h2>Uncertainty range not available for this run</h2>
+        <p className="muted">It comes with the analytics (live API for every scenario; offline only at the depeg presets).</p>
+      </section>
+    );
+  }
+  const pf = uncertainty.portfolio;
+  const all = [pf, ...Object.values(uncertainty.positions)];
+  const lo = Math.min(0, ...all.map((s) => Number(s.min_usd)));
+  const hi = Math.max(1, ...all.map((s) => Number(s.max_usd)));
+  const histogram = uncertainty.histogram.map((b) => ({ label: money((Number(b.from_usd) + Number(b.to_usd)) / 2), draws: b.draws }));
+  return (
+    <section className="visual-panel">
+      <p className="eyebrow">Step 2 · How sure is this number?</p>
+      <h2>Between {money(pf.p05_usd)} and {money(pf.p95_usd)} in 90% of {uncertainty.draws} runs</h2>
+      <p className="microcopy">
+        Same scenario, re-run {uncertainty.draws} times with every unverified model assumption drawn within its plausible range
+        (oracle types not verified, liquidation thresholds, venue depths, sUSDe beta, cascade arbitrage). Verified inputs stay fixed
+        {uncertainty.fixed_because_verified.length ? ` (${uncertainty.fixed_because_verified.map(compactId).join(", ")})` : ""}.
+        This measures what we do not know about the model, not how likely the scenario is.
+      </p>
+      <div className="engine-ranges">
+        <RangeRow label="Portfolio" summary={pf} lo={lo} hi={hi} strong />
+        {Object.entries(uncertainty.positions).map(([pid, summary]) => <RangeRow key={pid} label={compactId(pid)} summary={summary} lo={lo} hi={hi} />)}
+        <p className="microcopy">Thin bar: 5th to 95th percentile · thick bar: 25th to 75th · dot: median · tick: the single number above.</p>
+      </div>
+      <div className="engine-two-col">
+        <div>
+          <h3>Distribution of the portfolio loss</h3>
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={histogram}>
+                <CartesianGrid stroke="var(--np-line)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                <YAxis allowDecimals={false} width={32} />
+                <Tooltip />
+                <Bar dataKey="draws" fill="var(--np-accent-periwinkle)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div>
+          <h3>What drives the spread</h3>
+          <table className="engine-table">
+            <thead><tr><th>Assumption (range)</th><th>Link with the loss</th></tr></thead>
+            <tbody>{uncertainty.drivers.slice(0, 6).map((d) => (
+              <tr key={d.assumption}>
+                <td>{d.assumption} <small>({Number(d.low).toFixed(2)} – {Number(d.high).toFixed(2)})</small></td>
+                <td>{Number(d.rank_correlation) > 0 ? "higher → more loss" : "higher → less loss"} · {Math.abs(Number(d.rank_correlation)).toFixed(2)}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+          <p className="microcopy">
+            Positions liquidatable across runs: {Object.entries(uncertainty.liquidatable_positions_share).map(([n, share]) => `${n} in ${percent(share, 0)}`).join(" · ")}.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RangeRow({ label, summary, lo, hi, strong = false }: { label: string; summary: Summary; lo: number; hi: number; strong?: boolean }) {
+  const x = (v: string) => `${((Number(v) - lo) / (hi - lo || 1)) * 100}%`;
+  return (
+    <div className="engine-range-row" data-strong={strong}>
+      <span>{label}</span>
+      <div className="engine-range-track">
+        <div className="engine-range-whisker" style={{ left: x(summary.p05_usd), width: `calc(${x(summary.p95_usd)} - ${x(summary.p05_usd)})` }} />
+        <div className="engine-range-box" style={{ left: x(summary.p25_usd), width: `calc(${x(summary.p75_usd)} - ${x(summary.p25_usd)})` }} />
+        <div className="engine-range-median" style={{ left: x(summary.p50_usd) }} />
+        <div className="engine-range-base" style={{ left: x(summary.base_usd) }} />
+      </div>
+      <strong>{money(summary.p05_usd)} – {money(summary.p95_usd)}</strong>
+    </div>
   );
 }
