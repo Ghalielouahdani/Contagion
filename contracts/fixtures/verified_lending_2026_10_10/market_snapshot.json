@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "snapshot_verified_lending_2026_10_10",
+  "as_of": "2026-10-10T13:49:35Z",
+  "chain_id": 1,
+  "block_number": 26162438,
+  "prices_usd": {
+    "USDe": {
+      "value": "0.999597",
+      "source_type": "observed"
+    },
+    "sUSDe": {
+      "value": "1.251853",
+      "source_type": "derived"
+    },
+    "PYUSD": {
+      "value": "1.000067",
+      "source_type": "observed"
+    },
+    "RLUSD": {
+      "value": "1.000022",
+      "source_type": "observed"
+    }
+  },
+  "exchange_rates": {
+    "sUSDe_USDe": {
+      "value": "1.252358",
+      "source_type": "observed"
+    }
+  },
+  "markets": {
+    "lend_susde_01": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.9150",
+      "liquidation_incentive": "0.0262",
+      "oracle_pass_through": "1.0",
+      "oracle_type": "morpho_chainlink_v2:vault sUSDe x USDe / USD",
+      "oracle_address": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+      "collateral_asset": "sUSDe",
+      "loan_asset": "PYUSD",
+      "total_supply_assets": "109007445.36",
+      "total_borrow_assets": "96963609.18",
+      "borrower_ltv_buckets": [
+        {
+          "ltv": "0.8495",
+          "debt_share": "0.3089"
+        },
+        {
+          "ltv": "0.8793",
+          "debt_share": "0.6869"
+        },
+        {
+          "ltv": "0.9048",
+          "debt_share": "0.0042"
+        }
+      ],
+      "borrower_distribution_source_type": "observed",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "liquidation_incentive": "derived",
+        "oracle_pass_through": "derived",
+        "borrower_ltv_buckets": "derived"
+      },
+      "warnings": [
+        "Borrower distribution from 31 indexed positions (Morpho API) at oracle prices; 100.00% of on-chain debt covered."
+      ]
+    },
+    "lend_usde_01": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.9150",
+      "liquidation_incentive": "0.0262",
+      "oracle_pass_through": "1.0",
+      "oracle_type": "morpho_chainlink_v2:USDe / USD",
+      "oracle_address": "0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7",
+      "collateral_asset": "USDe",
+      "loan_asset": "RLUSD",
+      "total_supply_assets": "50017116.38",
+      "total_borrow_assets": "45701052.32",
+      "borrower_ltv_buckets": [
+        {
+          "ltv": "0.7862",
+          "debt_share": "0.0241"
+        },
+        {
+          "ltv": "0.8038",
+          "debt_share": "0.0208"
+        },
+        {
+          "ltv": "0.8830",
+          "debt_share": "0.9033"
+        },
+        {
+          "ltv": "0.9054",
+          "debt_share": "0.0518"
+        }
+      ],
+      "borrower_distribution_source_type": "observed",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "liquidation_incentive": "derived",
+        "oracle_pass_through": "derived",
+        "borrower_ltv_buckets": "derived"
+      },
+      "warnings": [
+        "Borrower distribution from 10 indexed positions (Morpho API) at oracle prices; 100.00% of on-chain debt covered."
+      ]
+    }
+  },
+  "yields": {
+    "lend_susde_01": {
+      "token_apy": "0.0371",
+      "source_type": "observed"
+    },
+    "lend_usde_01": {
+      "token_apy": "0.0439",
+      "source_type": "observed"
+    }
+  },
+  "exit_venues": {},
+  "warnings": [
+    "Markets, oracles, prices, APYs and borrower distributions observed on Ethereum mainnet at the block above; lender holdings are fictional. Lenders exit through the market's idle liquidity, not a DEX."
+  ]
+}

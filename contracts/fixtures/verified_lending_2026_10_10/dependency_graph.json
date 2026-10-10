@@ -1,0 +1,373 @@
+{
+  "schema_version": "1.0",
+  "graph_id": "graph_verified_lending_2026_10_10",
+  "portfolio_id": "verified_lending_2026_10_10_portfolio",
+  "as_of": "2026-10-10T13:49:35Z",
+  "nodes": [
+    {
+      "id": "asset:USDe",
+      "type": "asset",
+      "label": "USDe"
+    },
+    {
+      "id": "asset:sUSDe",
+      "type": "asset",
+      "label": "sUSDe"
+    },
+    {
+      "id": "protocol:ethena",
+      "type": "protocol",
+      "label": "Ethena"
+    },
+    {
+      "id": "protocol:morpho",
+      "type": "protocol",
+      "label": "Morpho Blue"
+    },
+    {
+      "id": "offchain:ethena_backing",
+      "type": "offchain_entity",
+      "label": "Ethena backing (custody, hedges, reserve fund)"
+    },
+    {
+      "id": "position:lend_susde_01",
+      "type": "position",
+      "label": "PYUSD supplied to Morpho sUSDe/PYUSD"
+    },
+    {
+      "id": "market:lend_susde_01",
+      "type": "market",
+      "label": "Morpho sUSDe/PYUSD 91.5% LLTV"
+    },
+    {
+      "id": "oracle:lend_susde_01",
+      "type": "oracle",
+      "label": "Morpho oracle vault sUSDe x USDe / USD"
+    },
+    {
+      "id": "asset:PYUSD",
+      "type": "asset",
+      "label": "PYUSD"
+    },
+    {
+      "id": "venue:morpho_susde_pyusd_supply",
+      "type": "venue",
+      "label": "PYUSD withdrawal from idle market liquidity"
+    },
+    {
+      "id": "position:lend_usde_01",
+      "type": "position",
+      "label": "RLUSD supplied to Morpho USDe/RLUSD"
+    },
+    {
+      "id": "market:lend_usde_01",
+      "type": "market",
+      "label": "Morpho USDe/RLUSD 91.5% LLTV"
+    },
+    {
+      "id": "oracle:lend_usde_01",
+      "type": "oracle",
+      "label": "Morpho oracle USDe / USD"
+    },
+    {
+      "id": "asset:RLUSD",
+      "type": "asset",
+      "label": "RLUSD"
+    },
+    {
+      "id": "venue:morpho_usde_rlusd_supply",
+      "type": "venue",
+      "label": "RLUSD withdrawal from idle market liquidity"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:1",
+      "source": "asset:USDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "confidence": "documented",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "documented",
+        "block_number": null
+      }
+    },
+    {
+      "id": "edge:2",
+      "source": "asset:USDe",
+      "target": "offchain:ethena_backing",
+      "relation": "backed_by",
+      "risk_channel": "custody",
+      "confidence": "documented",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "documented",
+        "block_number": null
+      }
+    },
+    {
+      "id": "edge:3",
+      "source": "asset:sUSDe",
+      "target": "asset:USDe",
+      "relation": "redeemable_for",
+      "risk_channel": "exchange_rate",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "sUSDe 0x9D39A5DE30e57443BfF2A8307A4256c8797A3497.convertToAssets(1e18) = 1.252358 USDe",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:4",
+      "source": "asset:sUSDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "smart_contract",
+      "confidence": "documented",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "documented",
+        "block_number": null
+      }
+    },
+    {
+      "id": "edge:5",
+      "source": "position:lend_susde_01",
+      "target": "market:lend_susde_01",
+      "relation": "position_in",
+      "risk_channel": "borrower_default",
+      "confidence": "verified",
+      "evidence": {
+        "method": "fixture",
+        "reference": "portfolio input (fictional holdings, data_origin=fictional)",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": null
+      }
+    },
+    {
+      "id": "edge:6",
+      "source": "market:lend_susde_01",
+      "target": "asset:sUSDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "Morpho 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.idToMarketParams(0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5).collateralToken = 0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:7",
+      "source": "market:lend_susde_01",
+      "target": "asset:PYUSD",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "Morpho 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.idToMarketParams(0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5).loanToken = 0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:8",
+      "source": "market:lend_susde_01",
+      "target": "oracle:lend_susde_01",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "Morpho 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.idToMarketParams(0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5).oracle = 0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:9",
+      "source": "market:lend_susde_01",
+      "target": "protocol:morpho",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "market created on Morpho Blue 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:10",
+      "source": "position:lend_susde_01",
+      "target": "venue:morpho_susde_pyusd_supply",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "confidence": "verified",
+      "evidence": {
+        "method": "fixture",
+        "reference": "portfolio input (fictional holdings, data_origin=fictional)",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": null
+      }
+    },
+    {
+      "id": "edge:11",
+      "source": "oracle:lend_susde_01",
+      "target": "asset:sUSDe",
+      "relation": "reads_price_of",
+      "risk_channel": "exchange_rate",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e.BASE_VAULT() = 0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:12",
+      "source": "oracle:lend_susde_01",
+      "target": "asset:USDe",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e.BASE_FEED_1() = 0xa569d910839ae8865da8f8e70fffb0cba869f961 ('USDe / USD')",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:13",
+      "source": "position:lend_usde_01",
+      "target": "market:lend_usde_01",
+      "relation": "position_in",
+      "risk_channel": "borrower_default",
+      "confidence": "verified",
+      "evidence": {
+        "method": "fixture",
+        "reference": "portfolio input (fictional holdings, data_origin=fictional)",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": null
+      }
+    },
+    {
+      "id": "edge:14",
+      "source": "market:lend_usde_01",
+      "target": "asset:USDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "Morpho 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.idToMarketParams(0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf).collateralToken = 0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:15",
+      "source": "market:lend_usde_01",
+      "target": "asset:RLUSD",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "Morpho 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.idToMarketParams(0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf).loanToken = 0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:16",
+      "source": "market:lend_usde_01",
+      "target": "oracle:lend_usde_01",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "Morpho 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb.idToMarketParams(0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf).oracle = 0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:17",
+      "source": "market:lend_usde_01",
+      "target": "protocol:morpho",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "market created on Morpho Blue 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    },
+    {
+      "id": "edge:18",
+      "source": "position:lend_usde_01",
+      "target": "venue:morpho_usde_rlusd_supply",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "confidence": "verified",
+      "evidence": {
+        "method": "fixture",
+        "reference": "portfolio input (fictional holdings, data_origin=fictional)",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": null
+      }
+    },
+    {
+      "id": "edge:19",
+      "source": "oracle:lend_usde_01",
+      "target": "asset:USDe",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "confidence": "verified",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7.BASE_FEED_1() = 0xa569d910839ae8865da8f8e70fffb0cba869f961 ('USDe / USD')",
+        "observed_at": "2026-10-10T13:49:35Z",
+        "status": "verified",
+        "block_number": 26162438
+      }
+    }
+  ],
+  "warnings": [
+    "Edges verified by eth_call at the snapshot block; Ethena issuance and backing are documented, not observable on-chain."
+  ]
+}

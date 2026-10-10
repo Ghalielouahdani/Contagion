@@ -1188,3 +1188,8 @@ tbody tr[data-highlighted="true"] {
     overflow-x: auto;
   }
 }
+
+.set-select {
+  max-width: 100%;
+  cursor: pointer;
+}

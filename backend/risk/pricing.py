@@ -10,7 +10,7 @@ from dataclasses import dataclass, replace
 from backend.risk.model import Position, Snapshot
 
 SUSDE_RATE_KEY = "sUSDe_USDe"
-STABLES = ("USDC", "USDT", "DAI", "PYUSD")  # debt assets priced at par (not shocked by USDe scenarios)
+STABLES = ("USDC", "USDT", "DAI", "PYUSD", "RLUSD")  # debt assets priced at their own observed price (not shocked by USDe scenarios)
 
 
 @dataclass(frozen=True)

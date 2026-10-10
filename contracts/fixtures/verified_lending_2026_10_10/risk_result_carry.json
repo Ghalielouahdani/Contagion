@@ -1,0 +1,221 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_verified_lending_2026_10_10_carry",
+  "request_id": "verified_lending_2026_10_10_carry",
+  "portfolio_id": "verified_lending_2026_10_10_portfolio",
+  "scenario_id": "carry_squeeze",
+  "horizon_days": 30,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_susde_01",
+      "gross_value_before_usd": "5000335.00",
+      "gross_value_after_usd": "5219681.82",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000335.00",
+      "net_equity_after_usd": "5219681.82",
+      "conditional_loss_usd": "-219346.82",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "-219346.82",
+        "bad_debt": "0.00",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Borrowers drift: 69% of the market's debt becomes liquidatable over the horizon (collateral/debt -4.70%).",
+        "Linked to asset:sUSDe (susde_yield) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:6"
+            ],
+            "channels": [
+              "borrower_default",
+              "mark_to_market"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "susde_yield",
+            "root": "asset:sUSDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "oracle:lend_susde_01",
+              "asset:sUSDe"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:8",
+              "edge:11"
+            ],
+            "channels": [
+              "borrower_default",
+              "oracle_repricing",
+              "exchange_rate"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "borrow_rate",
+            "root": "asset:PYUSD",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "asset:PYUSD"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:7"
+            ],
+            "channels": [
+              "borrower_default",
+              "debt_cost"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    },
+    {
+      "position_id": "lend_usde_01",
+      "gross_value_before_usd": "3000066.00",
+      "gross_value_after_usd": "3135247.73",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "3000066.00",
+      "net_equity_after_usd": "3135247.73",
+      "conditional_loss_usd": "-135181.73",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "negative_carry": "-135181.73",
+        "bad_debt": "0.00",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Borrowers drift: 96% of the market's debt becomes liquidatable over the horizon (collateral/debt -4.70%)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "borrow_rate",
+            "root": "asset:RLUSD",
+            "nodes": [
+              "position:lend_usde_01",
+              "market:lend_usde_01",
+              "asset:RLUSD"
+            ],
+            "edges": [
+              "edge:13",
+              "edge:15"
+            ],
+            "channels": [
+              "borrower_default",
+              "debt_cost"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "8000401.00",
+    "net_equity_after_usd": "8354929.55",
+    "total_conditional_loss_usd": "-354528.55",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_verified_lending_2026_10_10",
+    "input_graph_id": "graph_verified_lending_2026_10_10"
+  },
+  "warnings": [
+    "No current sUSDe APY in the snapshot yields: carry at current rates not reported.",
+    "Rates applied as simple interest over 30 days; no price shock."
+  ],
+  "contagion": {
+    "graph_id": "graph_verified_lending_2026_10_10",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      },
+      {
+        "node": "protocol:morpho",
+        "label": "Morpho Blue",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "8000000.00",
+        "net_equity_usd": "8000000.00"
+      }
+    ],
+    "warnings": []
+  }
+}

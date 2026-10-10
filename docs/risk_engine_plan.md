@@ -78,7 +78,7 @@ Chaque perte est reliée à son **chemin de contagion** dans le graphe de P1, pa
 
 **Le graphe ne décide pas seul qui est touché.** Un lien manquant donnerait une perte de zéro sans avertissement, ce qui est la pire erreur pour un outil de risque. Les montants viennent de la valorisation, et les deux sont **recoupés dans les deux sens** :
 - **trou du graphe** : perte sans chemin → la dépendance manque dans le graphe (signalé) ;
-- **exposition non modélisée** : chemin sans perte → l'exposition manque dans le moteur (signalé) ;
+- **exposition non modélisée** : dépendance non prise en charge par le moteur (signalée). Pour un prêteur modélisé dont les emprunteurs couvrent encore leur dette, un chemin sans perte déclenche seulement un avertissement de seuil ;
 - **hubs** : les nœuds dont dépendent plusieurs positions. Dans la démo, **l'USDe porte les 4 positions, soit toute la NAV de 6,2 M$** ; le venue sUSDe est partagé par deux positions.
 
 Ce qu'il faut demander à P1 : passer les liens de `assumed` à `verified` (adresse de contrat + bloc). La confiance affichée pour chaque perte monte automatiquement.
@@ -144,13 +144,21 @@ La plupart des positions réelles d'un fonds DeFi prêtent de l'USDC (vaults Mor
 - Le snapshot du marché porte l'offre, l'emprunt et une **distribution des emprunteurs par LTV oracle** (`borrower_ltv_buckets`) : les agrégats du marché ne disent pas combien d'emprunteurs un choc liquide. Étiquetée `assumed` tant que P1 n'indexe pas les positions.
 - Deux composantes de perte : `bad_debt` (liquidation déclenchée par l'oracle, les liquidateurs remboursent au plus collatérale / LIF, le reste est socialisé aux prêteurs) et `undercollateralized_debt` (emprunteur sous l'eau au prix de marché mais invisible à l'oracle : perte réelle, pas encore réalisée par le protocole).
 - Sortie : retrait sur la liquidité inutilisée du marché (offre − emprunt). Ce qui reste bloqué est un **délai, pas une perte**.
-- Carry : le prêteur reçoit taux d'emprunt × utilisation. Dans un « carry squeeze », il gagne.
+- Carry : le prêteur reçoit taux d'emprunt × utilisation, mais la dette des emprunteurs croît au taux d'emprunt et leur collatéral sUSDe au rendement sUSDe. Cette dérive peut déclencher des liquidations puis de la mauvaise dette ; le résultat net peut donc être un gain ou une perte.
 
 Jeu `demo_lending_01` : 5 M$ d'USDC dans deux marchés Morpho identiques sauf l'oracle. À −20 % :
 - oracle prix de marché : 60 % de la dette liquidable, **187,7 k$ de mauvaise dette réalisée** ;
 - oracle taux de change : aucune liquidation, mais **127,6 k$ de perte cachée**. L'oracle qui « protège » l'emprunteur transfère la perte au prêteur. Phrase de pitch : *« l'immunité de l'emprunteur, c'est le prêteur qui la paie. »*
 
-Limites : distribution des emprunteurs supposée ; les liquidateurs sont supposés agir au prix de l'oracle ; `carry_squeeze` ne modélise pas l'érosion de la collatérale des emprunteurs ; collatéral PT non pris en charge côté prêteur (signalé `insufficient_data`). **P1 : indexer les positions emprunteurs par marché** (débloque aussi la cascade).
+Limites du jeu `demo_lending_01` : distribution des emprunteurs supposée ; les liquidateurs sont supposés agir au prix de l'oracle ; collatéral PT non pris en charge côté prêteur (signalé `insufficient_data`). **P1 : indexer les positions emprunteurs par marché** (débloque aussi la cascade).
+
+### Jeu prêteur vérifié et mode hors ligne
+
+`verified_lending_2026_10_10` utilise deux marchés Morpho réels (sUSDe/PYUSD et USDe/RLUSD), avec des positions prêteur fictives et une distribution des LTV observée. Le snapshot est figé au bloc 26162438 ; la génération des résultats ne refait aucune lecture réseau.
+
+Après régénération avec le moteur courant, le carry à 60 % d'emprunt et 0 % de rendement sUSDe sur 30 jours rend liquidables 69 % et 96 % des dettes des marchés respectifs. Les composantes `bad_debt` et `undercollateralized_debt` restent nulles ; le gain net du portefeuille est de 354 528,55 $. Liquidable ne signifie donc pas encore mauvaise dette.
+
+Les deux jeux prêteurs disposent des six résultats et de leur `risk_surface.json`. Le front affiche uniquement les préréglages dont la requête et le résultat existent dans le jeu choisi, et recharge les valeurs du préréglage lors du changement de jeu. La surface hors ligne fait varier le curseur principal ; les autres paramètres restent ceux du préréglage, comme indiqué dans l'interface.
 
 ## Niveau 3 : la finition qui fait pro
 

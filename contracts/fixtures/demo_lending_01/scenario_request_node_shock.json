@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "request_id": "lending_sim_node_shock_01",
+  "portfolio_id": "demo_lending_01",
+  "graph_id": "graph_lending_01",
+  "snapshot_id": "snapshot_lending_01",
+  "scenario": {
+    "scenario_id": "node_shock",
+    "horizon_days": 7,
+    "parameters": {
+      "node_id": "offchain:ethena_backing",
+      "loss_pct": "0.10",
+      "oracle_pass_through_override": null
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

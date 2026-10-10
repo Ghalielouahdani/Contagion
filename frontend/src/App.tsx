@@ -50,7 +50,15 @@ import {
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
-import { defaultDataMode, loadAppData, postAssistantMessage, presetInputs } from "./data/api";
+import {
+  availableScenarios,
+  defaultDataMode,
+  defaultFixtureSet,
+  fixtureSets,
+  loadAppData,
+  postAssistantMessage,
+  presetInputs,
+} from "./data/api";
 import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
 import type {
   AppData,
@@ -133,6 +141,14 @@ const scenarioCopy: Record<ScenarioKind, { title: string; preset: string; summar
   },
 };
 
+// "verified_lending_2026_10_10" -> "Verified · lending · 2026-10-10"
+function fixtureSetLabel(id: string) {
+  const date = id.match(/(\d{4})_(\d{2})_(\d{2})$/);
+  const words = id.replace(/_?\d{4}_\d{2}_\d{2}$/, "").replace(/_\d+$/, "").split("_");
+  const label = words.map((word, i) => (i === 0 ? word[0].toUpperCase() + word.slice(1) : word)).join(" · ");
+  return date ? `${label} · ${date[1]}-${date[2]}-${date[3]}` : label;
+}
+
 const scenarioOrder: ScenarioKind[] = ["usde_depeg", "liquidity_crisis", "combined_crisis", "governance_change", "carry_squeeze", "node_shock"];
 
 // Controls shown per scenario (the horizon is always shown).
@@ -206,6 +222,7 @@ function App() {
   const [view, setView] = useState<View>("portfolio");
   const [scenario, setScenario] = useState<ScenarioKind>("usde_depeg");
   const [mode, setMode] = useState<DataMode>(defaultDataMode);
+  const [fixtureSet, setFixtureSet] = useState(defaultFixtureSet);
   const [theme, setTheme] = useState<Theme>("light");
   const [selectedPosition, setSelectedPosition] = useState("aave_01");
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
@@ -219,8 +236,9 @@ function App() {
     setExtraInputs((current) => ({ ...current, [key]: value }));
 
   // Picking a scenario loads its preset values, so the screen shows the preset the card announces.
-  function selectScenario(kind: ScenarioKind) {
-    const preset = presetInputs(kind);
+  function selectScenario(kind: ScenarioKind, set = fixtureSet) {
+    if (!availableScenarios(set).includes(kind)) return; // no preset in this data set: never show mock numbers
+    const preset = presetInputs(kind, set);
     setScenario(kind);
     if (preset.shockPct !== undefined) setShockPct(preset.shockPct);
     if (preset.liquidityLossPct !== undefined) setLiquidityLossPct(preset.liquidityLossPct);
@@ -246,14 +264,14 @@ function App() {
   const deferredExtra = useDeferredValue(extraInputs);
   const scenarioInputs: ScenarioInputs = { shockPct, horizonDays, liquidityLossPct, ...extraInputs };
   const appQuery = useQuery({
-    queryKey: ["app-data", mode, scenario, deferredShock, deferredHorizon, deferredLiquidity, deferredExtra],
+    queryKey: ["app-data", mode, fixtureSet, scenario, deferredShock, deferredHorizon, deferredLiquidity, deferredExtra],
     queryFn: () =>
       loadAppData(mode, scenario, {
         shockPct: deferredShock,
         horizonDays: deferredHorizon,
         liquidityLossPct: deferredLiquidity,
         ...deferredExtra,
-      }),
+      }, fixtureSet),
     placeholderData: (previousData) => previousData,
   });
 
@@ -274,6 +292,12 @@ function App() {
   }, []);
 
   const rawData = appQuery.data;
+  useEffect(() => {
+    const positions = rawData?.portfolio.positions;
+    if (positions?.length && !positions.some((position) => position.position_id === selectedPosition)) {
+      setSelectedPosition(positions[0].position_id);
+    }
+  }, [rawData, selectedPosition]);
   // Show the decision of the selected position (the engine computes one per position).
   const data = rawData ? { ...rawData, decision: rawData.decisions[selectedPosition] ?? rawData.decision } : undefined;
   const selectedRisk = data?.risk.positions.find((position) => position.position_id === selectedPosition) ?? data?.risk.positions[0];
@@ -323,6 +347,15 @@ function App() {
     if (action.type === "toggle_theme") setTheme((current) => (current === "light" ? "dark" : "light"));
   }
 
+  function changeFixtureSet(set: string) {
+    setFixtureSet(set);
+    setSelectedEdge(null);
+    setInspectedExitFraction(null);
+    const kinds = availableScenarios(set);
+    const next = kinds.includes(scenario) ? scenario : kinds[0];
+    if (next) selectScenario(next, set);
+  }
+
   function reset() {
     setScenario("usde_depeg");
     setMode("fixture");
@@ -344,6 +377,8 @@ function App() {
         setView={setView}
         mode={mode}
         setMode={setMode}
+        fixtureSet={fixtureSet}
+        setFixtureSet={changeFixtureSet}
         theme={theme}
         setTheme={setTheme}
         health={data?.health}
@@ -483,6 +518,8 @@ function Sidebar({
   setView,
   mode,
   setMode,
+  fixtureSet,
+  setFixtureSet,
   theme,
   setTheme,
   health,
@@ -491,6 +528,8 @@ function Sidebar({
   setView: (view: View) => void;
   mode: DataMode;
   setMode: (mode: DataMode) => void;
+  fixtureSet: string;
+  setFixtureSet: (set: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   health?: AppData["health"];
@@ -545,6 +584,19 @@ function Sidebar({
           <Database size={14} />
           {mode === "fixture" ? "Fixtures ON" : "Live API"}
         </button>
+        <select
+          className="mode-toggle set-select"
+          value={fixtureSet}
+          onChange={(event) => setFixtureSet(event.target.value)}
+          aria-label="Data set"
+          title={fixtureSets.find((set) => set.id === fixtureSet)?.description}
+        >
+          {fixtureSets.map((set) => (
+            <option key={set.id} value={set.id}>
+              {fixtureSetLabel(set.id)}
+            </option>
+          ))}
+        </select>
         <button className="mode-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
           {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
           {theme}
@@ -978,7 +1030,7 @@ function ScenarioLab({
   return (
     <div className="scenario-layout">
       <section className="preset-grid">
-        {scenarioOrder.map((kind) => (
+        {scenarioOrder.filter((kind) => availableScenarios(data.health.fixtureSet).includes(kind)).map((kind) => (
           <button key={kind} className="preset-card" data-selected={scenario === kind} onClick={() => setScenario(kind)}>
             <span>{scenarioCopy[kind].preset}</span>
             <strong>{scenarioCopy[kind].title}</strong>

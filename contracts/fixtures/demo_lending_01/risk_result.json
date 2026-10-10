@@ -29,7 +29,8 @@
       "calculation_status": "illustrative",
       "warnings": [
         "Lender share 4.17% of the market; 60% of borrower debt becomes liquidatable (USDe oracle pass-through 1).",
-        "Borrower LTV distribution is an assumption, not indexed borrower positions."
+        "Borrower LTV distribution is an assumption, not indexed borrower positions.",
+        "Linked to asset:USDe (usde_price) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
       ],
       "contagion": {
         "paths": [
@@ -110,7 +111,8 @@
       "warnings": [
         "Lender share 4.17% of the market; 0% of borrower debt becomes liquidatable (sUSDe oracle pass-through 0).",
         "127,584 USD of our share is underwater at market prices but invisible to the oracle: not yet realised by the protocol. With an oracle that follows the market, realised bad debt would be 187,704 USD.",
-        "Borrower LTV distribution is an assumption, not indexed borrower positions."
+        "Borrower LTV distribution is an assumption, not indexed borrower positions.",
+        "Linked to asset:USDe (usde_price) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
       ],
       "contagion": {
         "paths": [

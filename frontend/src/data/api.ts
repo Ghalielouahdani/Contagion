@@ -23,7 +23,7 @@ import type {
  */
 
 const FIXTURES = "../../../contracts/fixtures";
-export const fixtureSet: string = import.meta.env.VITE_FIXTURE_SET || "demo_ethena_01";
+export const defaultFixtureSet: string = import.meta.env.VITE_FIXTURE_SET || "demo_ethena_01";
 
 const smallFixtures = import.meta.glob(["../../../contracts/fixtures/*/*.json", "!**/risk_surface.json"], {
   eager: true,
@@ -35,6 +35,23 @@ const surfaceLoaders = import.meta.glob("../../../contracts/fixtures/*/risk_surf
 >;
 
 export const defaultDataMode: DataMode = readFixtureDefault() ? "fixture" : "api";
+
+/** Fixture sets bundled with the app (each contracts/fixtures/<set>/ with a manifest). */
+export const fixtureSets: Array<{ id: string; description: string }> = Object.entries(smallFixtures)
+  .filter(([path]) => path.endsWith("/manifest.json"))
+  .map(([, manifest]) => {
+    const m = manifest as { fixture_set_id: string; description?: string };
+    return { id: m.fixture_set_id, description: m.description ?? "" };
+  })
+  .sort((a, b) => a.id.localeCompare(b.id));
+
+/** Only expose presets with both a request and a computed result in the selected set. */
+export function availableScenarios(set: string): ScenarioKind[] {
+  return (Object.keys(fileSuffix) as ScenarioKind[]).filter((kind) =>
+    `${FIXTURES}/${set}/${fileByKind.scenario(kind)}` in smallFixtures &&
+    `${FIXTURES}/${set}/${fileByKind.risk(kind)}` in smallFixtures,
+  );
+}
 
 // File suffix per scenario in a fixture set (scenario_request<suffix>.json, risk_result<suffix>.json).
 const fileSuffix: Record<ScenarioKind, string> = {
@@ -89,20 +106,20 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-const withSet = (path: string) => `${path}?set=${encodeURIComponent(fixtureSet)}`;
+const withSet = (path: string, set: string) => `${path}?set=${encodeURIComponent(set)}`;
 const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
 
 /** The set's scenario request with the slider values applied (decimal strings, as the contract requires). */
-export function buildScenarioRequest(scenario: ScenarioKind, inputs: ScenarioInputs) {
-  const request = JSON.parse(JSON.stringify(baseScenarioRequest(scenario)));
+export function buildScenarioRequest(scenario: ScenarioKind, inputs: ScenarioInputs, set: string) {
+  const request = JSON.parse(JSON.stringify(baseScenarioRequest(scenario, set)));
   request.scenario.horizon_days = inputs.horizonDays;
   for (const { param, value } of scenarioParams[scenario]) request.scenario.parameters[param] = value(inputs);
   return request;
 }
 
 /** Slider values of a scenario's preset (its fixture request), so picking a preset shows exactly that preset. */
-export function presetInputs(scenario: ScenarioKind): Partial<ScenarioInputs> {
-  const request = baseScenarioRequest(scenario);
+export function presetInputs(scenario: ScenarioKind, set: string): Partial<ScenarioInputs> {
+  const request = baseScenarioRequest(scenario, set);
   const p = request.scenario.parameters as Record<string, unknown>;
   const percentOf = (key: string) => (p[key] == null ? undefined : Math.round(Number(p[key]) * 100));
   const inputs: Partial<ScenarioInputs> = { horizonDays: request.scenario.horizon_days };
@@ -122,31 +139,34 @@ export function presetInputs(scenario: ScenarioKind): Partial<ScenarioInputs> {
   return inputs;
 }
 
-function baseScenarioRequest(scenario: ScenarioKind) {
-  return loadFixture(fileByKind.scenario(scenario), () => createMockScenarioRequest(scenario)).data;
+function baseScenarioRequest(scenario: ScenarioKind, set: string) {
+  const request = smallFixtures[`${FIXTURES}/${set}/${fileByKind.scenario(scenario)}`];
+  if (!request) throw new Error(`Scenario ${scenario} is unavailable in ${set}`);
+  return request as ReturnType<typeof createMockScenarioRequest>;
 }
 
-export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs): Promise<AppData> {
-  if (mode === "fixture") return loadFixtureAppData(scenario, inputs);
+export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs, set: string): Promise<AppData> {
+  if (!availableScenarios(set).includes(scenario)) throw new Error(`Scenario ${scenario} is unavailable in ${set}`);
+  if (mode === "fixture") return loadFixtureAppData(scenario, inputs, set);
 
-  const request = buildScenarioRequest(scenario, inputs);
+  const request = buildScenarioRequest(scenario, inputs, set);
   const [health, portfolio, graph, marketSnapshot, risk, analytics] = await Promise.all([
-    requestJson<{ status: string; fixture_set?: string }>(withSet("/api/v1/health")),
-    requestJson<Portfolio>(withSet("/api/v1/portfolio")),
-    requestJson<DependencyGraph>(withSet("/api/v1/discover"), post({ schema_version: "1.0" })),
-    requestJson<MarketSnapshot>(withSet("/api/v1/market-snapshot")),
-    requestJson<RiskResult>(withSet("/api/v1/simulate"), post(request)),
-    requestJson<RiskAnalytics>(withSet("/api/v1/analyze"), post(request)),
+    requestJson<{ status: string; fixture_set?: string }>(withSet("/api/v1/health", set)),
+    requestJson<Portfolio>(withSet("/api/v1/portfolio", set)),
+    requestJson<DependencyGraph>(withSet("/api/v1/discover", set), post({ schema_version: "1.0" })),
+    requestJson<MarketSnapshot>(withSet("/api/v1/market-snapshot", set)),
+    requestJson<RiskResult>(withSet("/api/v1/simulate", set), post(request)),
+    requestJson<RiskAnalytics>(withSet("/api/v1/analyze", set), post(request)),
   ]);
   const decisionList = await Promise.all(
     portfolio.positions.map((position) =>
-      requestJson<DecisionResult>(withSet("/api/v1/decide"), post({ request, position_id: position.position_id })),
+      requestJson<DecisionResult>(withSet("/api/v1/decide", set), post({ request, position_id: position.position_id })),
     ),
   );
   const decisions = Object.fromEntries(decisionList.map((decision) => [decision.position_id, decision]));
 
   return {
-    health: { status: health.status, mode: "api", source: "FastAPI · live risk engine", mockedFixtures: [], fixtureSet: health.fixture_set ?? fixtureSet },
+    health: { status: health.status, mode: "api", source: "FastAPI · live risk engine", mockedFixtures: [], fixtureSet: health.fixture_set ?? set },
     portfolio,
     graph,
     marketSnapshot,
@@ -160,9 +180,9 @@ export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs
   };
 }
 
-async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs): Promise<AppData> {
-  const base = buildFixtureAppData(scenario);
-  const surface = await loadSurface();
+async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs, set: string): Promise<AppData> {
+  const base = buildFixtureAppData(scenario, set);
+  const surface = await loadSurface(set);
   const points = surface?.scenarios[scenario]?.points;
   if (!points?.length) return base;
 
@@ -171,12 +191,12 @@ async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs
   const point = points.reduce((best, p) => (Math.abs(Number(p.value) - target) < Math.abs(Number(best.value) - target) ? p : best));
   const risk = withContagion(point.risk_result, base.risk);
   // Offline, only the first parameter is precomputed; say which other inputs are held at the preset.
-  const preset = baseScenarioRequest(scenario);
+  const preset = baseScenarioRequest(scenario, set);
   const ignoredInputs = others
     .filter(({ param, value }) => String((preset.scenario.parameters as Record<string, unknown>)[param]) !== value(inputs))
     .map(({ param }) => param);
   if (inputs.horizonDays !== preset.scenario.horizon_days) ignoredInputs.push("horizon_days");
-  const analytics = fixtureAnalytics(scenario, inputs);
+  const analytics = fixtureAnalytics(scenario, inputs, set);
   return {
     ...base,
     health: { ...base.health, source: "contracts fixtures · precomputed engine surface" },
@@ -190,12 +210,12 @@ async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs
   };
 }
 
-let surfaceCache: Promise<RiskSurface | null> | null = null;
-function loadSurface(): Promise<RiskSurface | null> {
-  const loader = surfaceLoaders[`${FIXTURES}/${fixtureSet}/risk_surface.json`];
+const surfaceCache = new Map<string, Promise<RiskSurface | null>>();
+function loadSurface(set: string): Promise<RiskSurface | null> {
+  const loader = surfaceLoaders[`${FIXTURES}/${set}/risk_surface.json`];
   if (!loader) return Promise.resolve(null);
-  surfaceCache ??= loader().then((data) => data as RiskSurface).catch(() => null);
-  return surfaceCache;
+  if (!surfaceCache.has(set)) surfaceCache.set(set, loader().then((data) => data as RiskSurface).catch(() => null));
+  return surfaceCache.get(set)!;
 }
 
 /** Surface points omit contagion paths (they do not depend on the slider); take them from the set's risk result. */
@@ -209,17 +229,13 @@ function withContagion(result: RiskResult, reference: RiskResult): RiskResult {
 }
 
 /** Offline analytics only exist at the depeg presets (-5% and -30%); never show them for another scenario. */
-function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs): RiskAnalytics | null {
+function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs, set: string): RiskAnalytics | null {
   if (scenario !== "usde_depeg") return null;
-  const preset = loadFixture<RiskAnalytics | null>("risk_analytics.json", () => null).data;
-  const severe = loadFixture<RiskAnalytics | null>("risk_analytics_severe.json", () => null).data;
+  const preset = loadFixture<RiskAnalytics | null>(set, "risk_analytics.json", () => null).data;
+  const severe = loadFixture<RiskAnalytics | null>(set, "risk_analytics_severe.json", () => null).data;
   return severe && inputs.shockPct >= 17.5 ? severe : preset;
 }
 
-export const marketSnapshot = buildFixtureAppData("usde_depeg").marketSnapshot;
-export const scenarioFixtures = Object.fromEntries(
-  (Object.keys(fileSuffix) as ScenarioKind[]).map((kind) => [kind, baseScenarioRequest(kind)]),
-) as Record<ScenarioKind, ReturnType<typeof createMockScenarioRequest>>;
 
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
   if (mode === "api") {
@@ -248,17 +264,17 @@ function fixtureAssistantResponse(request: AssistantRequest): AssistantResponse 
   return parseAssistantIntent(request);
 }
 
-function buildFixtureAppData(scenario: ScenarioKind): AppData {
+function buildFixtureAppData(scenario: ScenarioKind, set: string): AppData {
   const mockedFixtures: string[] = [];
-  const portfolio = readFixture<Portfolio>("portfolio.json", () => createMockPortfolio(), mockedFixtures);
-  const graph = readFixture<DependencyGraph>("dependency_graph.json", () => createMockDependencyGraph(portfolio), mockedFixtures);
-  const marketSnapshot = readFixture<MarketSnapshot>("market_snapshot.json", () => createMockMarketSnapshot(), mockedFixtures);
-  const risk = readFixture<RiskResult>(fileByKind.risk(scenario), () => createMockRiskResult(portfolio, scenario), mockedFixtures);
+  const portfolio = readFixture<Portfolio>(set, "portfolio.json", () => createMockPortfolio(), mockedFixtures);
+  const graph = readFixture<DependencyGraph>(set, "dependency_graph.json", () => createMockDependencyGraph(portfolio), mockedFixtures);
+  const marketSnapshot = readFixture<MarketSnapshot>(set, "market_snapshot.json", () => createMockMarketSnapshot(), mockedFixtures);
+  const risk = readFixture<RiskResult>(set, fileByKind.risk(scenario), () => createMockRiskResult(portfolio, scenario), mockedFixtures);
   // Only the depeg has a decision fixture; other scenarios get their decisions from the surface or the API.
-  const decision = loadFixture<DecisionResult>(fileByKind.decision(scenario), () => createMockDecisionResult(risk, scenario)).data;
+  const decision = loadFixture<DecisionResult>(set, fileByKind.decision(scenario), () => createMockDecisionResult(risk, scenario)).data;
 
   return {
-    health: { status: "ok", mode: "fixture", source: "contracts fixtures", mockedFixtures, fixtureSet },
+    health: { status: "ok", mode: "fixture", source: "contracts fixtures", mockedFixtures, fixtureSet: set },
     portfolio,
     graph,
     marketSnapshot,
@@ -272,14 +288,14 @@ function buildFixtureAppData(scenario: ScenarioKind): AppData {
   };
 }
 
-function readFixture<T>(fileName: string, fallback: () => T, mockedFixtures: string[]) {
-  const fixture = loadFixture(fileName, fallback);
+function readFixture<T>(set: string, fileName: string, fallback: () => T, mockedFixtures: string[]) {
+  const fixture = loadFixture(set, fileName, fallback);
   if (fixture.mocked) mockedFixtures.push(fileName);
   return fixture.data;
 }
 
-function loadFixture<T>(fileName: string, fallback: () => T): { data: T; mocked: boolean } {
-  const data = smallFixtures[`${FIXTURES}/${fixtureSet}/${fileName}`] as T | undefined;
+function loadFixture<T>(set: string, fileName: string, fallback: () => T): { data: T; mocked: boolean } {
+  const data = smallFixtures[`${FIXTURES}/${set}/${fileName}`] as T | undefined;
   if (data !== undefined) return { data, mocked: false };
   return { data: fallback(), mocked: true };
 }

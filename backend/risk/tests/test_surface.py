@@ -17,7 +17,7 @@ def load(set_name, name):
     return json.loads((ROOT / "fixtures" / set_name / f"{name}.json").read_text())
 
 
-@pytest.mark.parametrize("set_name", ["demo_ethena_01", "verified_2026_10_10"])
+@pytest.mark.parametrize("set_name", ["demo_ethena_01", "verified_2026_10_10", "demo_lending_01", "verified_lending_2026_10_10"])
 def test_surface_validates_against_schema(set_name):
     registry = Registry()
     for path in (ROOT / "schemas" / "v1").rglob("*.schema.json"):
@@ -57,3 +57,23 @@ def test_surface_has_a_decision_per_position_and_point():
     for scenario in surface["scenarios"].values():
         for p in scenario["points"]:
             assert set(p["decisions"]) == ids
+
+
+@pytest.mark.parametrize('set_name', ['demo_lending_01', 'verified_lending_2026_10_10'])
+def test_lender_presets_and_surfaces_match_current_engine(set_name):
+    from backend.risk import simulate
+    from backend.risk.surface import SLIDERS
+
+    portfolio = load(set_name, 'portfolio')
+    snapshot = load(set_name, 'market_snapshot')
+    graph = load(set_name, 'dependency_graph')
+    surface = load(set_name, 'risk_surface')
+    for scenario, (request_file, param, _) in SLIDERS.items():
+        request = load(set_name, request_file)
+        result_file = request_file.replace('scenario_request', 'risk_result')
+        assert_same(load(set_name, result_file), simulate(portfolio, snapshot, request, graph))
+        expected = simulate(portfolio, snapshot, request)
+        expected.pop('contagion', None)
+        for position in expected['positions']:
+            position.pop('contagion', None)
+        assert_same(point(surface, scenario, request['scenario']['parameters'][param])['risk_result'], expected)

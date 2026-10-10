@@ -1,0 +1,267 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_lending_sim_governance_01",
+  "request_id": "lending_sim_governance_01",
+  "portfolio_id": "demo_lending_01",
+  "scenario_id": "governance_change",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "lend_usde_01",
+      "gross_value_before_usd": "5000000.00",
+      "gross_value_after_usd": "4609970.39",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000000.00",
+      "net_equity_after_usd": "4609970.39",
+      "conditional_loss_usd": "390029.61",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "bad_debt": "390029.61",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Lender share 4.17% of the market; 85% of borrower debt becomes liquidatable (USDe oracle pass-through 1).",
+        "Borrower LTV distribution is an assumption, not indexed borrower positions.",
+        "Linked to asset:USDe (usde_price) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_usde_01",
+              "market:lend_usde_01",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:6"
+            ],
+            "channels": [
+              "borrower_default",
+              "mark_to_market"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:5",
+              "edge:6"
+            ]
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_usde_01",
+              "market:lend_usde_01",
+              "oracle:lend_usde_01_usde",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:5",
+              "edge:8",
+              "edge:9"
+            ],
+            "channels": [
+              "borrower_default",
+              "oracle_repricing",
+              "oracle_repricing"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:5",
+              "edge:8",
+              "edge:9"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    },
+    {
+      "position_id": "lend_susde_01",
+      "gross_value_before_usd": "5000000.00",
+      "gross_value_after_usd": "4609970.39",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "0.00",
+      "net_equity_before_usd": "5000000.00",
+      "net_equity_after_usd": "4609970.39",
+      "conditional_loss_usd": "390029.61",
+      "loss_components": {
+        "market_repricing": "0.00",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00",
+        "bad_debt": "390029.61",
+        "undercollateralized_debt": "0.00"
+      },
+      "risk_metric": null,
+      "source_type": "derived",
+      "calculation_status": "illustrative",
+      "warnings": [
+        "Lender share 4.17% of the market; 85% of borrower debt becomes liquidatable (sUSDe oracle pass-through 1).",
+        "Borrower LTV distribution is an assumption, not indexed borrower positions.",
+        "Linked to asset:USDe (usde_price) through the graph; no lender loss at this scenario size (it starts only once borrowers' collateral stops covering their debt)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:12",
+              "edge:13",
+              "edge:3"
+            ],
+            "channels": [
+              "borrower_default",
+              "mark_to_market",
+              "exchange_rate"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:12",
+              "edge:13"
+            ]
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:lend_susde_01",
+              "market:lend_susde_01",
+              "oracle:lend_susde_01_susde",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:12",
+              "edge:15",
+              "edge:16",
+              "edge:3"
+            ],
+            "channels": [
+              "borrower_default",
+              "oracle_repricing",
+              "exchange_rate",
+              "exchange_rate"
+            ],
+            "confidence": "assumed",
+            "unverified_edges": [
+              "edge:12",
+              "edge:15",
+              "edge:16"
+            ]
+          }
+        ],
+        "evidence_confidence": "assumed",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      }
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "10000000.00",
+    "net_equity_after_usd": "9219940.78",
+    "total_conditional_loss_usd": "780059.22",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_lending_01",
+    "input_graph_id": "graph_lending_01"
+  },
+  "warnings": [
+    "Governance change applied before the shock: lend_usde_01 lltv 0.915 -> 0.865; lend_susde_01 lltv 0.915 -> 0.865; lend_susde_01 oracle pass-through 0 -> 1.",
+    "Computed from unverified market parameters; illustrative, never a real-market result."
+  ],
+  "comparison": {
+    "runs": [
+      {
+        "run_id": "without_governance_change",
+        "description": "Same depeg on today's market parameters.",
+        "total_conditional_loss_usd": "725199.99"
+      }
+    ],
+    "excess_loss_usd": "54859.23",
+    "excess_meaning": "Loss caused by the governance change alone."
+  },
+  "contagion": {
+    "graph_id": "graph_lending_01",
+    "hubs": [
+      {
+        "node": "asset:USDC",
+        "label": "USDC",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      },
+      {
+        "node": "protocol:morpho",
+        "label": "Morpho",
+        "node_type": "protocol",
+        "positions": [
+          "lend_susde_01",
+          "lend_usde_01"
+        ],
+        "gross_exposure_usd": "10000000.00",
+        "net_equity_usd": "10000000.00"
+      }
+    ],
+    "warnings": []
+  }
+}
