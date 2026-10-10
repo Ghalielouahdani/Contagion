@@ -82,6 +82,9 @@ class Snapshot:
     venues: dict[str, Venue]
     verified: bool
     yields: dict[str, dict[str, float]] = field(default_factory=dict)  # position_id -> {token_apy, collateral_supply_apy, debt_borrow_apy}
+    # Provenance of each input for the calculation trace: "price:<sym>", "rate:<key>", "market:<id>",
+    # "venue:<id>", "yield:<id>" -> source_type ("verified" for an on-chain verified market).
+    sources: dict[str, str] = field(default_factory=dict)
 
     def market(self, position_id: str) -> dict | None:
         return self.markets.get(position_id)
@@ -105,7 +108,18 @@ class Snapshot:
                 pid: {k: float(v) for k, v in y.items() if k.endswith("_apy")}
                 for pid, y in raw.get("yields", {}).items()
             },
+            sources=_sources(raw),
         )
+
+
+def _sources(raw: dict) -> dict[str, str]:
+    out = {}
+    for prefix, block in (("price", "prices_usd"), ("rate", "exchange_rates"), ("venue", "exit_venues"), ("yield", "yields")):
+        for key, value in raw.get(block, {}).items():
+            out[f"{prefix}:{key}"] = value.get("source_type", "assumed")
+    for key, market in raw.get("markets", {}).items():
+        out[f"market:{key}"] = "verified" if market.get("verified") else market.get("source_type", "assumed")
+    return out
 
 
 @dataclass(frozen=True)
@@ -164,6 +178,7 @@ class PositionImpact:
     warnings: list[str] = field(default_factory=list)
     internals: dict = field(default_factory=dict)  # unrounded facts for analytics; never published
     contagion: dict | None = None  # paths, evidence confidence, graph gaps (set by contagion.annotate)
+    trace: list[dict] = field(default_factory=list)  # calculation steps (see trace.py)
 
 
 @dataclass
@@ -176,3 +191,4 @@ class ScenarioOutcome:
     # ({"runs": [{"run_id", "description", "total_loss"}], "excess_meaning"}); excess = total - sum(runs).
     comparison: dict | None = None
     cascade: dict | None = None  # rounds, moves, amplification (liquidation_cascade only; see cascade.py)
+    trace: list[dict] = field(default_factory=list)  # portfolio-level calculation steps (see trace.py)

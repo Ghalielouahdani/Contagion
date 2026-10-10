@@ -10,6 +10,7 @@ Three distinct mechanisms, never reused as one multiplier:
 from __future__ import annotations
 
 from backend.risk import lending
+from backend.risk import trace as T
 from backend.risk.metrics import read_metric
 from backend.risk.model import Portfolio, Position, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, asset_price, oracle_price, position_values
@@ -63,6 +64,7 @@ def _impact(position: Position, snapshot: Snapshot, states: dict[str, MarketStat
             "execution_haircut": 0.0,
         },
     )
+    _trace_valuation(impact, position, snapshot, states, request, (gross0, debt0), (gross_m, debt_m), (gross1, debt1))
     if position.position_type == "pt_holding":
         impact.warnings.append("PT valued with implied-APY discount approximation.")
     if position.is_borrow:
@@ -111,6 +113,20 @@ def _apply_lender_loss(impact: PositionImpact, position: Position, snapshot: Sna
     impact.loss_components["undercollateralized_debt"] = under
     impact.gross_after -= bad + under  # the claim on the market is worth what borrowers can still repay
     impact.internals = {"market": market, "lender": shocked}
+    source = T.market_source(snapshot, position.position_id)
+    T.step(impact.trace, "lender_loss", "Lender loss: what borrowers' collateral no longer covers",
+           "share x (bad debt + underwater debt); bad debt = debt - oracle collateral / LIF when liquidated, "
+           "underwater = debt - market collateral when the oracle does not see the move",
+           [T.inp("our supply share", shocked.share, T.RATIO, source),
+            T.inp(f"{asset} market move", move, T.PCT, T.DERIVED),
+            T.inp("oracle pass-through", pass_through, T.RATIO, source),
+            T.inp("LLTV", float(market["lltv"]), T.RATIO, source),
+            T.inp("LIF = 1 + liquidation incentive", 1 + float(market.get("liquidation_incentive", 0)), T.RATIO, source),
+            T.inp("market bad debt", shocked.bad_debt, T.USD, T.DERIVED),
+            T.inp("market underwater debt", shocked.undercollateralized, T.USD, T.DERIVED)],
+           bad + under, T.USD,
+           note=f"Borrower distribution: {market.get('borrower_distribution_source_type', 'assumed')}.",
+           rows=list(shocked.rows))
     impact.warnings.append(
         f"Lender share {shocked.share:.2%} of the market; {shocked.liquidatable_debt / shocked.total_debt:.0%} of borrower "
         f"debt becomes liquidatable ({asset} oracle pass-through {pass_through:g}).")
@@ -146,12 +162,20 @@ def _apply_liquidation_metric(impact: PositionImpact, position: Position, snapsh
 
     oracle_collateral, metric = reading(pass_through)
     impact.risk_metric = metric.as_contract()
+    _trace_metric(impact, position, snapshot, market, price0, move, pass_through, cut, oracle_collateral, debt0, metric)
     impact.internals = {"market": market, "oracle_collateral_after": oracle_collateral, "metric": metric}
 
     if metric.liquidatable:
         # Liquidators repay close_factor x debt and seize that amount plus the incentive.
         repaid = metric.close_factor * impact.debt_after
         impact.loss_components["liquidation_penalty"] = repaid * metric.liquidation_incentive
+        T.step(impact.trace, "liquidation_penalty", "Liquidation penalty",
+               "close factor x debt after x liquidation incentive",
+               [T.inp("close factor", metric.close_factor, T.RATIO, T.RULE),
+                T.inp("debt after", impact.debt_after, T.USD, T.DERIVED),
+                T.inp("liquidation incentive", metric.liquidation_incentive, T.RATIO, T.market_source(snapshot, position.position_id))],
+               impact.loss_components["liquidation_penalty"], T.USD,
+               note="Liquidators repay this share of the debt and keep the incentive as a bonus taken from the collateral.")
         impact.warnings.append(
             f"Liquidatable: liquidators may repay {metric.close_factor:.0%} of the debt; penalty = repaid debt x incentive."
         )
@@ -163,3 +187,92 @@ def _apply_liquidation_metric(impact: PositionImpact, position: Position, snapsh
             f"Oracle assumed to pass through {pass_through:g} of the market move; if it fully follows the market, "
             f"{alt.type} becomes {alt.after:.4f} (liquidatable: {alt.liquidatable})."
         )
+
+
+# Calculation trace ---------------------------------------------------------------------------
+def _trace_price(impact: PositionImpact, asset: str, snapshot: Snapshot, states: dict[str, MarketState],
+                 request: ScenarioRequest, market: dict | None) -> None:
+    """Before/after market price of one asset, with the formula of each shock applied to it."""
+    p = request.param
+    before, after = asset_price(asset, states["before"], market), asset_price(asset, states["after"], market)
+    shocks = [T.inp("USDe spot shock", p("usde_spot_shock_pct", 0.0), T.PCT, T.SCENARIO),
+              T.inp("backing impairment", p("backing_impairment_pct", 0.0), T.PCT, T.SCENARIO)]
+    if asset == "USDe":
+        formula = "USDe price x (1 + spot shock) x (1 + backing impairment)"
+        inputs = [T.inp("USDe price", before, T.PRICE, T.price_source(snapshot, "USDe"))] + shocks
+    elif asset == "sUSDe":
+        formula = "sUSDe price x (1 + beta x spot shock) x (1 + backing impairment) x (1 + sUSDe rate cut)"
+        inputs = [T.inp("sUSDe price = sUSDe/USDe rate x USDe price", before, T.PRICE, T.snapshot_rate_source(snapshot)),
+                  T.inp("sUSDe beta to USDe", p("susde_market_beta", 1.0), T.RATIO, T.SCENARIO)] + shocks + [
+                  T.inp("sUSDe rate cut", p("susde_rate_cut_pct", 0.0), T.PCT, T.SCENARIO)]
+    elif asset.startswith("PT-") and market is not None:
+        days = float(market["days_to_maturity"])
+        formula = "USDe price after x (1 + sUSDe rate cut) / (1 + implied APY + APY shock) ^ (days / 365)"
+        inputs = [T.inp("implied APY", float(market["pt_implied_apy"]), T.PCT, T.market_source(snapshot, impact.position_id)),
+                  T.inp("implied APY shock", p("pt_implied_apy_shock", 0.0), T.PCT, T.SCENARIO),
+                  T.inp("days to maturity", days, T.DAYS, T.market_source(snapshot, impact.position_id)),
+                  T.inp("price before", before, T.PRICE, T.DERIVED)]
+    else:
+        formula = "stablecoin price (not shocked by this scenario)"
+        inputs = [T.inp(f"{asset} price", before, T.PRICE, T.price_source(snapshot, asset))]
+    T.step(impact.trace, f"price:{asset}", f"{asset} market price after the shock", formula, inputs, after, T.PRICE)
+
+
+def _trace_valuation(impact: PositionImpact, position: Position, snapshot: Snapshot, states: dict[str, MarketState],
+                     request: ScenarioRequest, before: tuple, market_only: tuple, after: tuple) -> None:
+    market = snapshot.market(position.position_id)
+    assets = [position.collateral_asset, position.debt_asset] if position.is_borrow else [position.asset_symbol]
+    for asset in assets:
+        try:
+            _trace_price(impact, asset, snapshot, states, request, market)
+        except (KeyError, ValueError):
+            continue
+    if position.is_borrow:
+        T.step(impact.trace, "value", "Collateral and debt after the shock",
+               "net equity = collateral quantity x collateral price - debt quantity x debt price",
+               [T.inp(f"{position.collateral_asset} collateral", position.collateral_quantity, T.TOKENS, "fictional"),
+                T.inp("collateral value after", after[0], T.USD, T.DERIVED),
+                T.inp(f"{position.debt_asset} debt", position.debt_quantity, T.TOKENS, "fictional"),
+                T.inp("debt value after", after[1], T.USD, T.DERIVED),
+                T.inp("net equity before", before[0] - before[1], T.USD, T.DERIVED)],
+               after[0] - after[1], T.USD)
+    else:
+        T.step(impact.trace, "value", f"{position.asset_symbol} holding value after the shock",
+               "quantity x price after",
+               [T.inp("quantity", position.quantity, T.TOKENS, "fictional"),
+                T.inp("value before", before[0], T.USD, T.DERIVED)],
+               after[0], T.USD)
+    T.step(impact.trace, "split", "Loss split by mechanism",
+           "market repricing = net before - net after the depeg alone; backing impairment = the rest of the move",
+           [T.inp("net before", before[0] - before[1], T.USD, T.DERIVED),
+            T.inp("net after the depeg alone", market_only[0] - market_only[1], T.USD, T.DERIVED),
+            T.inp("net after all shocks", after[0] - after[1], T.USD, T.DERIVED)],
+           (before[0] - before[1]) - (after[0] - after[1]), T.USD,
+           note="The depeg is applied alone first, so market repricing and backing loss are never counted twice.")
+
+
+def _trace_metric(impact: PositionImpact, position: Position, snapshot: Snapshot, market: dict, price0: float,
+                  move: float, pass_through: float, cut: float, oracle_collateral: float, debt0: float, metric) -> None:
+    source = T.market_source(snapshot, position.position_id)
+    T.step(impact.trace, "oracle", "Collateral value seen by the protocol's oracle",
+           "collateral quantity x price before x (1 + pass-through x market move) x (1 + sUSDe rate cut)",
+           [T.inp("collateral quantity", position.collateral_quantity, T.TOKENS, "fictional"),
+            T.inp("price before", price0, T.PRICE, T.DERIVED),
+            T.inp("market move of the collateral", move, T.PCT, T.DERIVED),
+            T.inp(f"oracle pass-through ({market.get('oracle_type', 'unknown')})", pass_through, T.RATIO, source),
+            T.inp("sUSDe rate cut", cut, T.PCT, T.SCENARIO)],
+           oracle_collateral, T.USD,
+           note="Pass-through 1 = the oracle reads the market price; 0 = it ignores the depeg (exchange-rate oracle).")
+    if metric.type == "health_factor":
+        formula, inputs = "HF = oracle collateral x liquidation threshold / debt; liquidatable when HF < 1", [
+            T.inp("oracle collateral", oracle_collateral, T.USD, T.DERIVED),
+            T.inp("liquidation threshold", float(market["liquidation_threshold"]), T.RATIO, source),
+            T.inp("debt", impact.debt_after, T.USD, T.DERIVED)]
+    else:
+        formula, inputs = "LTV = debt / oracle collateral; liquidatable when LTV > LLTV", [
+            T.inp("debt", impact.debt_after, T.USD, T.DERIVED),
+            T.inp("oracle collateral", oracle_collateral, T.USD, T.DERIVED),
+            T.inp("LLTV", metric.threshold, T.RATIO, source)]
+    T.step(impact.trace, "metric", f"{metric.type.replace('_', ' ')} after the shock", formula, inputs, metric.after, T.RATIO,
+           note=f"Before: {metric.before:.4f}. Liquidatable: {metric.liquidatable}. Distance to liquidation after: "
+                f"{metric.distance_after:.2%} of further oracle price drop.")

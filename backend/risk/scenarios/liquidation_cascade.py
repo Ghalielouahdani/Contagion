@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from backend.risk import cascade
+from backend.risk import trace as T
 from backend.risk.model import Portfolio, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.scenarios import scenario, usde_depeg
 
@@ -45,6 +46,11 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
         impact.loss_components["bad_debt"], impact.loss_components["undercollateralized_debt"] = losses
         impact.gross_after += old - sum(losses)
         impact.warnings.append("Lender loss counted round by round in the cascade (bad debt at liquidation-time prices).")
+        T.step(impact.trace, "lender_loss_cascade", "Lender loss counted round by round in the cascade",
+               "share x (bad debt realised in each round at that round's price + debt still underwater at the end)",
+               [T.inp("bad debt (our share)", losses[0], T.USD, T.DERIVED),
+                T.inp("underwater debt (our share)", losses[1], T.USD, T.DERIVED)],
+               sum(losses), T.USD, note="Replaces the single-price lender loss above.")
 
     without = usde_depeg.run(portfolio, snapshot, request)
     outcome.comparison = {
@@ -53,6 +59,21 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
         "excess_meaning": "Loss added by the cascade: forced selling pushes prices further and triggers new liquidations.",
     }
     outcome.cascade = _summary(result)
+    steps: list[dict] = []
+    T.step(steps, "cascade", "Liquidation cascade: prices after forced selling",
+           "per round: liquidate borrowers the oracle flags, sell their collateral on its venue, "
+           "move = (1 + initial move) x (1 - marginal discount at the selling still weighing) - 1",
+           [T.inp("initial USDe move", shock, T.PCT, T.SCENARIO),
+            T.inp("initial sUSDe move", beta * shock, T.PCT, T.SCENARIO),
+            T.inp("depth left", 1 - reduction, T.RATIO, T.SCENARIO),
+            T.inp("arbitrage absorption between rounds", absorption, T.RATIO, T.SCENARIO),
+            T.inp("liquidators internalize their impact", impact_aware, T.FLAG, T.SCENARIO)],
+           final_usde, T.PCT,
+           note=f"Final sUSDe move {final_susde:.2%}; positions are priced at these final moves.",
+           rows=[{"round": r["round"], "liquidated_debt_usd": r["liquidated_debt_usd"],
+                  "collateral_sold_usd": r["collateral_sold_usd"], "usde_move": r["moves"]["USDe"],
+                  "susde_move": r["moves"]["sUSDe"]} for r in result.rounds])
+    outcome.trace[:0] = steps
     outcome.warnings.extend(result.warnings)
     outcome.warnings.append(
         "Cascade model: liquidators " + ("stop when their own selling eats the incentive" if impact_aware else

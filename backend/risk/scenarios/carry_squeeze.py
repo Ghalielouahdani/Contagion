@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from backend.risk import lending
+from backend.risk import trace as T
 from backend.risk.metrics import read_metric
 from backend.risk.model import Portfolio, Position, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, position_values
@@ -93,6 +94,16 @@ def simulate(portfolio: Portfolio, snapshot: Snapshot, days: float, rates: Rates
                 "negative_carry": (gross0 - debt0) - (gross_c - debt_c),
             },
         )
+        T.step(impact.trace, "carry", f"Carry over {days:g} days (simple interest, no price move)",
+               "net now - net at the horizon, with every rate accrued for days / 365",
+               [T.inp("sUSDe APY", rates.susde_apy, T.PCT, T.SCENARIO),
+                T.inp("borrow APY override", rates.borrow_override, T.PCT, T.SCENARIO),
+                T.inp("collateral supply APY override", rates.supply_override, T.PCT, T.SCENARIO),
+                T.inp("horizon", days, T.DAYS, T.SCENARIO),
+                T.inp("net now", gross0 - debt0, T.USD, T.DERIVED),
+                T.inp("net at the horizon", gross_c - debt_c, T.USD, T.DERIVED)],
+               (gross0 - debt0) - (gross_c - debt_c), T.USD,
+               note="A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates.")
         if position.is_borrow:
             _liquidation(impact, position, snapshot, gross0, debt0)
         elif lending.is_lender(position):

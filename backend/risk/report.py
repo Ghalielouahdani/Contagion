@@ -53,6 +53,12 @@ def _position(impact: PositionImpact, status: str) -> tuple[dict, Decimal, Decim
     }
     if impact.contagion is not None:
         row["contagion"] = impact.contagion
+    total_step = {
+        "id": "loss", "label": "Conditional loss of the position", "formula": "sum of the loss components",
+        "inputs": [{"name": labelize(k), "value": str(v), "unit": "usd", "source": "derived"} for k, v in components.items()],
+        "result": {"value": str(loss), "unit": "usd"},
+    }
+    row["trace"] = [_step(s) for s in impact.trace] + [total_step]
     return row, net_before, loss
 
 
@@ -97,6 +103,16 @@ def build_risk_result(request: ScenarioRequest, snapshot: Snapshot, outcome: Sce
     }
     if outcome.cascade is not None:
         result["cascade"] = _cascade(outcome.cascade)
+    aggregation = {
+        "id": "portfolio_loss", "label": "Portfolio conditional loss",
+        "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+        "inputs": [{"name": row["position_id"], "value": row["conditional_loss_usd"], "unit": "usd", "source": "derived"}
+                   for row in rows] + [{"name": "shared exit-venue penalty", "value": str(penalty), "unit": "usd", "source": "derived"}],
+        "result": {"value": str(total) if complete else None, "unit": "usd"},
+    }
+    if complete and net_before:
+        aggregation["note"] = f"{total / net_before:.2%} of net equity ({net_before} USD)."
+    result["trace"] = [_step(s) for s in outcome.trace] + [aggregation]
     if outcome.comparison is not None:
         runs = [(run, money(run["total_loss"])) for run in outcome.comparison["runs"]]
         result["comparison"] = {
@@ -134,3 +150,32 @@ def _cascade(c: dict) -> dict:
         "stuck_debt_usd": str(money(c["stuck_debt"])),
         "converged": c["converged"],
     }
+
+
+SIX = Decimal("0.000001")
+
+
+def _value(value, unit: str):
+    if value is None or isinstance(value, (bool, str)):
+        return value
+    x = float(value)
+    if x != x or x in (float("inf"), float("-inf")):
+        return None
+    return str(money(x)) if unit == "usd" else str(Decimal(repr(x)).quantize(SIX, ROUND_HALF_UP))
+
+
+def _step(s: dict) -> dict:
+    out = {
+        "id": s["id"], "label": s["label"], "formula": s["formula"],
+        "inputs": [{**i, "value": _value(i["value"], i["unit"])} for i in s["inputs"]],
+        "result": {"value": _value(s["result"]["value"], s["result"]["unit"]), "unit": s["result"]["unit"]},
+    }
+    if s.get("note"):
+        out["note"] = s["note"]
+    if s.get("rows"):
+        out["rows"] = [{k: _value(v, "usd" if k.endswith("_usd") else "ratio") for k, v in r.items()} for r in s["rows"]]
+    return out
+
+
+def labelize(key: str) -> str:
+    return key.replace("_", " ")

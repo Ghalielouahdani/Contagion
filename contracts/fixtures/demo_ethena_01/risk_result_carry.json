@@ -51,7 +51,98 @@
         "evidence_confidence": "assumed",
         "graph_gaps": [],
         "unmodeled_exposures": []
-      }
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "2000000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "2000000.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          }
+        }
+      ]
     },
     {
       "position_id": "aave_01",
@@ -111,7 +202,98 @@
         "evidence_confidence": "assumed",
         "graph_gaps": [],
         "unmodeled_exposures": []
-      }
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "1200000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "1123561.64",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "76438.36",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "76438.36",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "76438.36",
+            "unit": "usd"
+          }
+        }
+      ]
     },
     {
       "position_id": "morpho_01",
@@ -219,7 +401,98 @@
         "evidence_confidence": "assumed",
         "graph_gaps": [],
         "unmodeled_exposures": []
-      }
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "1000000.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "901369.86",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "98630.14",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "98630.14",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "98630.14",
+            "unit": "usd"
+          }
+        }
+      ]
     },
     {
       "position_id": "pendle_01",
@@ -269,7 +542,98 @@
         "evidence_confidence": "assumed",
         "graph_gaps": [],
         "unmodeled_exposures": []
-      }
+      },
+      "trace": [
+        {
+          "id": "carry",
+          "label": "Carry over 30 days (simple interest, no price move)",
+          "formula": "net now - net at the horizon, with every rate accrued for days / 365",
+          "inputs": [
+            {
+              "name": "sUSDe APY",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "borrow APY override",
+              "value": "0.600000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "collateral supply APY override",
+              "value": null,
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "horizon",
+              "value": "30.000000",
+              "unit": "days",
+              "source": "user_scenario"
+            },
+            {
+              "name": "net now",
+              "value": "2000055.14",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net at the horizon",
+              "value": "2014272.02",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-14216.88",
+            "unit": "usd"
+          },
+          "note": "A negative value is a gain: the carry stays positive. Null overrides use the snapshot's rates."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "negative carry",
+              "value": "-14216.88",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "-14216.88",
+            "unit": "usd"
+          }
+        }
+      ]
     }
   ],
   "portfolio": {
@@ -287,6 +651,50 @@
   "warnings": [
     "Rates applied as simple interest over 30 days; no price shock.",
     "Computed from unverified market parameters; illustrative, never a real-market result."
+  ],
+  "trace": [
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "ethena_susde_01",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "aave_01",
+          "value": "76438.36",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "morpho_01",
+          "value": "98630.14",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "pendle_01",
+          "value": "-14216.88",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "160851.62",
+        "unit": "usd"
+      },
+      "note": "2.59% of net equity (6200055.14 USD)."
+    }
   ],
   "comparison": {
     "runs": [

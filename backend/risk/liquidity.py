@@ -81,6 +81,31 @@ def coverage_note(venue: Venue, size_usd: float, depth_factor: float = 1.0) -> s
             "through that quote.")
 
 
+def trace_exit(trace: list, venue: Venue, size_usd: float, depth_factor: float, source: str,
+               ahead: float = 0.0) -> None:
+    """Record how the execution cost of selling size_usd (behind `ahead` of forced selling) was priced."""
+    from backend.risk import trace as T
+
+    k = depth_factor * venue.depth_scale
+    cost = exit_cost(venue, ahead + size_usd, depth_factor) - exit_cost(venue, ahead, depth_factor)
+    how = coverage(venue, ahead + size_usd, depth_factor)
+    inputs = [T.inp("size sold", size_usd, T.USD, T.DERIVED), T.inp("depth left (k)", k, T.RATIO, T.SCENARIO)]
+    if ahead:
+        inputs.append(T.inp("forced selling queued ahead", ahead, T.USD, T.DERIVED))
+    if how == "proxy":
+        formula = "proxy: cost(x) = x^2 / (k x depth + x)"
+        inputs.append(T.inp("effective depth", venue.effective_depth_usd, T.USD, source))
+        rows = None
+    else:
+        formula = ("executable quotes: cost(x) = k x (x / k) x loss(x / k), loss interpolated between quoted sizes"
+                   + ("; beyond the largest quote, constant product through it" if how == "extrapolated" else ""))
+        rows = [{"size_usd": s, "loss_pct": f * 100} for s, f in venue.curve]
+    if ahead:
+        formula += "; marginal: cost(ahead + size) - cost(ahead)"
+    T.step(trace, f"exit:{venue.venue_id}", f"Execution cost on {venue.venue_id} ({how})", formula, inputs, cost, T.USD,
+           rows=rows)
+
+
 def joint_haircuts(sizes_by_venue: dict[str, list[float]], venues: dict[str, Venue],
                    depth_factor: float = 1.0) -> dict[str, float]:
     """Cost of selling every position on a venue at once (sizes summed, priced once)."""

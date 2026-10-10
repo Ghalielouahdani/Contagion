@@ -20,6 +20,7 @@ from dataclasses import replace
 from backend.risk.metrics import read_metric
 from backend.risk.model import Portfolio, Position, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import STABLES, MarketState, position_values
+from backend.risk import trace as T
 from backend.risk.scenarios import scenario, usde_depeg
 
 ETHENA_NODES = ("asset:USDe", "protocol:ethena")
@@ -59,6 +60,13 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
     else:
         outcome = _protocol_failure(portfolio, snapshot, node, loss)
 
+    T.step(outcome.trace, "node_mechanism", f"How a failure of {node} is priced",
+           {"usde_backing": "USDe backing loss of loss_pct (scenario A backing_impairment_pct = -loss_pct)",
+            "susde_exchange_rate": "sUSDe exchange-rate cut of loss_pct (scenario A susde_rate_cut_pct = -loss_pct)",
+            "stablecoin_depeg": "debt stablecoin price x (1 - loss_pct)",
+            "protocol_failure": "positions in the protocol/market/token lose loss_pct of gross value, capped at net equity for borrowers"}[kind],
+           [T.inp("node", node, "id", T.SCENARIO), T.inp("loss at the node", loss, T.PCT, T.SCENARIO)],
+           kind, "mechanism")
     hit = [i.position_id for i in outcome.impacts if abs(sum(i.loss_components.values())) > 0.005]
     outcome.warnings.append(
         f"Shock on {node} ({kind.replace('_', ' ')}, {loss:.0%}): "

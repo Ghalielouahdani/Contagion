@@ -22,7 +22,7 @@ What cannot be withdrawn is locked until borrowers repay: a delay, not a loss.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from backend.risk.model import Position, Snapshot
 
@@ -40,6 +40,8 @@ class LenderShock:
     undercollateralized: float  # market-wide, underwater but not liquidatable by the oracle
     liquidatable_debt: float  # market-wide debt of liquidatable buckets
     total_debt: float
+    # Per bucket: debt, LTV before/after, outcome, bad debt, underwater. Explanation only: not part of equality.
+    rows: tuple = field(default=(), compare=False)
 
 
 def market_buckets(market: dict) -> list[tuple[float, float]] | None:
@@ -66,18 +68,27 @@ def shock(position: Position, market: dict, move, pass_through: float, rate_cut:
     lltv = float(market["lltv"])
     lif = 1 + float(market.get("liquidation_incentive", 0))
     bad = under = liquidatable = 0.0
+    rows = []
     for debt, ltv in buckets:
         if debt <= 0 or ltv <= 0:
             continue
         c0 = debt / ltv
         c_oracle = c0 * (1 + pass_through * move) * (1 + rate_cut)
         c_market = c0 * (1 + move) * (1 + rate_cut)
-        if c_oracle <= 0 or debt / c_oracle > lltv:
+        ltv_after = debt / c_oracle if c_oracle > 0 else float("inf")
+        row_bad = row_under = 0.0
+        if c_oracle <= 0 or ltv_after > lltv:
             liquidatable += debt
-            bad += max(debt - max(c_oracle, 0.0) / lif, 0.0)
+            row_bad = max(debt - max(c_oracle, 0.0) / lif, 0.0)
+            bad += row_bad
+            outcome = "liquidated"
         else:
-            under += max(debt - max(c_market, 0.0), 0.0)
-    return LenderShock(share, bad, under, liquidatable, sum(d for d, _ in buckets))
+            row_under = max(debt - max(c_market, 0.0), 0.0)
+            under += row_under
+            outcome = "underwater, invisible to the oracle" if row_under > 0 else "safe"
+        rows.append({"debt_usd": debt, "oracle_ltv_before": ltv, "oracle_ltv_after": min(ltv_after, 1e9),
+                     "outcome": outcome, "bad_debt_usd": row_bad, "underwater_usd": row_under})
+    return LenderShock(share, bad, under, liquidatable, sum(d for d, _ in buckets), tuple(rows))
 
 
 def withdrawable(position: Position, market: dict, liquidity_reduction: float = 0.0) -> float | None:

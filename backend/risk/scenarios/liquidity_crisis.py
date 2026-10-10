@@ -8,7 +8,8 @@ a joint exit per shared venue and reports the difference as shared_liquidity_pen
 from __future__ import annotations
 
 from backend.risk import lending
-from backend.risk.liquidity import coverage_note, exit_cost, group_by_venue, joint_haircuts
+from backend.risk import trace as T
+from backend.risk.liquidity import coverage_note, exit_cost, group_by_venue, joint_haircuts, trace_exit
 from backend.risk.model import Portfolio, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, position_values
 from backend.risk.scenarios import scenario
@@ -56,6 +57,7 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
         else:
             # A borrow position exits by selling its collateral (pro-rata unwind at x = 100%).
             cost = exit_cost(venue, gross1, k)
+            trace_exit(impact.trace, venue, gross1, k, T.venue_source(snapshot, venue.venue_id))
             impact.loss_components["execution_haircut"] = cost
             impact.executable_after = gross1 - cost
             standalone[position.position_id] = cost
@@ -73,6 +75,12 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
 
     joint = joint_haircuts(group_by_venue(exits), snapshot.venues, k)
     outcome.shared_liquidity_penalty = sum(joint.values()) - sum(standalone.values())
+    T.step(outcome.trace, "shared_liquidity_penalty", "Shared exit venues: selling together costs more",
+           "sum over venues of cost(sum of sizes) - sum of each position's standalone cost",
+           [T.inp("joint cost", sum(joint.values()), T.USD, T.DERIVED),
+            T.inp("standalone costs", sum(standalone.values()), T.USD, T.DERIVED)],
+           outcome.shared_liquidity_penalty, T.USD,
+           note="Exists only at portfolio level: no single position carries it.")
     if outcome.shared_liquidity_penalty > 0:
         outcome.warnings.append(
             "Portfolio total uses a joint exit per shared venue; it exceeds the sum of position losses by shared_liquidity_penalty_usd."

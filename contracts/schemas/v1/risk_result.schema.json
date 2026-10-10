@@ -266,6 +266,13 @@
         "converged"
       ],
       "additionalProperties": false
+    },
+    "trace": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/trace_step"
+      },
+      "description": "Optional. Portfolio-level steps (shared penalties, cascade, aggregation)."
     }
   },
   "required": [
@@ -374,6 +381,13 @@
         },
         "contagion": {
           "$ref": "#/$defs/position_contagion"
+        },
+        "trace": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trace_step"
+          },
+          "description": "Optional. How each number of the position was computed, ending with the loss total."
         }
       },
       "required": [
@@ -528,6 +542,96 @@
         "positions",
         "gross_exposure_usd",
         "net_equity_usd"
+      ],
+      "additionalProperties": false
+    },
+    "trace_step": {
+      "type": "object",
+      "description": "One calculation step: formula applied to named inputs with provenance (backend/risk/trace.py).",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "formula": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "boolean",
+                  "null"
+                ]
+              },
+              "unit": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "value",
+              "unit",
+              "source"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "boolean",
+                "null"
+              ]
+            },
+            "unit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        "note": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "formula",
+        "inputs",
+        "result"
       ],
       "additionalProperties": false
     }

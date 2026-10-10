@@ -36,8 +36,10 @@ def test_surface_points_match_golden_fixtures():
     surface = load("demo_ethena_01", "risk_surface")
     golden = load("demo_ethena_01", "risk_result")
     golden.pop("contagion")
+    golden.pop("trace", None)
     for position in golden["positions"]:
         position.pop("contagion")
+        position.pop("trace", None)
     assert_same(point(surface, "usde_depeg", "-0.05")["risk_result"], golden)
     assert point(surface, "liquidity_crisis", "0.80")["risk_result"]["portfolio"]["total_conditional_loss_usd"] == "920646.49"
 
@@ -74,6 +76,8 @@ def test_lender_presets_and_surfaces_match_current_engine(set_name):
         assert_same(load(set_name, result_file), simulate(portfolio, snapshot, request, graph))
         expected = simulate(portfolio, snapshot, request)
         expected.pop('contagion', None)
+        expected.pop('trace', None)
         for position in expected['positions']:
             position.pop('contagion', None)
+            position.pop('trace', None)
         assert_same(point(surface, scenario, request['scenario']['parameters'][param])['risk_result'], expected)

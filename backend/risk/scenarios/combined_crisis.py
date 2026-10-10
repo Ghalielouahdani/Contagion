@@ -19,7 +19,8 @@ from __future__ import annotations
 from dataclasses import replace
 
 from backend.risk import lending
-from backend.risk.liquidity import coverage_note, exit_cost
+from backend.risk import trace as T
+from backend.risk.liquidity import coverage_note, exit_cost, trace_exit
 from backend.risk.model import Portfolio, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.scenarios import liquidity_crisis, scenario, usde_depeg
 
@@ -94,6 +95,7 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
         size = impact.gross_after - seized_collateral(impact)
         ahead = forced.get(venue.venue_id, 0.0)
         cost = queued_haircut(venue, size, ahead, k)
+        trace_exit(impact.trace, venue, size, k, T.venue_source(snapshot, venue.venue_id), ahead)
         extrapolated = coverage_note(venue, ahead + size, k)
         if extrapolated:
             impact.warnings.append(extrapolated)
@@ -108,6 +110,10 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
 
     joint = sum(queued_haircut(snapshot.venues[vid], size, forced.get(vid, 0.0), k) for vid, size in exits.items())
     outcome.shared_liquidity_penalty = joint - standalone
+    T.step(outcome.trace, "shared_liquidity_penalty", "Shared exit venues: selling together costs more",
+           "sum over venues of the joint marginal cost behind liquidations - sum of standalone costs",
+           [T.inp("joint cost", joint, T.USD, T.DERIVED), T.inp("standalone costs", standalone, T.USD, T.DERIVED)],
+           outcome.shared_liquidity_penalty, T.USD, note="Exists only at portfolio level: no single position carries it.")
     if outcome.shared_liquidity_penalty > 0:
         outcome.warnings.append(
             "Portfolio total uses a joint exit per shared venue, behind the liquidation selling; it exceeds "

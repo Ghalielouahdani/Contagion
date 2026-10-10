@@ -107,7 +107,230 @@
         "evidence_confidence": "verified",
         "graph_gaps": [],
         "unmodeled_exposures": []
-      }
+      },
+      "trace": [
+        {
+          "id": "price:PYUSD",
+          "label": "PYUSD market price after the shock",
+          "formula": "stablecoin price (not shocked by this scenario)",
+          "inputs": [
+            {
+              "name": "PYUSD price",
+              "value": "1.000067",
+              "unit": "price",
+              "source": "observed"
+            }
+          ],
+          "result": {
+            "value": "1.000067",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "value",
+          "label": "PYUSD holding value after the shock",
+          "formula": "quantity x price after",
+          "inputs": [
+            {
+              "name": "quantity",
+              "value": "5000000.000000",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "value before",
+              "value": "5000335.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "5000335.00",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "split",
+          "label": "Loss split by mechanism",
+          "formula": "market repricing = net before - net after the depeg alone; backing impairment = the rest of the move",
+          "inputs": [
+            {
+              "name": "net before",
+              "value": "5000335.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after the depeg alone",
+              "value": "5000335.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after all shocks",
+              "value": "5000335.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          },
+          "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
+        },
+        {
+          "id": "lender_loss",
+          "label": "Lender loss: what borrowers' collateral no longer covers",
+          "formula": "share x (bad debt + underwater debt); bad debt = debt - oracle collateral / LIF when liquidated, underwater = debt - market collateral when the oracle does not see the move",
+          "inputs": [
+            {
+              "name": "our supply share",
+              "value": "0.045868",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "sUSDe market move",
+              "value": "-0.702575",
+              "unit": "pct",
+              "source": "derived"
+            },
+            {
+              "name": "oracle pass-through",
+              "value": "1.000000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "LLTV",
+              "value": "0.915000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "LIF = 1 + liquidation incentive",
+              "value": "1.026200",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "market bad debt",
+              "value": "64660278.68",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "market underwater debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "2965865.24",
+            "unit": "usd"
+          },
+          "note": "Borrower distribution: observed.",
+          "rows": [
+            {
+              "debt_usd": "29952058.88",
+              "oracle_ltv_before": "0.849500",
+              "oracle_ltv_after": "2.856180",
+              "outcome": "liquidated",
+              "bad_debt_usd": "19733043.84",
+              "underwater_usd": "0.00"
+            },
+            {
+              "debt_usd": "66604303.15",
+              "oracle_ltv_before": "0.879300",
+              "oracle_ltv_after": "2.956374",
+              "outcome": "liquidated",
+              "bad_debt_usd": "44650439.82",
+              "underwater_usd": "0.00"
+            },
+            {
+              "debt_usd": "407247.16",
+              "oracle_ltv_before": "0.904800",
+              "oracle_ltv_after": "3.042109",
+              "outcome": "liquidated",
+              "bad_debt_usd": "276795.02",
+              "underwater_usd": "0.00"
+            }
+          ]
+        },
+        {
+          "id": "lender_loss_cascade",
+          "label": "Lender loss counted round by round in the cascade",
+          "formula": "share x (bad debt realised in each round at that round's price + debt still underwater at the end)",
+          "inputs": [
+            {
+              "name": "bad debt (our share)",
+              "value": "1358882.19",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "underwater debt (our share)",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1358882.19",
+            "unit": "usd"
+          },
+          "note": "Replaces the single-price lender loss above."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "bad debt",
+              "value": "1358882.19",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "undercollateralized debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1358882.19",
+            "unit": "usd"
+          }
+        }
+      ]
     },
     {
       "position_id": "lend_usde_01",
@@ -181,7 +404,238 @@
         "evidence_confidence": "verified",
         "graph_gaps": [],
         "unmodeled_exposures": []
-      }
+      },
+      "trace": [
+        {
+          "id": "price:RLUSD",
+          "label": "RLUSD market price after the shock",
+          "formula": "stablecoin price (not shocked by this scenario)",
+          "inputs": [
+            {
+              "name": "RLUSD price",
+              "value": "1.000022",
+              "unit": "price",
+              "source": "observed"
+            }
+          ],
+          "result": {
+            "value": "1.000022",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "value",
+          "label": "RLUSD holding value after the shock",
+          "formula": "quantity x price after",
+          "inputs": [
+            {
+              "name": "quantity",
+              "value": "3000000.000000",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "value before",
+              "value": "3000066.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "3000066.00",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "split",
+          "label": "Loss split by mechanism",
+          "formula": "market repricing = net before - net after the depeg alone; backing impairment = the rest of the move",
+          "inputs": [
+            {
+              "name": "net before",
+              "value": "3000066.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after the depeg alone",
+              "value": "3000066.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after all shocks",
+              "value": "3000066.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          },
+          "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
+        },
+        {
+          "id": "lender_loss",
+          "label": "Lender loss: what borrowers' collateral no longer covers",
+          "formula": "share x (bad debt + underwater debt); bad debt = debt - oracle collateral / LIF when liquidated, underwater = debt - market collateral when the oracle does not see the move",
+          "inputs": [
+            {
+              "name": "our supply share",
+              "value": "0.059979",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "USDe market move",
+              "value": "-0.050812",
+              "unit": "pct",
+              "source": "derived"
+            },
+            {
+              "name": "oracle pass-through",
+              "value": "1.000000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "LLTV",
+              "value": "0.915000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "LIF = 1 + liquidation incentive",
+              "value": "1.026200",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "market bad debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "market underwater debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "0.00",
+            "unit": "usd"
+          },
+          "note": "Borrower distribution: observed.",
+          "rows": [
+            {
+              "debt_usd": "1101395.36",
+              "oracle_ltv_before": "0.786200",
+              "oracle_ltv_after": "0.828287",
+              "outcome": "safe",
+              "bad_debt_usd": "0.00",
+              "underwater_usd": "0.00"
+            },
+            {
+              "debt_usd": "950581.89",
+              "oracle_ltv_before": "0.803800",
+              "oracle_ltv_after": "0.846829",
+              "outcome": "safe",
+              "bad_debt_usd": "0.00",
+              "underwater_usd": "0.00"
+            },
+            {
+              "debt_usd": "41281760.56",
+              "oracle_ltv_before": "0.883000",
+              "oracle_ltv_after": "0.930269",
+              "outcome": "liquidated",
+              "bad_debt_usd": "0.00",
+              "underwater_usd": "0.00"
+            },
+            {
+              "debt_usd": "2367314.51",
+              "oracle_ltv_before": "0.905400",
+              "oracle_ltv_after": "0.953868",
+              "outcome": "liquidated",
+              "bad_debt_usd": "0.00",
+              "underwater_usd": "0.00"
+            }
+          ]
+        },
+        {
+          "id": "lender_loss_cascade",
+          "label": "Lender loss counted round by round in the cascade",
+          "formula": "share x (bad debt realised in each round at that round's price + debt still underwater at the end)",
+          "inputs": [
+            {
+              "name": "bad debt (our share)",
+              "value": "121641.98",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "underwater debt (our share)",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "121641.98",
+            "unit": "usd"
+          },
+          "note": "Replaces the single-price lender loss above."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "bad debt",
+              "value": "121641.98",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "undercollateralized debt",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "121641.98",
+            "unit": "usd"
+          }
+        }
+      ]
     }
   ],
   "portfolio": {
@@ -247,6 +701,103 @@
     "stuck_debt_usd": "0.00",
     "converged": true
   },
+  "trace": [
+    {
+      "id": "cascade",
+      "label": "Liquidation cascade: prices after forced selling",
+      "formula": "per round: liquidate borrowers the oracle flags, sell their collateral on its venue, move = (1 + initial move) x (1 - marginal discount at the selling still weighing) - 1",
+      "inputs": [
+        {
+          "name": "initial USDe move",
+          "value": "-0.050000",
+          "unit": "pct",
+          "source": "user_scenario"
+        },
+        {
+          "name": "initial sUSDe move",
+          "value": "-0.050000",
+          "unit": "pct",
+          "source": "user_scenario"
+        },
+        {
+          "name": "depth left",
+          "value": "0.500000",
+          "unit": "ratio",
+          "source": "user_scenario"
+        },
+        {
+          "name": "arbitrage absorption between rounds",
+          "value": "0.800000",
+          "unit": "ratio",
+          "source": "user_scenario"
+        },
+        {
+          "name": "liquidators internalize their impact",
+          "value": false,
+          "unit": "flag",
+          "source": "user_scenario"
+        }
+      ],
+      "result": {
+        "value": "-0.050812",
+        "unit": "pct"
+      },
+      "note": "Final sUSDe move -70.26%; positions are priced at these final moves.",
+      "rows": [
+        {
+          "round": "1.000000",
+          "liquidated_debt_usd": "110660625.38",
+          "collateral_sold_usd": "113559933.76",
+          "usde_move": "-0.990500",
+          "susde_move": "-0.990500"
+        },
+        {
+          "round": "2.000000",
+          "liquidated_debt_usd": "32004036.12",
+          "collateral_sold_usd": "359498.78",
+          "usde_move": "-0.990500",
+          "susde_move": "-0.958974"
+        },
+        {
+          "round": "3.000000",
+          "liquidated_debt_usd": "0.00",
+          "collateral_sold_usd": "0.00",
+          "usde_move": "-0.050812",
+          "susde_move": "-0.702575"
+        }
+      ]
+    },
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "lend_susde_01",
+          "value": "1358882.19",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "lend_usde_01",
+          "value": "121641.98",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "1480524.17",
+        "unit": "usd"
+      },
+      "note": "18.51% of net equity (8000401.00 USD)."
+    }
+  ],
   "comparison": {
     "runs": [
       {

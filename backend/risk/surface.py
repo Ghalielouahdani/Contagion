@@ -39,6 +39,10 @@ def _point(portfolio: dict, snapshot: dict, request: dict, param: str, value: fl
     r["scenario"]["parameters"][param] = f"{value:.2f}"
     result = simulate(portfolio, snapshot, r)
     result.pop("contagion", None)
+    # Calculation traces stay in the stored preset results (risk_result*.json): one per slider point would bloat the file.
+    result.pop("trace", None)
+    for position in result["positions"]:
+        position.pop("trace", None)
     return {
         "value": f"{value:.2f}",
         "risk_result": result,
