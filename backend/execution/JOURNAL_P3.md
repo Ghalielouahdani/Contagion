@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : les 8 étapes du mode prévention sont terminées ; nouveau mode « crise en cours » : étapes 9, 10 et 11 faites (branche `feat/p3-crisis-advisor`)
+> État : les 8 étapes du mode prévention sont terminées ; nouveau mode « crise en cours » : étapes 9 à 12 faites (branche `feat/p3-crisis-advisor`)
 
 ---
 
@@ -719,8 +719,40 @@ Suite complète du repo : **447 tests verts**.
 
 **À faire de ton côté :** ajouter ta clé dans un fichier `.env` à la racine (`GEMINI_API_KEY=...`). Ce fichier n'est jamais commité.
 
-### Suite prévue
+### Étape 12 : point d'entrée API et README
 
-| Étape | Contenu |
+**La route `POST /api/v1/crisis-advice`** (dans `backend/api/main.py`, ajout de 28 lignes sans rien supprimer) :
+
+| Champ | Rôle |
 |---|---|
-| 12 | Point d'entrée API (`POST /api/v1/crisis-advice`), README, journal |
+| `request` | une requête de scénario (n'importe lequel des 7)… |
+| `simulation_id` | … ou une simulation déjà lancée avec `/simulate` (même résultat de risque exactement) |
+| `advice` | `true` par défaut : on demande l'avis de l'IA ; `false` : seulement le plan calculé |
+| `on_demand_quotes` | `true` : chiffrer les couvertures en direct sur KyberSwap (réseau) |
+
+La réponse contient toujours `plan` (positions, stratégies, couverture). `advice` contient l'avis de l'IA avec le résultat recalculé de chaque stratégie, ou `null`. Dans ce cas, `advice_error` dit pourquoi : clé absente ou refusée, quota, réponse invalide. **Jamais d'erreur 500, jamais de conseil inventé.**
+
+**Le README** : la section « Crisis mode » est ajoutée en bas, en anglais pour l'équipe. Elle couvre le modèle (une ligne par formule), l'univers de couverture, le conseiller IA et sa configuration, la route avec un exemple réel tiré de la crise combinée, les limites et les tests.
+
+**Tests (`tests/test_crisis_api.py`, 4 tests)** :
+- le plan seul contient positions, stratégies et couverture ;
+- un échec de l'IA garde le plan et explique l'erreur ;
+- une simulation enregistrée est bien réutilisée ;
+- une simulation inconnue donne une erreur 404.
+
+Les tests forcent une clé vide : aucun appel réseau, même si `.env` contient une clé.
+
+**Essai réel avec Gemini :** l'appel a atteint Google, mais la clé du `.env` a été refusée (« API key not valid »). Ça a révélé que Gemini signale une clé invalide avec le code 400 (raison `API_KEY_INVALID`). C'est corrigé (commit `5796aff`) et testé. À refaire avec une clé valide.
+
+**Fusion sur `main` :** Ismail (P2) a fusionné `feat/p3-crisis-advisor` sur `main` après l'étape 10 (commit `2e10b74`). Les étapes 11 et 12 n'y sont pas encore.
+
+Suite complète du repo : **452 tests verts**.
+
+### Suite possible
+
+| Qui | Action |
+|---|---|
+| Toi | Mettre une clé Gemini valide dans `.env`, puis relancer un vrai appel |
+| P4 | Afficher le mode crise dans le dashboard (route `/api/v1/crisis-advice`) |
+| P1 | Ajouter le prix de l'USDT au snapshot et le PT-sUSDe au registre, pour élargir les couvertures chiffrables |
+| Équipe | Fusionner les étapes 11 et 12 sur `main` par une PR |
