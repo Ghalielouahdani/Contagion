@@ -455,10 +455,7 @@ function Sidebar({
           {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
           {theme}
         </button>
-        <span className="status-line">
-          {health?.status ?? "loading"}
-          {health?.mockedFixtures.length ? ` · ${health.mockedFixtures.length} mock` : ""}
-        </span>
+        {health?.mockedFixtures.length ? <span className="status-line">{health.mockedFixtures.length} mock</span> : null}
       </div>
     </aside>
   );
