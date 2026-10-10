@@ -151,6 +151,10 @@
         },
         "field_sources": {
           "$ref": "common.schema.json#/$defs/field_sources"
+        },
+        "observed_liquidity_usd": {
+          "$ref": "common.schema.json#/$defs/non_negative_decimal",
+          "description": "Optional. Total pool liquidity observed on the venue (USD)."
         }
       },
       "required": [

@@ -83,6 +83,13 @@ Chaque perte est reliée à son **chemin de contagion** dans le graphe de P1, pa
 
 Ce qu'il faut demander à P1 : passer les liens de `assumed` à `verified` (adresse de contrat + bloc). La confiance affichée pour chaque perte monte automatiquement.
 
+## Marchés vérifiés on-chain (fait)
+
+Jeu `contracts/fixtures/verified_2026_10_10/`, journal complet dans [verified_markets.md](verified_markets.md). Ce que la réalité change :
+- **Aave ne voit pas le depeg de l'USDe** (oracle USDT/USD) : immunisé contre le depeg, mais exposé à un depeg de l'USDT (pas encore modélisé).
+- **Morpho, sur le marché liquide sUSDe/PYUSD, le voit** (Chainlink USDe/USD) : liquidation à **−27,2 %**. Le récit « deux positions identiques, deux chocs différents » tient, mais dans l'autre sens.
+- **La position PT pèse 52 % de son pool Pendle** : sortie très coûteuse en crise. Les économies de dé-risquage sur ce jeu (≈ 197 k$) reposent sur un proxy qui surestime l'impact Pendle : ne pas les annoncer telles quelles.
+
 ## Valeur pour le fonds : combien l'outil fait gagner (fait)
 
 Le module `backend/risk/analytics` traduit chaque scénario en **dollars** pour le gérant (contrat `risk_analytics.json`, fixtures `risk_analytics*.json`). Tout est conditionnel au scénario : on ne promet jamais un rendement, on chiffre ce qu'une décision rapporte **si** le scénario arrive.

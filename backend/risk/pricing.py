@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace
 from backend.risk.model import Position, Snapshot
 
 SUSDE_RATE_KEY = "sUSDe_USDe"
+STABLES = ("USDC", "USDT", "DAI", "PYUSD")  # debt assets priced at par (not shocked by USDe scenarios)
 
 
 @dataclass(frozen=True)
@@ -18,16 +19,19 @@ class MarketState:
 
     usde_usd: float  # USDe market price
     susde_usd: float  # sUSDe market price
-    stable_usd: float = 1.0  # USDC / other debt stablecoins
+    stable_usd: float = 1.0  # default price of a debt stablecoin without its own observed price
     pt_apy_shift: float = 0.0  # additive shock to every PT implied APY
     susde_rate_factor: float = 1.0  # cumulative sUSDe exchange-rate cut (PT-sUSDe redeems into it)
     fundamental_factor: float = 1.0  # uniform value shock (liquidity scenario)
+    stables: tuple[tuple[str, float], ...] = ()  # observed price per debt stablecoin
 
     @classmethod
     def from_snapshot(cls, snapshot: Snapshot) -> MarketState:
         usde = snapshot.prices_usd["USDe"]
         rate = snapshot.exchange_rates[SUSDE_RATE_KEY]
-        return cls(usde_usd=usde, susde_usd=rate * usde, stable_usd=snapshot.prices_usd.get("USDC", 1.0))
+        default = snapshot.prices_usd.get("USDC", 1.0)
+        stables = tuple((s, snapshot.prices_usd.get(s, default)) for s in STABLES)
+        return cls(usde_usd=usde, susde_usd=rate * usde, stable_usd=default, stables=stables)
 
     def shocked(
         self,
@@ -66,8 +70,8 @@ def asset_price(symbol: str, state: MarketState, market: dict | None = None):
         price = state.usde_usd
     elif symbol == "sUSDe":
         price = state.susde_usd
-    elif symbol in ("USDC", "USDT", "DAI"):
-        return state.stable_usd
+    elif symbol in STABLES:
+        return dict(state.stables).get(symbol, state.stable_usd)
     elif symbol.startswith("PT-"):
         if market is None:
             raise ValueError(f"{symbol} needs its Pendle market parameters")

@@ -32,6 +32,7 @@ contracts/
         ├── scenario_request_severe.json    demo preset: −30% depeg, 6h oracle lag
         ├── risk_result.json · risk_result_liquidity.json · decision_result.json
         └── risk_analytics.json · risk_analytics_severe.json   money value for the fund (P2)
+    verified_2026_10_10/                fictional holdings on real markets verified on-chain (see docs/verified_markets.md)
 ```
 
 ## Why it is modular
