@@ -69,6 +69,7 @@ export type AssistantMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  inputMode?: "text" | "voice";
   caption?: string;
   action?: DashboardAction;
 };

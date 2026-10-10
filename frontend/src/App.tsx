@@ -43,6 +43,7 @@ import {
   Sparkles,
   Sun,
   Volume2,
+  VolumeX,
   WalletCards,
   X,
 } from "lucide-react";
@@ -69,6 +70,7 @@ import type {
 type Theme = "light" | "dark";
 type SortKey = "protocol" | "gross_value_usd" | "debt_value_usd" | "net_equity_usd";
 type AssistantState = "idle" | "listening" | "thinking" | "speaking";
+type AssistantInputMode = "text" | "voice";
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -1161,9 +1163,11 @@ function AssistantDock({
   const [assistantState, setAssistantState] = useState<AssistantState>("idle");
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
+  const [audioMuted, setAudioMuted] = useState(false);
   const [amplitude, setAmplitude] = useState(0.12);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const recognitionFinalRef = useRef(false);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -1193,14 +1197,18 @@ function AssistantDock({
   }, [open, setOpen]);
 
   useEffect(() => {
-    return () => stopListening();
+    return () => {
+      stopListening();
+      cancelSpeech();
+    };
   }, []);
 
-  async function submitMessage(raw: string) {
+  async function submitMessage(raw: string, inputMode: AssistantInputMode = "text") {
     const trimmed = raw.trim();
     if (!trimmed) return;
+    cancelSpeech();
     setInput("");
-    const userMessage: AssistantMessage = { id: crypto.randomUUID(), role: "user", content: trimmed };
+    const userMessage: AssistantMessage = { id: crypto.randomUUID(), role: "user", content: trimmed, inputMode };
     setMessages((current) => [...current, userMessage]);
     setAssistantState("thinking");
     try {
@@ -1220,6 +1228,7 @@ function AssistantDock({
         id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
+        inputMode,
       };
       setMessages((current) => [...current, assistantMessage]);
       if (response.actions?.length) {
@@ -1228,7 +1237,11 @@ function AssistantDock({
           await new Promise((resolve) => window.setTimeout(resolve, action.type === "run_simulation" ? 520 : 300));
         }
       }
-      speak(response.message);
+      if (inputMode === "voice" && !audioMuted) {
+        speak(response.message);
+      } else {
+        setAssistantState("idle");
+      }
     } catch {
       setMessages((current) => [
         ...current,
@@ -1240,6 +1253,11 @@ function AssistantDock({
       ]);
       setAssistantState("idle");
     }
+  }
+
+  function cancelSpeech() {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setAssistantState((current) => (current === "speaking" ? "idle" : current));
   }
 
   function speak(text: string) {
@@ -1264,8 +1282,10 @@ function AssistantDock({
       return;
     }
     setVoiceSupported(true);
+    cancelSpeech();
     setListening(true);
     setAssistantState("listening");
+    recognitionFinalRef.current = false;
     try {
       const stream = await navigator.mediaDevices?.getUserMedia({ audio: true });
       if (stream) {
@@ -1298,11 +1318,14 @@ function AssistantDock({
         .join(" ");
       setInput(transcript);
       const last = event.results[event.results.length - 1];
-      if (last?.isFinal) submitMessage(transcript);
+      if (last?.isFinal) {
+        recognitionFinalRef.current = true;
+        submitMessage(transcript, "voice");
+      }
     };
     recognition.onend = () => {
       setListening(false);
-      setAssistantState("idle");
+      if (!recognitionFinalRef.current) setAssistantState("idle");
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
     recognition.onerror = () => {
@@ -1363,7 +1386,7 @@ function AssistantDock({
               className="assistant-input"
               onSubmit={(event) => {
                 event.preventDefault();
-                submitMessage(input);
+                submitMessage(input, "text");
               }}
             >
               <button type="button" className="icon-button" onClick={listening ? stopListening : startListening} aria-label={listening ? "Stop listening" : "Start voice input"}>
@@ -1373,8 +1396,19 @@ function AssistantDock({
               <button type="submit" className="icon-button" aria-label="Send message">
                 <Send size={15} />
               </button>
-              <button type="button" className="icon-button" onClick={() => speak(messages[messages.length - 1]?.content ?? "")} aria-label="Read last reply aloud">
-                <Volume2 size={15} />
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => {
+                  setAudioMuted((muted) => {
+                    if (!muted) cancelSpeech();
+                    return !muted;
+                  });
+                }}
+                aria-label={audioMuted ? "Unmute spoken replies" : "Mute spoken replies"}
+                aria-pressed={audioMuted}
+              >
+                {audioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
               </button>
             </form>
           </motion.aside>
