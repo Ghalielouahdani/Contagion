@@ -67,3 +67,44 @@ def test_summary_adds_chosen_actions_and_flags_shared_venue(contracts):
                       if o["exit_fraction"] == d["recommended_exit_fraction"])
     assert D(out["summary"]["chosen_actions"]["estimated_exit_cost_usd"]) == chosen_cost
     assert any("venue:susde_usdc" in w for w in out["summary"]["warnings"])
+
+
+# --- Étape 5 : règles de recommandation (section 8) ---
+
+def with_probability(c, p):
+    c = copy.deepcopy(c)
+    c["scenario_request"]["assumptions"]["probability"] = p
+    return c
+
+
+def test_probability_with_proxy_quotes_recommends_but_flags(contracts):
+    out = run(with_probability(contracts, "0.15"))
+    assert (out["mode"], out["recommendation"], out["recommended_exit_fraction"]) == ("expected_cost", "REDUCE", "0.25")
+    assert all(o["objective_usd"] is not None for o in out["exit_options"])
+    assert any(w.startswith("proxy_quotes") for w in out["warnings"])
+
+
+def test_probability_outside_0_1_is_rejected(contracts):
+    with pytest.raises(ValueError, match="probability"):
+        run(with_probability(contracts, "1.5"))
+
+
+def test_reason_names_the_cheapest_threshold_not_always_25pct(contracts):
+    # Pool quasi infinie + gas énorme : le coût fixe domine, la sortie totale devient rentable la première.
+    c = copy.deepcopy(contracts)
+    c["snapshot"]["exit_venues"]["venue:usde_usdc"].update(effective_depth_usd="1000000000000", gas_usd="5000")
+    out = run(c)
+    p_stars = {o["exit_fraction"]: D(o["break_even_probability"]) for o in out["exit_options"][1:]}
+    assert min(p_stars, key=p_stars.get) == "1.00"
+    assert "Exiting fully beats staying" in out["reason"]
+
+
+def test_liquidity_crisis_exits_at_pre_crisis_depth(contracts):
+    liq = load_contracts(liquidity=True)
+    out = run(liq)
+    assert (out["decision_id"], out["simulation_id"], out["scenario_id"]) == ("decision_sim_002", "result_sim_002", "liquidity_crisis")
+    # Mêmes coûts qu'avant la crise (profondeur 300 M$, pas 60 M$) ; seule la perte change (142 857,14 $).
+    depeg_costs = [o["estimated_exit_cost_usd"] for o in run(contracts)["exit_options"]]
+    assert [o["estimated_exit_cost_usd"] for o in out["exit_options"]] == depeg_costs
+    assert out["exit_options"][1]["break_even_probability"] == "0.0813"
+    assert "liquidity crisis exceeds 8.13%" in out["reason"]

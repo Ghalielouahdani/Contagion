@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : étapes 0 à 4 terminées sur 8
+> État : étapes 0 à 5 terminées sur 8
 
 ---
 
@@ -282,6 +282,45 @@ La fonction renvoie **l'impact de prix seulement**. Les frais (0,1 %) et le gas 
 
 **Changement pratique :** `decision.py` importe maintenant `exit_cost.py`. On lance donc le script comme un module : `python3 -m backend.execution.decision`.
 
+Commit `20d31e4`.
+
+### Étape 5 : règles de recommandation complètes (section 8)
+
+**Les 3 règles, telles qu'implémentées :**
+
+| Situation | `mode` | `objective_usd` | Recommandation | Signal |
+|---|---|---|---|---|
+| Pas de probabilité | `conditional_stress` | `null` partout | INSUFFICIENT_DATA | — |
+| Probabilité + vrais prix (`executable` / `pool_reserves`) | `expected_cost` | J(x) chiffré | argmin J(x) : STAY / REDUCE / EXIT | — |
+| Probabilité + au moins un prix `proxy` | `expected_cost` | J(x) chiffré | argmin J(x), **affichée** | `proxy_quotes` dans `warnings` |
+| Aucun prix du tout (étape 4) | `conditional_stress` | `null` | INSUFFICIENT_DATA | — |
+
+Le schéma n'a pas de champ « flags » : le signal `proxy_quotes` est donc un avertissement qui **commence par** `proxy_quotes`. P4 peut le repérer facilement.
+
+**Détails ajoutés :**
+- **Égalité de J(x)** : on garde l'option qui vend le moins. À coût attendu égal, inutile de trader.
+- **Probabilité invalide** (hors de 0 à 1) : erreur claire.
+- **p\* négatif** : ça arriverait si une sortie *rapportait* plus qu'elle ne coûte, par exemple avec un carry très négatif. p\* est alors ramené à 0, ce qui veut dire « bat STAY quelle que soit la probabilité ». Une probabilité négative n'aurait pas de sens.
+
+**Le texte `reason` cite toujours le meilleur seuil de bascule**, c'est-à-dire l'option qui bat STAY au p le plus bas, et le nom du scénario. Exemples sur aave_01 :
+- sans p : *« No scenario probability supplied and all quotes are proxies. Reducing by 25% beats staying if the user's probability of this depeg exceeds 7.75%. »* (identique au corrigé) ;
+- p = 15 % : *« With a 15% probability of this depeg, reducing by 25% has the lowest expected cost (19779.84 USD vs 22500.00 USD for staying). Reducing by 25% beats staying if … exceeds 7.75%. Exit costs are proxy estimates. »*
+
+**Pourquoi le meilleur seuil est presque toujours à 25 %.** L'impact de prix est convexe : petite vente, petit coût par dollar protégé. Mais si le **coût fixe** (le gas) domine, c'est l'inverse : on paie les 40 $ (ou 5 000 $) une seule fois, qu'on vende 25 % ou 100 %. Dans ce cas, mieux vaut vendre gros. Le test `test_reason_names_the_cheapest_threshold_not_always_25pct` le montre avec une pool quasi infinie et 5 000 $ de gas : la sortie totale devient rentable avant la sortie de 25 %.
+
+**Scénario liquidité (`risk_result_liquidity.json`)** pour aave_01 :
+
+| | Depeg | Crise de liquidité |
+|---|---|---|
+| Perte si crise | 150 000 $ | 142 857 $ |
+| Coût sortie 25 % | 2 660,32 $ | **2 660,32 $** (identique) |
+| p\* 25 % | 7,75 % | 8,13 % |
+| p\* 100 % | 22,48 % | 23,60 % |
+
+Le coût est **identique** parce qu'on sort **avant** la crise, avec la profondeur normale de 300 M$, et non avec les 60 M$ de crise. Le moteur lit la profondeur dans le snapshot et n'applique jamais `exit_liquidity_reduction_pct`. Seule la perte évitée change.
+
+**Limite repérée (à discuter, non corrigée car le blueprint fait foi) :** dans la crise de liquidité, la perte est un coût de vente forcée, et ce coût est convexe. Le blueprint dit perte résiduelle = (1 − x) × perte, une règle proportionnelle. Mais si on garde 75 % d'aave_01 et qu'on doit le vendre pendant la crise, le vrai coût serait 2,25 M² / (60 M + 2,25 M) = **81 325 $**, pas 0,75 × 142 857 = **107 143 $**. La règle proportionnelle **surestime** donc le risque restant, ce qui pousse à sortir un peu trop.
+
 ---
 
 ## 4. Organisation du code actuel
@@ -354,7 +393,12 @@ python3 -m pytest backend/execution -v
 | `test_missing_venue_gives_insufficient_data` | Venue absente du snapshot → INSUFFICIENT_DATA |
 | `test_venue_claiming_better_method_than_used_is_flagged` | La venue annonce `executable_quote` mais seul le proxy répond → `proxy` + avertissement |
 
-Dernier résultat : **13 passed**.
+| `test_probability_with_proxy_quotes_recommends_but_flags` | p = 15 % + proxy → `expected_cost`, REDUCE 25 %, J(x) chiffrés, signal `proxy_quotes` |
+| `test_probability_outside_0_1_is_rejected` | Une probabilité de 1,5 est refusée |
+| `test_reason_names_the_cheapest_threshold_not_always_25pct` | Gas énorme + pool infinie → le texte cite « Exiting fully », pas 25 % |
+| `test_liquidity_crisis_exits_at_pre_crisis_depth` | Scénario liquidité : bons identifiants, coûts identiques au depeg (profondeur d'avant crise), p\* 25 % = 8,13 % |
+
+Dernier résultat : **17 passed**.
 
 On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : le script affiche « IDENTIQUE » puis le JSON complet.
 
@@ -363,7 +407,8 @@ On peut aussi lancer `python3 -m backend.execution.decision` depuis la racine : 
 ## 6. Historique git (branche `feat/p3`)
 
 ```
-(étape 4) P3: pluggable exit cost estimator (executable → pool → proxy)  ← étape 4
+(étape 5) P3: complete section 8 recommendation rules + liquidity check  ← étape 5
+20d31e4  P3: pluggable exit cost estimator (executable → pool → proxy)  ← étape 4
 ff6fbc4  P3: run decisions on all four positions + portfolio summary  ← étape 3
 fdad924  P3: add step-by-step journal (steps 0-2)
 eea69a3  P3: decide_position reads the real contract files      ← étape 2
@@ -383,6 +428,8 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 - **Le proxy surestime** probablement l'impact de prix sur les pools de stablecoins (Curve). C'est à signaler dans le README final.
 - **Rendement de la garantie morpho_01 (à remonter à P1)** : le snapshot met `collateral_supply_apy = 0.00`, parce que Morpho ne verse pas d'intérêts sur la garantie. Mais la garantie est du **sUSDe**, dont la valeur en USDe monte d'elle-même d'environ 7 %/an (c'est le `token_apy` d'ethena_susde_01). Avec 0 %, le carry de morpho_01 vaut −110 000 $/an. En comptant les 7 %, il vaudrait environ +100 000 $/an (3 M$ × 7 % − 2 M$ × 5,5 %). Les p\* de morpho_01 seraient alors plus élevés. Proposition : que P1 ajoute ce rendement « intrinsèque » au snapshot. P3 n'y touche pas.
 - **Schéma `decision_result` (P3 en est propriétaire)** : les champs de coût (`fees_usd`, `price_impact_usd`…) ne peuvent pas valoir `null`. Quand une taille n'a pas de prix, on doit donc retirer la ligne. Proposition pour une PR d'équipe : autoriser `null` sur ces champs quand `quote_status = "unavailable"`, pour que P4 puisse afficher « pas de prix » au lieu d'une ligne manquante. C'est un changement additif, compatible v1.
+- **Perte résiduelle en crise de liquidité** : la règle proportionnelle du blueprint surestime le risque restant (81 325 $ réels contre 107 143 $ pour aave_01 à 75 % gardé). À proposer à P2 et à l'équipe : recalculer la perte de vente forcée sur la taille restante (1 − x) au lieu de la proportionner. C'est P2 qui fournit la perte, et le blueprint fait foi.
+- **No incident sans probabilité** : si la perte vaut 0, aucune sortie ne peut battre STAY, quelle que soit la probabilité. La règle 1 impose quand même INSUFFICIENT_DATA ; le texte `reason` dit alors « no exit can beat staying ». On pourrait renvoyer STAY directement, puisque ce n'est pas une probabilité inventée mais une dominance. C'est à trancher en équipe.
 
 ---
 
@@ -390,7 +437,6 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 
 | Étape | Contenu |
 |---|---|
-| 5 | Règles de recommandation complètes ; vérification avec le scénario liquidité |
 | 6 | Tests pytest complets (section 16 P3) |
 | 7 | Données de sensibilité pour le curseur du dashboard |
 | 8 | Point d'entrée pour l'API `POST /api/v1/decide` + README |

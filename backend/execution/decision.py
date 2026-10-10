@@ -35,6 +35,10 @@ def annual_carry(position, yields):
     return gross * D(yields["token_apy"])
 
 
+def pct(x):  # 0.0775 → "7.75", 0.10 → "10"
+    return f"{x * 100:.2f}".rstrip("0").rstrip(".")
+
+
 def option_label(x):
     return "Exiting fully" if x == 1 else f"Reducing by {int(x * 100)}%"
 
@@ -57,6 +61,8 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
     priced = {x: q for x, q in quotes.items() if q is not None}
     statuses = {q.quote_status for q in priced.values()}
     best_status = min(statuses, key=PRIORITY.index) if statuses else "unavailable"
+    if probability is not None and not D(0) <= D(probability) <= D(1):
+        raise ValueError(f"probability must be between 0 and 1, got {probability!r}")
     # Sans aucun prix, pas de J(x) : on retombe en conditional_stress (section 8).
     p = D(probability) if probability is not None and priced else None
 
@@ -65,7 +71,8 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
         residual = (1 - x) * loss0
         foregone = x * carry_h
         avoided = loss0 - residual
-        p_star = (cost + foregone) / avoided if avoided > 0 else None
+        # p* ≤ 0 (sortie qui rapporte plus qu'elle ne coûte) : l'option bat STAY pour toute probabilité.
+        p_star = max(D(0), (cost + foregone) / avoided) if avoided > 0 else None
         objective = cost + p * residual + foregone if p is not None else None
         return {
             "exit_fraction": str(x),
@@ -96,28 +103,41 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
     if missing:
         warnings.append(f"No exit price on {venue_id} for exit fractions {', '.join(missing)}; rows omitted.")
 
+    # Meilleur seuil de bascule : l'option qui bat STAY au p le plus bas.
+    scenario = SCENARIO_LABELS.get(scenario_id, "scenario")
+    candidates = [o for o in options if o["_p_star"] is not None]
+    if candidates:
+        cheapest = min(candidates, key=lambda o: o["_p_star"])
+        threshold = (f"{option_label(D(cheapest['exit_fraction']))} beats staying if the user's probability "
+                     f"of this {scenario} exceeds {pct(D(cheapest['break_even_probability']))}%.")
+    else:
+        threshold = f"No exit reduces the loss under this {scenario}, so no exit can beat staying."
+
+    # Règles de la section 8.
     if not priced:
         mode, rec, rec_x = "conditional_stress", "INSUFFICIENT_DATA", None
         reason = f"No exit price available on {venue_id}: exit costs cannot be estimated, no trade is recommended."
     elif p is None:
         mode, rec, rec_x = "conditional_stress", "INSUFFICIENT_DATA", None
         reason = "No scenario probability supplied"
-        reason += " and all quotes are proxies." if statuses == {"proxy"} else "."
-        candidates = [o for o in options if o["_p_star"] is not None]
-        if candidates:
-            best = min(candidates, key=lambda o: o["_p_star"])   # option rentable au p le plus bas
-            scenario = SCENARIO_LABELS.get(scenario_id, "scenario")
-            reason += (f" {option_label(D(best['exit_fraction']))} beats staying if the user's probability "
-                       f"of this {scenario} exceeds {D(best['break_even_probability']) * 100:.2f}%.")
+        reason += " and all quotes are proxies. " if statuses == {"proxy"} else ". "
+        reason += threshold
     else:
         mode = "expected_cost"
-        best = min(options, key=lambda o: o["_objective"])
+        best = min(options, key=lambda o: o["_objective"])   # égalité → la plus petite vente (min garde la 1re)
         bx = D(best["exit_fraction"])
         rec = "STAY" if bx == 0 else "EXIT" if bx == 1 else "REDUCE"
         rec_x = best["exit_fraction"]
-        reason = f"Lowest expected cost at exit fraction {rec_x} with probability {p}."
+        stay_j = options[0]["objective_usd"]
+        if rec == "STAY":
+            reason = f"With a {pct(p)}% probability of this {scenario}, staying has the lowest expected cost ({stay_j} USD). "
+        else:
+            reason = (f"With a {pct(p)}% probability of this {scenario}, {option_label(bx).lower()} has the lowest "
+                      f"expected cost ({best['objective_usd']} USD vs {stay_j} USD for staying). ")
+        reason += threshold
         if "proxy" in statuses:
-            warnings.append("proxy_quotes: recommendation relies on proxy exit costs.")
+            reason += " Exit costs are proxy estimates."
+            warnings.append("proxy_quotes: recommendation relies on proxy exit costs; confirm with executable quotes before trading.")
 
     for o in options:
         del o["_objective"], o["_p_star"]
