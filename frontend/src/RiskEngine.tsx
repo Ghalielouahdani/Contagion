@@ -524,6 +524,8 @@ function Probabilities({ grid, navBefore, breakEven }: { grid: Grid | null; navB
 }
 
 
+const exactUsd = (value: string) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(Number(value));
+
 /** One scenario, many plausible model assumptions: the range around the single number. */
 function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) {
   if (!uncertainty) {
@@ -539,50 +541,57 @@ function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) 
   const all = [pf, ...Object.values(uncertainty.positions)];
   const lo = Math.min(0, ...all.map((s) => Number(s.min_usd)));
   const hi = Math.max(1, ...all.map((s) => Number(s.max_usd)));
-  const histogram = uncertainty.histogram.map((b) => ({ label: money((Number(b.from_usd) + Number(b.to_usd)) / 2), draws: b.draws }));
+  const histogram = uncertainty.histogram.map((b) => ({ label: money((Number(b.from_usd) + Number(b.to_usd)) / 2), draws: b.draws, range: `${exactUsd(b.from_usd)} – ${exactUsd(b.to_usd)}` }));
   return (
     <section className="visual-panel">
       <p className="eyebrow">Step 2 · How sure is this number?</p>
-      <h2>Between {money(pf.p05_usd)} and {money(pf.p95_usd)} in 90% of {uncertainty.draws} runs</h2>
+      <h2>Portfolio stress loss: {money(pf.p05_usd)} – {money(pf.p95_usd)}</h2>
+      <p className="microcopy"><strong>Loss in USD, not remaining equity.</strong> Central 90% of {uncertainty.draws} model runs (P5–P95).
+        The upper value is the 95th percentile of loss, not the maximum loss.</p>
+      <p className="microcopy">Reference loss with the original assumptions: <strong>{exactUsd(pf.base_usd)}</strong>.
+        Source: risk engine uncertainty analysis, using the same scenario, horizon, portfolio and market snapshot as its reference run.
+        Final net equity = initial net equity − portfolio loss.</p>
       <p className="microcopy">
-        Same scenario, re-run {uncertainty.draws} times with every unverified model assumption drawn within its plausible range
+        Same scenario parameters, re-run {uncertainty.draws} times with uncertain model inputs sampled uniformly within their declared ranges
         (oracle types not verified, liquidation thresholds, venue depths, sUSDe beta, cascade arbitrage). Verified inputs stay fixed
         {uncertainty.fixed_because_verified.length ? ` (${uncertainty.fixed_because_verified.map(compactId).join(", ")})` : ""}.
         This measures what we do not know about the model, not how likely the scenario is.
       </p>
       <div className="engine-ranges">
-        <RangeRow label="Portfolio" summary={pf} lo={lo} hi={hi} strong />
-        {Object.entries(uncertainty.positions).map(([pid, summary]) => <RangeRow key={pid} label={compactId(pid)} summary={summary} lo={lo} hi={hi} />)}
-        <p className="microcopy">Thin bar: 5th to 95th percentile · thick bar: 25th to 75th · dot: median · tick: the single number above.</p>
+        <RangeRow label="Whole portfolio loss" summary={pf} lo={lo} hi={hi} strong />
+        {Object.entries(uncertainty.positions).map(([pid, summary]) => <RangeRow key={pid} label={`${compactId(pid)} · position loss`} summary={summary} lo={lo} hi={hi} />)}
+        <p className="microcopy">All rows show losses in USD on the same scale. Thin bar: P5–P95 · thick bar: P25–P75 · white dot: median loss (P50) · coral tick: reference loss. Expand a row for exact amounts. Portfolio percentiles come from total loss in each run; they are not sums of position percentiles.</p>
       </div>
       <div className="engine-two-col">
         <div>
-          <h3>Distribution of the portfolio loss</h3>
+          <h3>Distribution of portfolio stress loss</h3>
+          <p className="microcopy">Horizontal: portfolio loss in USD. Vertical: number of model runs in each loss interval.</p>
           <div className="chart-frame">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={histogram}>
                 <CartesianGrid stroke="var(--np-line)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
                 <YAxis allowDecimals={false} width={32} />
-                <Tooltip />
-                <Bar dataKey="draws" fill="var(--np-accent-periwinkle)" />
+                <Tooltip labelFormatter={(_, payload) => payload[0]?.payload?.range ?? "Loss interval (USD)"} formatter={(value) => [value, "Model runs"]} />
+                <Bar name="Model runs" dataKey="draws" fill="var(--np-accent-periwinkle)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
         <div>
           <h3>What drives the spread</h3>
+          <p className="microcopy">Spearman rank correlation with portfolio loss, from −1 to +1: a relationship across sampled runs, not dollars or a scenario probability. Input ranges use each assumption’s native units.</p>
           <table className="engine-table">
             <thead><tr><th><Term>Assumption (range)</Term></th><th><Term>Link with the loss</Term></th></tr></thead>
             <tbody>{uncertainty.drivers.slice(0, 6).map((d) => (
               <tr key={d.assumption}>
                 <td>{d.assumption} <small>({Number(d.low).toFixed(2)} – {Number(d.high).toFixed(2)})</small></td>
-                <td>{Number(d.rank_correlation) > 0 ? "higher → more loss" : "higher → less loss"} · {Math.abs(Number(d.rank_correlation)).toFixed(2)}</td>
+                <td>{Number(d.rank_correlation) > 0 ? "higher → more loss" : "higher → less loss"} · {Number(d.rank_correlation).toFixed(2)}</td>
               </tr>
             ))}</tbody>
           </table>
           <p className="microcopy">
-            Positions liquidatable across runs: {Object.entries(uncertainty.liquidatable_positions_share).map(([n, share]) => `${n} in ${percent(share, 0)}`).join(" · ")}.
+            Number of positions breaching their liquidation threshold: {Object.entries(uncertainty.liquidatable_positions_share).map(([n, share]) => `${n} positions in ${percent(share, 0)} of sampled runs`).join(" · ")}.
           </p>
         </div>
       </div>
@@ -593,7 +602,8 @@ function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) 
 function RangeRow({ label, summary, lo, hi, strong = false }: { label: string; summary: Summary; lo: number; hi: number; strong?: boolean }) {
   const x = (v: string) => `${((Number(v) - lo) / (hi - lo || 1)) * 100}%`;
   return (
-    <div className="engine-range-row" data-strong={strong}>
+    <details className="engine-range-details">
+    <summary className="engine-range-row" data-strong={strong}>
       <span>{label}</span>
       <div className="engine-range-track">
         <div className="engine-range-whisker" style={{ left: x(summary.p05_usd), width: `calc(${x(summary.p95_usd)} - ${x(summary.p05_usd)})` }} />
@@ -601,7 +611,21 @@ function RangeRow({ label, summary, lo, hi, strong = false }: { label: string; s
         <div className="engine-range-median" style={{ left: x(summary.p50_usd) }} />
         <div className="engine-range-base" style={{ left: x(summary.base_usd) }} />
       </div>
-      <strong>{money(summary.p05_usd)} – {money(summary.p95_usd)}</strong>
-    </div>
+      <strong>{money(summary.p05_usd)} – {money(summary.p95_usd)} <small>USD loss · P5–P95 ▾</small></strong>
+    </summary>
+    <table className="engine-table" aria-label={`${label}: exact loss amounts`}>
+      <thead><tr><th>Loss statistic · {label}</th><th>Exact loss (USD)</th></tr></thead>
+      <tbody>{([
+        ["Reference · original model assumptions", summary.base_usd],
+        ["P5 · 5th percentile", summary.p05_usd],
+        ["P25 · 25th percentile", summary.p25_usd],
+        ["P50 · median", summary.p50_usd],
+        ["P75 · 75th percentile", summary.p75_usd],
+        ["P95 · 95th percentile", summary.p95_usd],
+        ["Minimum observed across sampled runs", summary.min_usd],
+        ["Maximum observed across sampled runs", summary.max_usd],
+      ]).map(([name, value]) => <tr key={name}><td>{name}</td><td>{exactUsd(value)}</td></tr>)}</tbody>
+    </table>
+    </details>
   );
 }

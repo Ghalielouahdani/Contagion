@@ -384,3 +384,9 @@
   color: var(--np-text);
   font-size: var(--np-size-0);
 }
+
+.engine-range-details > summary { cursor: pointer; list-style: none; }
+.engine-range-details > summary::-webkit-details-marker { display: none; }
+.engine-range-details > summary:focus-visible { outline: 2px solid var(--np-accent-periwinkle); outline-offset: 4px; }
+.engine-range-details small { display: block; font-weight: normal; color: var(--np-soft); }
+.engine-range-details[open] { padding-bottom: 12px; }
