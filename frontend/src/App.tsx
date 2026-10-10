@@ -8,6 +8,7 @@ import {
   Cell,
   Line,
   LineChart,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -1269,6 +1270,7 @@ function ScenarioLab({
           <div>
             <p className="eyebrow">Animated before / after</p>
             <h2>Net equity under stress</h2>
+            <p className="microcopy">All portfolio positions · USD. Select a position to inspect its liquidation metric and loss breakdown.</p>
             <p className="microcopy">Last run: {scenarioCopy[data.risk.scenario_id as ScenarioKind]?.title ?? data.risk.scenario_id}</p>
             <p className="microcopy">
               {sourceCopy}
@@ -1284,9 +1286,10 @@ function ScenarioLab({
           </select>
         </div>
         <div className="chart-frame">
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={320}>
             <BarChart
               data={valuationData}
+              margin={{ top: 8, right: 12, bottom: 8, left: 12 }}
               onMouseMove={(state) => {
                 const active = (state as { activePayload?: Array<{ payload?: { id?: string } }> }).activePayload?.[0]?.payload;
                 if (active?.id) setHoveredPosition(active.id);
@@ -1298,15 +1301,16 @@ function ScenarioLab({
               }}
             >
               <CartesianGrid stroke="var(--np-line)" vertical={false} />
-              <XAxis dataKey="name" tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={(value) => money(value).replace(".00", "")} tickLine={false} axisLine={false} />
+              <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" height={70} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <YAxis width={90} tickFormatter={(value) => money(value).replace(".00", "")} tickLine={false} axisLine={false} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="before" fill="var(--np-soft)" radius={[4, 4, 0, 0]}>
+              <Legend />
+              <Bar name="Before stress" dataKey="before" fill="var(--np-soft)" radius={[4, 4, 0, 0]}>
                 {valuationData.map((entry) => (
                   <Cell key={`before-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
                 ))}
               </Bar>
-              <Bar dataKey="after" fill="var(--np-strong)" radius={[4, 4, 0, 0]}>
+              <Bar name="After stress" dataKey="after" fill="var(--np-strong)" radius={[4, 4, 0, 0]}>
                 {valuationData.map((entry) => (
                   <Cell key={`after-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
                 ))}
@@ -1314,12 +1318,17 @@ function ScenarioLab({
             </BarChart>
           </ResponsiveContainer>
         </div>
+        <p className="microcopy">Each pair of bars represents one position. Negative equity means the modeled loss exceeds that position's initial equity.</p>
       </section>
 
       <section className="gauge-panel">
         <div>
           <p className="eyebrow">Liquidation metric</p>
           <h2>{selectedRisk.risk_metric ? labelize(selectedRisk.risk_metric.type) : "No lending metric"}</h2>
+          <p className="microcopy">Selected position: <strong>{compactId(selectedRisk.position_id)}</strong> · {data.portfolio.positions.find(position => position.position_id === selectedRisk.position_id)?.protocol}</p>
+          {selectedRisk.risk_metric ? <p>{selectedRisk.risk_metric.type === "health_factor"
+            ? "Health factor = oracle collateral value × liquidation threshold ÷ debt value. Below 1, this position is liquidatable."
+            : "LTV = debt value ÷ oracle collateral value. Above the market's LLTV, this position is liquidatable."}</p> : null}
           <p>Liquidatable does not mean fully liquidated; it means the protocol threshold has been breached.</p>
         </div>
         {selectedRisk.risk_metric ? <RiskGauge metric={selectedRisk.risk_metric} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
@@ -2134,20 +2143,26 @@ function Control({ label, value, children }: { label: string; value: string; chi
 }
 
 function RiskGauge({ metric }: { metric: NonNullable<RiskPosition["risk_metric"]> }) {
-  const after = Number(metric.distance_to_liquidation_after_pct);
+  const distance = Number(metric.distance_to_liquidation_after_pct);
+  const before = Number(metric.before);
+  const after = Number(metric.after);
+  const threshold = Number(metric.threshold);
+  const maximum = Math.max(before, after, threshold, 1) * 1.2;
+  const formatMetric = (value: number) => metric.type === "ltv" ? percent(value, 2) : value.toFixed(4);
   return (
     <div className="risk-gauge">
       <div className="gauge-track">
-        <span className="threshold" />
-        <span className="gauge-fill" style={{ width: `${Math.max(6, Math.min(100, after * 100))}%` }} />
+        <span className="threshold" style={{ left: `${threshold / maximum * 100}%` }} />
+        <span className="gauge-fill" style={{ width: `${Math.max(0, Math.min(100, after / maximum * 100))}%`, background: metric.liquidatable ? "var(--np-accent-coral)" : "var(--np-accent-blue)" }} />
       </div>
       <div className="metric-row">
         <span>
-          {metric.before} {"->"} {metric.after}
+          Before {formatMetric(before)} → After {formatMetric(after)}
         </span>
         <Badge tone={metric.liquidatable ? "risk" : "good"}>{metric.liquidatable ? "liquidatable" : "not liquidatable"}</Badge>
       </div>
-      <p className="muted">Threshold: {metric.threshold}. Distance after shock: {percent(after)}.</p>
+      <p className="muted">Liquidation threshold: {formatMetric(threshold)} · vertical marker. Scale: 0–{formatMetric(maximum)}.</p>
+      <p className="muted">{distance < 0 ? `Oracle collateral price must recover ${percent(-distance, 1)} to return to the threshold, with debt fixed.` : `Oracle collateral price can fall another ${percent(distance, 1)} before reaching the threshold, with debt fixed.`}</p>
     </div>
   );
 }
