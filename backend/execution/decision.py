@@ -4,9 +4,14 @@ Entrées : une position (portfolio.json), le snapshot (market_snapshot.json),
 la perte conditionnelle de la position (risk_result.json), l'horizon et
 éventuellement une probabilité de scénario.
 Sortie : un dict au format decision_result.json (section 11.8).
-"""
-from decimal import Decimal as D, ROUND_HALF_UP
 
+Point d'entrée : decide_position(portfolio, snapshot, risk_result, scenario_request, position_id).
+"""
+import json
+from decimal import Decimal as D, ROUND_HALF_UP
+from pathlib import Path
+
+FIXTURE_DIR = Path(__file__).resolve().parents[2] / "contracts" / "fixtures" / "demo_ethena_01"
 FRACTIONS = [D("0.00"), D("0.25"), D("0.50"), D("0.75"), D("1.00")]
 SCENARIO_LABELS = {"usde_depeg": "depeg", "liquidity_crisis": "liquidity crisis"}
 
@@ -123,7 +128,49 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
     }
 
 
+def load_contracts(liquidity=False, fixture_dir=FIXTURE_DIR):
+    """Charge les 4 fichiers d'entrée de P3 (lecture seule). liquidity=True → scénario B."""
+    suffix = "_liquidity" if liquidity else ""
+    names = {"portfolio": "portfolio", "snapshot": "market_snapshot",
+             "risk_result": f"risk_result{suffix}", "scenario_request": f"scenario_request{suffix}"}
+    return {key: json.loads((Path(fixture_dir) / f"{name}.json").read_text()) for key, name in names.items()}
+
+
+def decide_position(portfolio, snapshot, risk_result, scenario_request, position_id):
+    """Décision pour une position, à partir des contrats JSON de P1/P2 (format 11.8)."""
+    scenario = scenario_request["scenario"]
+    for field, a, b in [("request_id", risk_result["request_id"], scenario_request["request_id"]),
+                        ("portfolio_id", risk_result["portfolio_id"], portfolio["portfolio_id"]),
+                        ("portfolio_id", scenario_request["portfolio_id"], portfolio["portfolio_id"]),
+                        ("scenario_id", risk_result["scenario_id"], scenario["scenario_id"]),
+                        ("horizon_days", risk_result["horizon_days"], scenario["horizon_days"])]:
+        if a != b:
+            raise ValueError(f"Inconsistent inputs: {field} {a!r} != {b!r}")
+
+    position = next((p for p in portfolio["positions"] if p["position_id"] == position_id), None)
+    impact = next((p for p in risk_result["positions"] if p["position_id"] == position_id), None)
+    if position is None or impact is None:
+        raise ValueError(f"Position {position_id!r} missing from portfolio or risk_result")
+    if impact.get("conditional_loss_usd") is None:
+        raise ValueError(f"No conditional_loss_usd for {position_id!r} in risk_result")
+
+    out = decide(position, snapshot, impact["conditional_loss_usd"], scenario["horizon_days"],
+                 scenario_request["assumptions"]["probability"], scenario["scenario_id"])
+    ids = {"decision_id": f"decision_{scenario_request['request_id']}",
+           "simulation_id": risk_result["simulation_id"],
+           "portfolio_id": portfolio["portfolio_id"],
+           "position_id": position_id,
+           "scenario_id": scenario["scenario_id"]}
+    return {"schema_version": out.pop("schema_version"), **ids, **out}   # ordre des champs de 11.8
+
+
 if __name__ == "__main__":
+    c = load_contracts()
+    got = decide_position(c["portfolio"], c["snapshot"], c["risk_result"], c["scenario_request"], "aave_01")
+    golden = json.loads((FIXTURE_DIR / "decision_result.json").read_text())
+    print("aave_01 vs fixture 11.8 :", "IDENTIQUE" if got == golden else "DIFFÉRENT")
+    print(json.dumps(got, indent=2))
+    print("\n--- ancien test sur données écrites à la main ---")
     # Test sur les valeurs attendues de la section 11.8 (aave_01, depeg)
     position = {"position_id": "aave_01", "position_type": "collateralized_borrow",
                 "gross_value_usd": "3000000.00", "debt_value_usd": "1800000.00",
