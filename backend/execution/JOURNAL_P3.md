@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : étapes 0, 1, 1bis et 2 terminées sur 8
+> État : étapes 0, 1, 1bis, 2 et 3 terminées sur 8
 
 ---
 
@@ -201,6 +201,52 @@ Commit `c50ac6c`.
 
 Commit `eea69a3`, puis branche poussée sur GitHub (`origin/feat/p3`).
 
+### Étape 3 : les 4 positions et le résumé du portefeuille
+
+**Deux façons de « sortir »** (section 7.2) :
+
+| Type | Sortir de x % | Exemple 25 % |
+|---|---|---|
+| Position simple (`token_holding`, `pt_holding`) | vendre x % des jetons | ethena_susde_01 : 400 000 sUSDe × 1,25 $ = 500 000 $ vendus |
+| Position avec dette (`collateralized_borrow`) | retirer x % de la garantie, la vendre, rembourser x % de la dette | aave_01 : vendre 750 000 $ d'USDe, rembourser 450 000 $ d'USDC, garder 300 000 $ en cash |
+
+Dans les deux cas, **le coût se calcule sur ce qu'on vend**, c'est-à-dire x × la valeur brute (et non la valeur nette). Rembourser de l'USDC avec de l'USDC ne coûte rien en impact de prix.
+
+**Le ratio d'endettement ne bouge pas** quand on vend la même proportion de garantie et de dette. Pour aave_01, 1,8/3,0 = 0,6 avant, et 1,35/2,25 = 0,6 après une sortie de 25 %. La position devient juste plus petite.
+
+**Résultats sur les 4 positions** (scénario depeg) :
+
+| Position | Perte si crise | Coût sortie 25 % | Coût sortie 100 % | Rendement perdu (100 %, 7 j) | p\* 25 / 50 / 75 / 100 % |
+|---|---|---|---|---|---|
+| ethena_susde_01 | 100 000 | 1 787 | 21 842 | 2 685 | 9,8 / 14,7 / 19,6 / 24,5 % |
+| aave_01 | 150 000 | 2 660 | 32 743 | 978 | 7,8 / 12,7 / 17,6 / 22,5 % |
+| morpho_01 | 150 000 | 3 592 | 47 375 | **−2 110** | 8,2 / 15,5 / 22,9 / 30,2 % |
+| pendle_01 | 123 321 | 3 646 | 50 823 | 3 452 | 14,6 / 24,5 / 34,3 / 44,0 % |
+
+Comment lire ce tableau :
+- Probabilité `null` dans les fixtures → les 4 positions sortent **INSUFFICIENT_DATA**. C'est normal et voulu.
+- **pendle_01 est la plus chère à protéger** : sa pool est 4 fois moins profonde (80 M$ contre 300 M$), et il faut au moins 14,6 % de risque pour que la moindre vente vaille le coup.
+- **aave_01 est la moins chère** : la pool USDe est la plus profonde.
+- **morpho_01 a un rendement perdu négatif.** Sa garantie est notée à 0 % de rendement, alors qu'on paie 5,5 % sur la dette. Garder la position *coûte* donc 110 000 $/an : la vendre fait économiser des intérêts, d'où le signe moins. Ce n'est pas un coût négatif mais un gain. Voir le point d'attention n°4 plus bas.
+
+**Exemple si l'utilisateur donnait p = 10 %** (démonstration, pas dans `contracts/`) :
+
+| Position | Recommandation |
+|---|---|
+| ethena_susde_01 | REDUCE 25 % |
+| aave_01 | REDUCE 25 % |
+| morpho_01 | REDUCE 25 % |
+| pendle_01 | STAY (10 % < 14,6 %) |
+
+**Résumé du portefeuille (`portfolio_summary`)** : il additionne les choix position par position, sans chercher la meilleure combinaison globale (section 4.2).
+- `stay_conditional_loss_usd` = 523 320,57 $ = perte totale si on ne fait rien. C'est le même chiffre que P2.
+- `chosen_actions` = somme des coûts, rendements perdus et pertes restantes des options choisies. Il vaut `null` si une position est INSUFFICIENT_DATA : on n'additionne pas des choix qui n'existent pas. Avec p = 10 %, on obtient 8 039 $ de coûts pour faire passer la perte possible de 523 321 $ à 423 321 $.
+- **Avertissement de venue partagée** : ethena_susde_01 et morpho_01 vendent tous les deux du sUSDe dans la même pool. Calculés séparément, leurs coûts **sous-estiment** une vente simultanée : la 2ᵉ vente arrive dans une pool déjà « creusée » par la 1ʳᵉ. Le résumé le signale.
+
+**Ce résumé n'a pas de schéma dans `contracts/`.** C'est une sortie interne de P3, destinée à l'API et à P4. Si P4 veut l'utiliser, il faudra ajouter un schéma (P3 est propriétaire de `decision_result`) via une PR d'équipe.
+
+Commit : voir l'historique plus bas.
+
 ---
 
 ## 4. Organisation du code actuel
@@ -226,6 +272,8 @@ backend/execution/
 | `decide(...)` | Le cœur du calcul : 5 options, coûts, p\*, J(x), recommandation |
 | `load_contracts(...)` | Lit les fichiers JSON des contrats |
 | `decide_position(...)` | **Point d'entrée** : contrats JSON → `decision_result` au format 11.8 |
+| `portfolio_summary(...)` | Additionne les choix des positions et signale les venues partagées |
+| `decide_portfolio(...)` | Décision des 4 positions + résumé |
 
 **Règles respectées :**
 - Tous les calculs sont en `Decimal` (pas de `float`), pour éviter les erreurs d'arrondi du type 0,1 + 0,2 = 0,30000000000000004.
@@ -248,8 +296,12 @@ python3 -m pytest backend/execution -v
 | `test_aave_01_matches_golden_fixture_field_by_field` | La sortie aave_01 est identique au corrigé 11.8 (champs, ordre, valeurs) |
 | `test_inconsistent_request_ids_are_rejected` | Des fichiers d'entrée de simulations différentes sont refusés |
 | `test_unknown_position_is_rejected` | Une position inconnue lève une erreur claire |
+| `test_all_four_positions_get_five_options` | Les 4 positions ont bien leurs 5 options 0 à 100 % |
+| `test_borrow_position_sells_collateral_not_net_equity` | Position avec dette : on paie les frais sur la garantie vendue (750 $), pas sur la valeur nette |
+| `test_summary_stay_loss_matches_risk_result_total` | La perte totale « on ne fait rien » = total de P2 ; pas de total des choix sans probabilité |
+| `test_summary_adds_chosen_actions_and_flags_shared_venue` | Avec p = 10 %, le total = somme des choix, et la venue partagée sUSDe est signalée |
 
-Dernier résultat : **3 passed**.
+Dernier résultat : **7 passed**.
 
 On peut aussi lancer `python3 backend/execution/decision.py` : le script affiche « IDENTIQUE » puis le JSON complet.
 
@@ -258,6 +310,8 @@ On peut aussi lancer `python3 backend/execution/decision.py` : le script affiche
 ## 6. Historique git (branche `feat/p3`)
 
 ```
+(étape 3) P3: run decisions on all four positions + portfolio summary  ← étape 3
+fdad924  P3: add step-by-step journal (steps 0-2)
 eea69a3  P3: decide_position reads the real contract files      ← étape 2
 c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bis
 9f9e5dd  P3: add initial decision engine to backend/execution     ← étape 1
@@ -273,6 +327,7 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 - **Branches des coéquipiers** : `feat/risk-engine` (P2) et `feat/frontend` (P4) existent, avec un « live risk engine ». À l'intégration, il faudra vérifier que leur `risk_result` a bien le format que P3 lit.
 - **Perte manquante** : on lève une erreur pour l'instant. On pourra plus tard renvoyer un `INSUFFICIENT_DATA` propre si P4 préfère.
 - **Le proxy surestime** probablement l'impact de prix sur les pools de stablecoins (Curve). C'est à signaler dans le README final.
+- **Rendement de la garantie morpho_01 (à remonter à P1)** : le snapshot met `collateral_supply_apy = 0.00`, parce que Morpho ne verse pas d'intérêts sur la garantie. Mais la garantie est du **sUSDe**, dont la valeur en USDe monte d'elle-même d'environ 7 %/an (c'est le `token_apy` d'ethena_susde_01). Avec 0 %, le carry de morpho_01 vaut −110 000 $/an. En comptant les 7 %, il vaudrait environ +100 000 $/an (3 M$ × 7 % − 2 M$ × 5,5 %). Les p\* de morpho_01 seraient alors plus élevés. Proposition : que P1 ajoute ce rendement « intrinsèque » au snapshot. P3 n'y touche pas.
 
 ---
 
@@ -280,7 +335,6 @@ c50ac6c  P3: honest quote_status and golden reason text           ← étape 1bi
 
 | Étape | Contenu |
 |---|---|
-| 3 | Faire tourner les 4 positions ; différence token/PT et position avec dette ; résumé du portefeuille |
 | 4 | Estimateur de coût de sortie interchangeable (vrai prix → réserves de pool → proxy) |
 | 5 | Règles de recommandation complètes ; vérification avec le scénario liquidité |
 | 6 | Tests pytest complets (section 16 P3) |

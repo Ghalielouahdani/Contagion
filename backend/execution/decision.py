@@ -52,7 +52,10 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
     gas = D(venue["gas_usd"])
     quote_status = "proxy"                           # méthode réellement utilisée : seul le proxy existe (étape 4)
 
-    gross = D(position["gross_value_usd"])           # on vend x × la garantie (ou le token)
+    # Ce qu'on vend, au prix d'avant le choc (section 7.2) :
+    #  - token / PT : x × quantité × prix = x × valeur brute ;
+    #  - avec dette : x × garantie (la dette x × debt est remboursée en USDC, sans impact de prix).
+    gross = D(position["gross_value_usd"])
     loss0 = D(conditional_loss_usd)
     carry_h = annual_carry(position, snapshot["yields"][pid]) * D(horizon_days) / D(365)
     p = D(probability) if probability is not None else None
@@ -162,6 +165,60 @@ def decide_position(portfolio, snapshot, risk_result, scenario_request, position
            "position_id": position_id,
            "scenario_id": scenario["scenario_id"]}
     return {"schema_version": out.pop("schema_version"), **ids, **out}   # ordre des champs de 11.8
+
+
+def portfolio_summary(portfolio, decisions):
+    """Additionne les choix position par position, sans optimisation jointe (section 4.2).
+
+    Les totaux sont la somme des montants affichés par position. Ils valent null tant
+    qu'une position est INSUFFICIENT_DATA : on n'additionne pas des choix qui n'existent pas.
+    """
+    rows, warnings = [], []
+    stay_loss = D(0)
+    chosen = {"estimated_exit_cost_usd": D(0), "foregone_yield_usd": D(0), "residual_stress_loss_usd": D(0)}
+    undecided = []
+    for d in decisions:
+        by_x = {D(o["exit_fraction"]): o for o in d["exit_options"]}
+        stay_loss += D(by_x[D(0)]["residual_stress_loss_usd"])
+        x = d["recommended_exit_fraction"]
+        if x is None:
+            undecided.append(d["position_id"])
+        else:
+            for key in chosen:
+                chosen[key] += D(by_x[D(x)][key])
+        rows.append({"position_id": d["position_id"], "recommendation": d["recommendation"],
+                     "recommended_exit_fraction": x})
+
+    if undecided:
+        warnings.append(f"No portfolio total for the chosen actions: {', '.join(undecided)} "
+                        f"returned INSUFFICIENT_DATA.")
+
+    venues = {}
+    for p in portfolio["positions"]:
+        venues.setdefault(p["exit_venue_id"], []).append(p["position_id"])
+    for venue_id, pids in venues.items():
+        if len(pids) > 1:
+            warnings.append(f"{' and '.join(pids)} share {venue_id}: exit costs are standalone and understate "
+                            f"a simultaneous exit (joint haircut, section 7.2).")
+
+    first = decisions[0]
+    return {
+        "portfolio_id": first["portfolio_id"],
+        "simulation_id": first["simulation_id"],
+        "scenario_id": first["scenario_id"],
+        "method": "sum_of_standalone_decisions",
+        "positions": rows,
+        "stay_conditional_loss_usd": usd(stay_loss),
+        "chosen_actions": None if undecided else {k: usd(v) for k, v in chosen.items()},
+        "warnings": warnings,
+    }
+
+
+def decide_portfolio(portfolio, snapshot, risk_result, scenario_request):
+    """Une décision par position du portefeuille + le résumé additif."""
+    decisions = [decide_position(portfolio, snapshot, risk_result, scenario_request, p["position_id"])
+                 for p in portfolio["positions"]]
+    return {"decisions": decisions, "summary": portfolio_summary(portfolio, decisions)}
 
 
 if __name__ == "__main__":
