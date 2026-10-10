@@ -204,13 +204,21 @@ async function loadFixtureAppData(scenario: ScenarioKind, inputs: ScenarioInputs
   const target = Number(live.value(inputs));
   const point = points.reduce((best, p) => (Math.abs(Number(p.value) - target) < Math.abs(Number(best.value) - target) ? p : best));
   const base = buildFixtureAppData(scenario, set, point.decisions);
-  const risk = withContagion(point.risk_result, base.risk);
   // Offline, only the first parameter is precomputed; say which other inputs are held at the preset.
   const preset = baseScenarioRequest(scenario, set);
+  const presetParams = preset.scenario.parameters as Record<string, unknown>;
   const ignoredInputs = others
-    .filter(({ param, value }) => String((preset.scenario.parameters as Record<string, unknown>)[param]) !== value(inputs))
+    .filter(({ param, value }) => String(presetParams[param]) !== value(inputs))
     .map(({ param }) => param);
   if (inputs.horizonDays !== preset.scenario.horizon_days) ignoredInputs.push("horizon_days");
+  // At the preset values the stored result is the same run, with its calculation trace and contagion
+  // paths; surface points carry neither, so use them only once the slider moves away from the preset.
+  const atPreset =
+    Number(point.value) === Number(presetParams[live.param]) &&
+    Number(point.value) === target &&
+    ignoredInputs.length === 0 &&
+    !base.health.mockedFixtures.includes(fileByKind.risk(scenario));
+  const risk = atPreset ? base.risk : withContagion(point.risk_result, base.risk);
   const analytics = fixtureAnalytics(scenario, inputs, set);
   return {
     ...base,
