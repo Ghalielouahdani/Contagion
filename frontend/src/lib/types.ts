@@ -268,9 +268,18 @@ export type AppData = {
   analyticsIsPreset: boolean;
 };
 
+export type ScenarioProposal = {
+  scenario: ScenarioKind;
+  inputs: ScenarioInputs;
+  sourceText: string;
+  parameters: Array<{ label: string; value: string; source: "Your text" | "Portfolio preset" }>;
+  engineScenario?: { scenario_id: ScenarioKind; horizon_days: number; parameters: Record<string, unknown> };
+};
+
 export type DashboardAction =
   | { type: "navigate_view"; view: View }
   | { type: "select_position"; positionId: string; view?: View }
+  | { type: "prepare_scenario"; scenario: ScenarioKind; inputs: ScenarioInputs }
   | { type: "set_scenario"; scenario: ScenarioKind }
   | { type: "set_shock"; shockPct: number }
   | { type: "set_horizon"; days: number }
@@ -288,6 +297,7 @@ export type AssistantMessage = {
   inputMode?: "text" | "voice";
   caption?: string;
   action?: DashboardAction;
+  proposal?: ScenarioProposal;
 };
 
 export type AssistantRequest = {
@@ -297,10 +307,13 @@ export type AssistantRequest = {
   selectedPosition: string;
   inspectedExitFraction?: string | null;
   scenarioInputs: ScenarioInputs;
-  data: AppData;
+  data?: AppData;
+  fixtureSet: string;
+  graph: DependencyGraph;
 };
 
 export type AssistantResponse = {
   message: string;
+  proposal?: ScenarioProposal;
   actions?: DashboardAction[];
 };

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "check:fixtures": "node scripts/check-fixtures.mjs"
+    "check:fixtures": "node scripts/check-fixtures.mjs",
+    "check:assistant": "node scripts/check-assistant.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",

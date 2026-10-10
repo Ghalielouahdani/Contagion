@@ -234,3 +234,21 @@ Les entrées sont dans [contracts/fixtures/stress_portfolio_01](../contracts/fix
 ```
 
 L'API `/simulate` produit le résultat et les traces ; `/analyze` produit les comparaisons analytiques, courbes, sensibilités et incertitudes. Les fichiers enregistrés sont des sorties du moteur, pas des nombres inventés dans le front. L'architecture et l'historique sont décrits dans [risk_engine_plan.md](risk_engine_plan.md).
+
+## Préparer un scénario dans le chatbot
+
+Le chatbot est disponible dès que le portefeuille initial est chargé, avant la première simulation. Saisir une description en français ou en anglais, par exemple :
+
+- `USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours` → crise combinée.
+- `Crée une cascade avec USDe -8 %, liquidité -60 %, sur 7 jours` → cascade.
+- `Rendement sUSDe -5 %, emprunt 65 % sur 30 jours` → compression du carry.
+- `Gouvernance : baisse des seuils de 3 points, USDe -15 %` → changement de gouvernance.
+- `Défaillance du backing Ethena : perte 20 % sur 7 jours` → choc de dépendance.
+
+La réponse est une proposition, avec chaque paramètre marqué « Your text » ou « Portfolio preset ». Le détail JSON montre le scénario exact prévu pour le moteur, y compris les autres paramètres du préréglage. Cliquer **Use in Scenario Lab** charge les contrôles ; cliquer ensuite **Run scenario** déclenche le calcul habituel. Le chatbot ne produit pas de chiffres de perte pour une proposition et ne simule pas lors de sa préparation.
+
+Cette version utilise un interpréteur local contraint ([scenarioDraft.ts](../frontend/src/actions/scenarioDraft.ts)), sans modèle de langage ni clé API. Elle reconnaît les sept mécanismes existants, leurs contrôles exposés et un horizon de 1 à 30 jours. Elle refuse une quantité hors limites, un pourcentage non attribuable, un nœud absent ou un choc d'actif non pris en charge ; elle ne construit pas un huitième modèle à partir d'un récit libre. Les valeurs sont à écrire après leur paramètre, avec une unité (% ou points), et l'horizon en jours. Les paramètres non exposés dans les contrôles, comme le beta ou l'absorption de l'arbitrage, restent au préréglage ; tenter de les modifier dans le texte est refusé. Pour exécuter exactement les paramètres soumis, utiliser le mode API : le mode enregistré garde les limites de sa surface et affiche les paramètres ignorés.
+
+Après un run, les questions sur le HF/LTV ou les positions continuent de lire les résultats présents. Mentionner USDe dans une question ne relance plus une simulation.
+
+Vérification : `cd frontend && npm run check:assistant`.

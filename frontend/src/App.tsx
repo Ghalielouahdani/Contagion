@@ -365,6 +365,17 @@ function App() {
   }
 
   function executeAction(action: DashboardAction) {
+    if (action.type === "prepare_scenario") {
+      if (!availableScenarios(fixtureSet).includes(action.scenario)) return;
+      const inputs = { ...action.inputs };
+      draft.current = { scenario: action.scenario, inputs };
+      setScenario(action.scenario);
+      setShockPct(inputs.shockPct);
+      setHorizonDays(inputs.horizonDays);
+      setLiquidityLossPct(inputs.liquidityLossPct);
+      setExtraInputs({ ltShiftPct: inputs.ltShiftPct, susdeApyPct: inputs.susdeApyPct, borrowApyPct: inputs.borrowApyPct, nodeId: inputs.nodeId, nodeLossPct: inputs.nodeLossPct });
+      setView("scenario");
+    }
     if (action.type === "navigate_view") setView(action.view);
     if (action.type === "select_position") {
       setSelectedPosition(action.positionId);
@@ -570,17 +581,20 @@ function App() {
         data={data}
         executeAction={executeAction}
       />
-      {data ? (
+      {baseline ? (
         <AssistantDock
+          key={fixtureSet}
+          fixtureSet={fixtureSet}
+          graph={baseline.graph}
           open={assistantOpen}
           setOpen={setAssistantOpen}
           stateData={data}
           mode={mode}
           view={view}
-          scenario={submitted.scenario}
+          scenario={scenario}
           selectedPosition={selectedPosition}
           inspectedExitFraction={inspectedExitFraction}
-          scenarioInputs={submitted.inputs}
+          scenarioInputs={scenarioInputs}
           executeAction={executeAction}
         />
       ) : null}
@@ -1724,6 +1738,8 @@ function CommandPalette({
 }
 
 function AssistantDock({
+  fixtureSet,
+  graph,
   open,
   setOpen,
   stateData,
@@ -1737,7 +1753,9 @@ function AssistantDock({
 }: {
   open: boolean;
   setOpen: (open: boolean) => void;
-  stateData: AppData;
+  stateData?: AppData;
+  fixtureSet: string;
+  graph: AppData["graph"];
   mode: DataMode;
   view: View;
   scenario: ScenarioKind;
@@ -1750,7 +1768,7 @@ function AssistantDock({
     {
       id: "assistant-welcome",
       role: "assistant",
-      content: "Ask about the selected position, dependency evidence, scenario loss, or an exit fraction. I only use the results on screen.",
+      content: "Describe a stress in French or English. I prepare an editable scenario for the risk engine. Example: USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours. Nothing runs until you click Run scenario. After a run, I can explain visible results.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -1778,7 +1796,7 @@ function AssistantDock({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
       if (event.key !== "Tab" || !panelRef.current) return;
-      const focusables = Array.from(panelRef.current.querySelectorAll<HTMLElement>("button, input, textarea, [tabindex]:not([tabindex='-1'])")).filter(
+      const focusables = Array.from(panelRef.current.querySelectorAll<HTMLElement>("button, input, textarea, select, summary, [tabindex]:not([tabindex='-1'])")).filter(
         (element) => !element.hasAttribute("disabled"),
       );
       const firstFocusable = focusables[0];
@@ -1833,6 +1851,8 @@ function AssistantDock({
           inspectedExitFraction,
           scenarioInputs,
           data: stateData,
+          fixtureSet,
+          graph,
         },
         mode,
       );
@@ -1840,6 +1860,7 @@ function AssistantDock({
         id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
+        proposal: response.proposal,
         inputMode,
       };
       setMessages((current) => [...current, assistantMessage]);
@@ -2011,16 +2032,38 @@ function AssistantDock({
             <header className="assistant-header">
               <div>
                 <p className="eyebrow">Assistant</p>
-                <h2>Ask from visible data</h2>
+                <h2>Describe your stress</h2>
               </div>
               <button className="icon-button" onClick={() => setOpen(false)} aria-label="Close assistant">
                 <X size={15} />
               </button>
             </header>
             <div className="assistant-messages" aria-live="polite">
+              <div className="assistant-examples" aria-label="Scenario prompt examples">
+                {[
+                  ["Depeg + liquidity", "USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours"],
+                  ["Cascade", "Crée une cascade avec USDe -8 %, liquidité -60 %, sur 7 jours"],
+                  ["Carry squeeze", "Rendement sUSDe 0 %, emprunt 60 % sur 30 jours"],
+                ].map(([label, prompt]) => <button key={label} onClick={() => setInput(prompt)}>{label}</button>)}
+              </div>
               {messages.map((message) => (
                 <div className="assistant-message" data-role={message.role} key={message.id}>
                   <p>{message.content}</p>
+                  {message.proposal ? (
+                    <div className="assistant-scenario-proposal">
+                      <strong>{labelize(message.proposal.scenario)}</strong>
+                      <table><thead><tr><th>Parameter</th><th>Value</th><th>Source</th></tr></thead>
+                        <tbody>{message.proposal.parameters.map(parameter => <tr key={parameter.label}><td>{parameter.label}</td><td>{parameter.value}</td><td>{parameter.source}</td></tr>)}</tbody>
+                      </table>
+                      <small>Other engine inputs retain the portfolio preset. Local text interpreter; no language model connected.</small>
+                      <details><summary>Exact scenario sent to the engine</summary><pre>{JSON.stringify(message.proposal.engineScenario, null, 2)}</pre></details>
+                      <button className="primary-button" onClick={() => {
+                        const proposal = message.proposal!;
+                        executeAction({ type: "prepare_scenario", scenario: proposal.scenario, inputs: proposal.inputs });
+                        setOpen(false);
+                      }}>Use in Scenario Lab</button>
+                    </div>
+                  ) : null}
                   {message.caption && message.role === "assistant" ? <small>{message.caption}</small> : null}
                 </div>
               ))}
@@ -2049,8 +2092,8 @@ function AssistantDock({
               <button type="button" className="icon-button" onClick={listening ? stopListening : startListening} aria-label={listening ? "Stop listening" : "Start voice input"}>
                 {listening ? <MicOff size={15} /> : <Mic size={15} />}
               </button>
-              <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask about Aave, exit cost, or the graph" />
-              <button type="submit" className="icon-button" aria-label="Send message">
+              <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="USDe −10%, liquidity −80%, 7 days" />
+              <button type="submit" className="icon-button" aria-label="Send message" disabled={assistantState === "thinking"}>
                 <Send size={15} />
               </button>
               <button

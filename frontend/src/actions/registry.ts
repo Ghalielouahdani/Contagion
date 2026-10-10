@@ -13,6 +13,7 @@ export const ACTION_SCHEMA = [
   "navigate_view",
   "select_position",
   "set_scenario",
+  "prepare_scenario",
   "set_shock",
   "set_horizon",
   "set_liquidity_loss",

@@ -1,3 +1,4 @@
+import { proposeScenario } from "../actions/scenarioDraft";
 import { parseAssistantIntent } from "../actions/assistantIntent";
 import type {
   AppData,
@@ -274,6 +275,14 @@ function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs, set: s
 
 
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
+  const draft = proposeScenario(request.message,
+    kind => ({ ...request.scenarioInputs, ...presetInputs(kind, request.fixtureSet) }),
+    availableScenarios(request.fixtureSet), request.graph.nodes.map(node => node.id));
+  if (draft) {
+    if (draft.proposal) draft.proposal.engineScenario = buildScenarioRequest(draft.proposal.scenario, draft.proposal.inputs, request.fixtureSet).scenario;
+    return draft;
+  }
+  if (!request.data) return { message: "Describe a stress to prepare a scenario, for example: USDe falls 10%, liquidity falls 80%, over 7 days. Run a scenario before asking about losses or liquidation results.", actions: [] };
   if (mode === "api") {
     try {
       return await requestJson<AssistantResponse>("/api/v1/assistant", {
@@ -297,7 +306,7 @@ export async function postAssistantMessage(request: AssistantRequest, mode: Data
 
 function fixtureAssistantResponse(request: AssistantRequest): AssistantResponse {
   // The assistant answers from the results on screen (request.data), never from stored presets.
-  return parseAssistantIntent(request);
+  return parseAssistantIntent({ ...request, data: request.data! });
 }
 
 function buildFixtureAppData(scenario: ScenarioKind, set: string, decisions: Record<string, DecisionResult>): AppData {

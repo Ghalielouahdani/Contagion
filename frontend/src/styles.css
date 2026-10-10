@@ -1263,3 +1263,12 @@ tbody tr[data-highlighted="true"] {
   opacity: 1;
   visibility: visible;
 }
+
+.assistant-scenario-proposal { display: grid; gap: 12px; margin-top: 14px; }
+.assistant-scenario-proposal table { width: 100%; font-size: var(--np-size-0); border-collapse: collapse; }
+.assistant-scenario-proposal th, .assistant-scenario-proposal td { padding: 6px; text-align: left; border-bottom: 1px solid var(--np-line); }
+.assistant-scenario-proposal pre { max-width: 100%; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; }
+.assistant-scenario-proposal summary { cursor: pointer; }
+
+.assistant-examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.assistant-examples button { padding: 6px 8px; border: 1px solid var(--np-line); border-radius: var(--np-radius); background: var(--np-page); color: var(--np-strong); font-size: var(--np-size-0); cursor: pointer; }
