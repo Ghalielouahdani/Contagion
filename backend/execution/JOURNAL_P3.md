@@ -748,11 +748,33 @@ Les tests forcent une clé vide : aucun appel réseau, même si `.env` contient 
 
 Suite complète du repo : **452 tests verts**.
 
+### Étape 12 bis : premier vrai essai avec Gemini et corrections
+
+**L'essai réel** (crise combinée, clé valide) a marché du premier coup techniquement : réponse en 5 secondes, schéma respecté, aucun chiffre inventé. Mais trois défauts de **raisonnement** sont apparus :
+
+| Défaut observé | Correction |
+|---|---|
+| Les 3 stratégies de l'IA recopiaient exactement les candidats du code | Consigne : au moins une stratégie différente. Le code marque chaque stratégie (`matches_candidate`) et **relance une fois** avec une remarque si les 3 sont des copies ; si elle recopie encore, c'est signalé |
+| Le texte parlait de « changements de taux » dans un scénario sans taux, et disait qu'un prêt ne pouvait pas être retiré alors que le retrait était possible | Contrôles de cohérence (`consistency_warnings`) contre les données envoyées |
+| L'IA recommandait une stratégie perdant environ 450 000 $ de plus que la meilleure, pour « garder du potentiel de hausse », alors que le scénario est certain | Consigne : l'objectif est la perte la plus faible, autre choix seulement avec une raison tirée des données. Le code signale l'écart en dollars (calculé par le moteur) sans remplacer le choix |
+
+**Résultat après correction** (vrai appel) : recommandation = « Minimum Loss Execution » (200 047 $), une stratégie nouvelle (« Partial Depeg Defense », 535 272 $), aucune incohérence, aucun chiffre inventé. La relance porte le temps de réponse à environ 12 secondes.
+
+**Leçon :** les garde-fous sur les chiffres ne suffisent pas. Une IA peut respecter tous les chiffres et quand même mal raisonner (recommander plus cher, recopier). Il faut aussi vérifier ses **conclusions** contre l'objectif.
+
+**Tests ajoutés** (`test_advisor.py`, 14 tests au total) :
+- relance quand tout est recopié ;
+- signalement si elle recopie encore, et pas de relance si la réponse est déjà nouvelle ;
+- retrait faussement « impossible » signalé ;
+- taux signalés seulement si le scénario n'en a pas ;
+- écart de recommandation signalé, et absent si la meilleure est recommandée.
+
+Suite complète du repo : **459 tests verts**.
+
 ### Suite possible
 
 | Qui | Action |
 |---|---|
-| Toi | Mettre une clé Gemini valide dans `.env`, puis relancer un vrai appel |
 | P4 | Afficher le mode crise dans le dashboard (route `/api/v1/crisis-advice`) |
 | P1 | Ajouter le prix de l'USDT au snapshot et le PT-sUSDe au registre, pour élargir les couvertures chiffrables |
 | Équipe | Fusionner les étapes 11 et 12 sur `main` par une PR |

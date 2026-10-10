@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from backend.execution.advisor import OUTPUT_SCHEMA, SYSTEM, GeminiClient, advise
-from backend.execution.crisis import CrisisModel
+from backend.execution.crisis import CrisisModel, min_loss_choices
 
 FIXTURES = Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / "stress_portfolio_01"
 
@@ -117,3 +117,90 @@ def test_rejected_api_key_gives_a_clear_error(monkeypatch):
 def test_missing_api_key_gives_a_clear_error_without_network():
     out = advise(*inputs(), llm=GeminiClient(api_key=""))
     assert out["advice_error"] == {"status": 503, "message": "AI advisor requires GEMINI_API_KEY on the backend."}
+
+
+# --- Nouveauté et cohérence du discours ---
+
+class SequenceLLM:
+    def __init__(self, *replies):
+        self.replies, self.calls = list(replies), []
+
+    def __call__(self, system, context, schema):
+        self.calls.append(context)
+        return copy.deepcopy(self.replies[min(len(self.calls), len(self.replies)) - 1])
+
+
+def copied_candidates(suffix="_combined"):
+    """Réponse qui recopie trois stratégies calculées par le code."""
+    from backend.execution.crisis import crisis_plan
+    plan = crisis_plan(*inputs(suffix), include_strategies=True)
+    picks = [("early", "min_loss"), ("early", "protect_liquidations"), ("late", "min_loss")]
+    strategies = []
+    for timing, sid in picks:
+        s = next(x for x in plan["strategies"][timing] if x["strategy_id"] == sid)
+        actions = [{"position_id": pid, "action": c["action"], "fraction": c["fraction"] or "none", "rationale": "Copied."}
+                   for pid, c in s["choices"].items() if c["action"] != "hold"]
+        strategies.append({"name": sid, "timing": timing, "actions": actions, "rationale": "Copied.", "pros": [], "cons": []})
+    return answer(strategies=strategies)
+
+
+def test_copying_all_candidates_triggers_one_retry_with_feedback():
+    llm = SequenceLLM(copied_candidates(), answer())
+    out = advise(*inputs(), llm=llm)
+    assert len(llm.calls) == 2 and "feedback" in llm.calls[1] and "feedback" not in llm.calls[0]
+    advice = out["advice"]
+    assert advice["retried_for_novelty"] is True
+    assert any(s["matches_candidate"] is None for s in advice["strategies"])
+    assert "copy computed candidate" not in " ".join(advice["consistency_warnings"])
+
+
+def test_still_copying_after_the_retry_is_flagged_not_rejected():
+    llm = SequenceLLM(copied_candidates(), copied_candidates())
+    advice = advise(*inputs(), llm=llm)["advice"]
+    assert len(llm.calls) == 2
+    assert [s["matches_candidate"] for s in advice["strategies"]] == ["min_loss", "protect_liquidations", "min_loss"]
+    assert "All three AI strategies copy computed candidate strategies." in advice["consistency_warnings"]
+
+
+def test_novel_answer_is_not_retried():
+    llm = SequenceLLM(answer())
+    advice = advise(*inputs(), llm=llm)["advice"]
+    assert len(llm.calls) == 1 and advice["retried_for_novelty"] is False
+
+
+def test_claiming_an_available_exit_is_impossible_is_flagged():
+    wrong = answer(position_assessments=[{"position_id": "lend_susde_01", "situation": "Lender exposed to bad debt.",
+                                          "key_risk": "Inability to withdraw fully without exhausting reserves."}])
+    warnings = advise(*inputs(), llm=FakeLLM(wrong))["advice"]["consistency_warnings"]
+    assert any(w.startswith("lend_susde_01: the AI says the position cannot be exited") for w in warnings)
+
+
+def test_rate_changes_are_flagged_only_when_the_scenario_has_no_rate_parameter():
+    text = "Losses come from the depeg, thinner exit pools and interest rate changes."
+    combined = advise(*inputs(), llm=FakeLLM(answer(scenario_explanation=text)))["advice"]["consistency_warnings"]
+    assert "The explanation mentions rate changes, but this scenario sets no rate parameter." in combined
+    carry_answer = answer(scenario_explanation=text, strategies=[
+        {"name": n, "timing": "early", "rationale": "r", "pros": [], "cons": [],
+         "actions": [{"position_id": "aave_01", "action": "sell", "fraction": f, "rationale": "r"}]}
+        for n, f in (("A", "0.25"), ("B", "0.50"), ("C", "0.75"))])
+    carry = advise(*inputs("_carry"), llm=FakeLLM(carry_answer))["advice"]["consistency_warnings"]
+    assert not any("rate changes" in w for w in carry)
+
+
+def test_recommending_a_costlier_strategy_is_flagged_with_the_gap():
+    costly = answer(recommended_strategy_index=1)          # « Keep core, deleverage Morpho » perd bien plus
+    advice = advise(*inputs(), llm=FakeLLM(costly))["advice"]
+    gap = [w for w in advice["consistency_warnings"] if w.startswith("The recommended strategy loses")]
+    assert gap and "(early)" in gap[0]
+    assert advice["recommended_strategy"] == "Keep core, deleverage Morpho"   # signalé, pas remplacé
+
+
+def test_recommending_the_lowest_loss_strategy_is_not_flagged():
+    model = CrisisModel(*inputs())
+    best = answer(strategies=[
+        {"name": "Min loss", "timing": "early", "rationale": "r", "pros": [], "cons": [],
+         "actions": [{"position_id": pid, "action": c[0], "fraction": c[1] or "none", "rationale": "r"}
+                     for pid, c in min_loss_choices(model, "early").items() if c[0] != "hold"]},
+        *answer()["strategies"][1:]], recommended_strategy_index=0)
+    advice = advise(*inputs(), llm=FakeLLM(best))["advice"]
+    assert not any(w.startswith("The recommended strategy loses") for w in advice["consistency_warnings"])
