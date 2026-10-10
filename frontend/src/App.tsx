@@ -2099,10 +2099,9 @@ function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: 
           <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" />
         </filter>
         <linearGradient id="orb-ink" x1="20%" x2="85%" y1="10%" y2="90%">
-          <stop offset="0%" stopColor="var(--np-accent-periwinkle)" />
-          <stop offset="36%" stopColor="var(--np-accent-lilac)" />
-          <stop offset="70%" stopColor="var(--np-accent-coral)" />
-          <stop offset="100%" stopColor="var(--np-accent-gold)" />
+          <stop offset="0%" stopColor="var(--np-surface)" />
+          <stop offset="42%" stopColor="var(--np-accent)" />
+          <stop offset="100%" stopColor="var(--np-strong)" />
         </linearGradient>
       </defs>
       <motion.path
@@ -2118,11 +2117,11 @@ function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: 
         }}
         transition={{ duration: state === "listening" ? 0.7 : 5.8, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="72" cy="36" r="13" fill="rgba(255,255,255,0.52)" animate={{ opacity: [0.28, 0.62, 0.28], x: [0, -8, 0] }} transition={{ duration: 3.6, repeat: Infinity }} />
+      <motion.circle cx="72" cy="36" r="13" fill="color-mix(in srgb, var(--np-page) 76%, transparent)" animate={{ opacity: [0.24, 0.58, 0.24], x: [0, -8, 0] }} transition={{ duration: 3.6, repeat: Infinity }} />
       <motion.path
         d="M35 67C48 76 72 75 88 61"
         fill="none"
-        stroke="rgba(255,255,255,0.72)"
+        stroke="color-mix(in srgb, var(--np-page) 72%, transparent)"
         strokeLinecap="round"
         strokeWidth="3"
         animate={{ pathLength: [0.25, 1, 0.25], opacity: [0.2, shimmer, 0.2] }}
