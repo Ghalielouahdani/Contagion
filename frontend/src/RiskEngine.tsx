@@ -18,6 +18,8 @@ import type { AppData, RiskPosition } from "./lib/types";
 import "./risk-engine.css";
 import { AssumptionRegister, PositionSheets } from "./RiskPositions";
 import { RiskCausalChain } from "./RiskCausalChain";
+import { ScenarioStory } from "./ScenarioStory";
+import { COMPONENT_COPY } from "./lib/lossComponents";
 
 type TraceInput = { name: string; value: string | boolean | null; unit: string; source: string };
 type TraceStep = {
@@ -54,17 +56,6 @@ const SOURCE_COPY: Record<string, string> = {
   protocol_rule: "protocol rule",
 };
 const TRUSTED = new Set(["verified", "observed"]);
-const COMPONENT_COPY: Record<string, string> = {
-  market_repricing: "Market repricing",
-  backing_impairment: "Backing loss / rate cut",
-  liquidation_penalty: "Liquidation penalty",
-  execution_haircut: "Execution cost of exiting",
-  negative_carry: "Carry over the horizon",
-  bad_debt: "Bad debt (realised)",
-  undercollateralized_debt: "Underwater debt (not yet realised)",
-  protocol_failure: "Protocol failure",
-  shared_liquidity_penalty: "Shared exit venues (portfolio only)",
-};
 
 const traceOf = (position: RiskPosition) => ((position as unknown as { trace?: TraceStep[] }).trace ?? []);
 
@@ -140,6 +131,8 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
           )) : <span className="muted">No scenario parameter recorded in the trace.</span>}
         </div>
       </section>
+
+      <ScenarioStory key={`story-${risk.simulation_id}`} data={data} />
 
       {data.riskSource === "surface" && data.analyticsIsPreset && analytics ? (
         <p className="engine-banner">

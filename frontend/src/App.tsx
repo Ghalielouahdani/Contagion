@@ -54,6 +54,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
+import { InteractiveLabel } from "./motion/primitives";
 import { GeneratedScenarioCard } from "./RiskScenarioAgent";
 import { Term } from "./Term";
 import {
@@ -116,12 +117,12 @@ declare global {
   }
 }
 
-const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string }> = {
-  portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore" },
-  graph: { label: "Dependency Graph", icon: GitBranch, section: "Explore" },
-  scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run" },
-  engine: { label: "Risk Engine", icon: Calculator, section: "Run" },
-  decision: { label: "Decision Engine", icon: BarChart3, section: "Run" },
+const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string; key: string }> = {
+  portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore", key: "P" },
+  graph: { label: "Dependency Graph", icon: GitBranch, section: "Explore", key: "G" },
+  scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run", key: "L" },
+  engine: { label: "Risk Engine", icon: Calculator, section: "Run", key: "R" },
+  decision: { label: "Decision Engine", icon: BarChart3, section: "Run", key: "D" },
 };
 
 const scenarioCopy: Record<ScenarioKind, { title: string; preset: string; summary: string }> = {
@@ -345,6 +346,11 @@ function App() {
         setCommandOpen((open) => !open);
       }
       if (event.key === "Escape") setCommandOpen(false);
+      // Single-letter view shortcuts, like the reference's [S] / [E]; never while typing or with a modifier.
+      const target = event.target instanceof Element ? event.target : null;
+      if (event.metaKey || event.ctrlKey || event.altKey || target?.closest("input, textarea, select, [contenteditable], dialog")) return;
+      const next = (Object.keys(viewMeta) as View[]).find((v) => viewMeta[v].key === event.key.toUpperCase());
+      if (next) setView(next);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -523,10 +529,9 @@ function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={`${view}-${mode}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2, ease: "easeOut" } }}
+            exit={{ opacity: 0, filter: "blur(8px)", transition: { duration: 0.28, ease: "easeInOut" } }}
           >
             {visibleQuery.isLoading && view !== "scenario" ? <SkeletonView /> : null}
             {visibleQuery.isError ? <ErrorView mode={mode} /> : null}
@@ -696,9 +701,11 @@ function Sidebar({
                   {section.items.map((item) => {
                     const Icon = viewMeta[item].icon;
                     return (
-                      <button key={item} className="nav-item" data-selected={view === item} onClick={() => setView(item)}>
+                      <button key={item} className="nav-item" data-selected={view === item} onClick={() => setView(item)}
+                        aria-keyshortcuts={viewMeta[item].key}>
                         <Icon size={15} />
-                        {viewMeta[item].label}
+                        <InteractiveLabel>{viewMeta[item].label}</InteractiveLabel>
+                        <span className="nav-key">[{viewMeta[item].key}]</span>
                       </button>
                     );
                   })}

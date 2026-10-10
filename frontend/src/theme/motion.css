@@ -1,0 +1,568 @@
+/*
+ * Motion and type layer, taken from nickpyl.space (selected work + home), loaded after styles.css.
+ *
+ * Same font stack (Geist first, then the system face: no webfont, exactly like the reference), the
+ * same square geometry, dashed rules and ink colours, and the same motion vocabulary:
+ * - page-reveal: opacity 0 + blur(8px) -> sharp, 0.62s cubic-bezier(.25,.1,.25,1), staggered 15-100ms;
+ * - page-fade-out: the inverse on the way out, 0.28s ease-in-out;
+ * - interactive labels: spring scale 1.03 on hover (cubic-bezier(.34,1.56,.64,1)), 0.96 on press
+ *   (90ms cubic-bezier(.4,0,1,1)), and a colour sweep through the text (nav-gradient-sweep);
+ * - nav indicator: a 5px square that grows from 0.35 under the selected item, 140ms after the click;
+ * - tags and tooltips open from a 2px slit with clip-path, 0.17s cubic-bezier(.22,.7,.25,1);
+ * - fills: clip-path inset(50%) -> inset(0) and scaleX progress bars, 0.22s cubic-bezier(.22,1,.36,1);
+ * - zoom into a chart through a View Transition (section-preview, 0.44s cubic-bezier(.22,.8,.25,1)).
+ * Everything collapses to instant changes under prefers-reduced-motion.
+ */
+
+:root {
+  --np-font:
+    Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --np-ink: #161616;
+  --np-subtitle: #a0a0a0;
+  --np-caption: #929292;
+  --np-strong: #161616;
+  --np-radius: 0px;
+  --np-radius-pill: 0px;
+  --np-dash-color: #dddddd;
+  --np-dash: repeating-linear-gradient(90deg, var(--np-dash-color) 0 3px, #0000 3px 9px);
+  --np-link-blue: #1800ff;
+  --np-link-green: #00b443;
+  --np-link-magenta: #e838ff;
+  --np-tag-red: #ff3b3b;
+  --np-tag-blue: #32a5ff;
+  --np-cents: #b7b7b7;
+  --np-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --np-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --np-ease-press: cubic-bezier(0.4, 0, 1, 1);
+  --np-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --np-ease-reveal: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --np-ease-tip: cubic-bezier(0.22, 0.7, 0.25, 1);
+  --np-ease-swipe: cubic-bezier(0.16, 1, 0.3, 1);
+  --np-ease-view: cubic-bezier(0.22, 0.8, 0.25, 1);
+  --np-shadow: inset 0 0 0 1px #f0f0f0;
+  --np-shadow-hover: inset 0 0 0 1px #dcdcdc;
+}
+
+:root[data-theme="dark"] {
+  --np-ink: #f2f2f2;
+  --np-strong: #f2f2f2;
+  --np-subtitle: #7a7a7a;
+  --np-caption: #6e6e6e;
+  --np-dash-color: rgba(255, 255, 255, 0.2);
+  --np-cents: #5c5c5c;
+  --np-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --np-shadow-hover: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Keyframes, verbatim from the reference -------------------------------------------------- */
+@keyframes page-reveal {
+  from { opacity: 0; filter: blur(8px); }
+  /* "none", not blur(0): a lingering filter would make every fixed descendant relative to the panel. */
+  to { opacity: 1; filter: none; }
+}
+
+@keyframes page-fade-out {
+  from { opacity: 1; filter: blur(0); }
+  to { opacity: 0; filter: blur(8px); }
+}
+
+@keyframes preview-text-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes preview-content-in {
+  0% { opacity: 0; filter: blur(8px); }
+  60% { opacity: 0.8; filter: blur(1.5px); }
+  to { opacity: 1; filter: none; }
+}
+
+@keyframes nav-gradient-sweep {
+  from { background-position: 100% 0; filter: blur(0.6px); }
+  to { background-position: 0 0; filter: blur(0); }
+}
+
+@keyframes next-page-scroll-hint {
+  0% { transform: scaleX(0); animation-timing-function: var(--np-ease); }
+  41% { transform: scaleX(var(--next-page-hint, 0.35)); }
+  51% { transform: scaleX(var(--next-page-hint, 0.35)); animation-timing-function: var(--np-ease-standard); }
+  100% { transform: scaleX(0); }
+}
+
+@keyframes tag-open {
+  from { opacity: 0; clip-path: inset(0 calc(50% - 1px)); }
+  to { opacity: 1; clip-path: inset(0); }
+}
+
+/* Type ------------------------------------------------------------------------------------- */
+html,
+body {
+  font-family: var(--np-font);
+}
+
+body {
+  color: var(--np-text);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+h1 {
+  color: var(--np-ink);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  font-size: clamp(32px, 3.6vw, 48px);
+  line-height: 1.02;
+}
+
+h2,
+h3 {
+  color: var(--np-ink);
+  font-weight: 400;
+}
+
+.stat strong,
+.position-card h2 {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.eyebrow {
+  color: var(--np-subtitle);
+  font-weight: 400;
+}
+
+.lead {
+  color: var(--np-ink);
+  line-height: 1.34;
+}
+
+.microcopy {
+  color: var(--np-subtitle);
+  line-height: 1.34;
+}
+
+/* Fuse-style figures: whole dollars in ink, cents greyed. */
+.np-figure {
+  color: var(--np-ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.np-figure .np-cents {
+  color: var(--np-cents);
+}
+
+/* Dashed rules ----------------------------------------------------------------------------- */
+.topbar {
+  padding-bottom: 20px;
+  background: var(--np-dash) 0 100% / 100% 1px no-repeat;
+}
+
+.np-rule {
+  height: 1px;
+  border: 0;
+  background: var(--np-dash) 0 0 / 100% 1px no-repeat;
+}
+
+/* Staggered page reveal: every view remounts on navigation, so its blocks blur in one by one. */
+.topbar > div:first-child > *,
+.content-pane .page-stack > *,
+.content-pane .scenario-layout > *,
+.content-pane .decision-layout > *,
+.content-pane .engine-page > * {
+  animation: page-reveal 0.62s var(--np-ease-reveal) var(--page-reveal-delay, 0s) both;
+}
+
+.topbar > div:first-child > :nth-child(2),
+.content-pane :is(.page-stack, .scenario-layout, .decision-layout, .engine-page) > :nth-child(2) { --page-reveal-delay: 15ms; }
+.topbar > div:first-child > :nth-child(3),
+.content-pane :is(.page-stack, .scenario-layout, .decision-layout, .engine-page) > :nth-child(3) { --page-reveal-delay: 35ms; }
+.topbar > div:first-child > :nth-child(4),
+.content-pane :is(.page-stack, .scenario-layout, .decision-layout, .engine-page) > :nth-child(4) { --page-reveal-delay: 55ms; }
+.content-pane :is(.page-stack, .scenario-layout, .decision-layout, .engine-page) > :nth-child(5) { --page-reveal-delay: 80ms; }
+.content-pane :is(.page-stack, .scenario-layout, .decision-layout, .engine-page) > :nth-child(n + 6) { --page-reveal-delay: 0.1s; }
+
+/* Sidebar navigation: muted headings, text items, a 5px square under the selected one ----- */
+.section-trigger {
+  color: var(--np-muted);
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sidebar-nav {
+  gap: 32px;
+}
+
+.section-menu {
+  gap: 12px;
+  margin-top: 12px;
+  overflow: visible;
+}
+
+.sidebar .nav-item {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0;
+  color: var(--np-ink);
+  white-space: nowrap;
+  transform: none;
+  transition: none;
+}
+
+.sidebar .nav-item svg {
+  display: none;
+}
+
+.sidebar .nav-item::before {
+  content: "";
+  position: absolute;
+  bottom: calc(0.18em + 0.9px);
+  left: -10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 0;
+  background: var(--np-ink);
+  opacity: 0;
+  transform: scale(0.35);
+  transform-origin: center bottom;
+  transition:
+    opacity 180ms ease-in-out,
+    transform 240ms var(--np-ease-standard),
+    left 240ms var(--np-ease);
+  pointer-events: none;
+}
+
+.sidebar .nav-item[data-selected="true"]::before {
+  width: 5px;
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 260ms ease-out 140ms,
+    transform 360ms var(--np-ease) 140ms,
+    left 240ms var(--np-ease);
+}
+
+.sidebar .nav-item:hover,
+.sidebar .nav-item[data-selected="true"] {
+  color: var(--np-ink);
+  transform: none;
+}
+
+.nav-key {
+  color: var(--np-soft);
+}
+
+/* Interactive label: spring scale and a colour sweep through the letters ------------------ */
+.interactive-label {
+  position: relative;
+  display: inline-block;
+  transform-origin: center;
+  transition:
+    transform 360ms var(--np-ease-spring),
+    font-weight 180ms ease;
+}
+
+.interactive-label-gradient {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--np-ink) 0%,
+    var(--np-ink) 33.33%,
+    #c69bc4 40%,
+    #ed705a 45%,
+    #efb94f 50%,
+    #b9c8e8 55%,
+    #5f8fe0 60%,
+    transparent 66.67%,
+    transparent 100%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(0.6px);
+  will-change: background-position, filter;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(a, button):hover > .interactive-label,
+  :is(a, button):focus-visible > .interactive-label {
+    transform: scale(1.03);
+  }
+
+  :is(a, button):hover > .interactive-label > .interactive-label-gradient,
+  :is(a, button):focus-visible > .interactive-label > .interactive-label-gradient {
+    opacity: 1;
+    animation: nav-gradient-sweep 0.85s var(--np-ease-reveal) both;
+  }
+}
+
+:is(a, button):active > .interactive-label {
+  transition: transform 90ms var(--np-ease-press);
+  transform: scale(0.96);
+}
+
+/* Buttons: square, hairline inset, press down then spring back ----------------------------- */
+.mode-toggle,
+.icon-button,
+.mini-tab,
+.filter-chip,
+.run-button,
+.np-button {
+  min-height: 30px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  box-shadow: var(--np-shadow);
+  font-size: 12px;
+  line-height: 1;
+  transform-origin: center;
+  transition:
+    box-shadow 220ms var(--np-ease),
+    color 120ms ease,
+    transform 360ms var(--np-ease-spring);
+}
+
+.mode-toggle:hover,
+.icon-button:hover,
+.mini-tab:hover,
+.filter-chip:hover,
+.np-button:hover {
+  border-color: transparent;
+  box-shadow: var(--np-shadow-hover);
+  color: var(--np-ink);
+}
+
+.filter-chip[data-active="true"],
+.mini-tab[data-selected="true"] {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--np-ink);
+  color: var(--np-ink);
+}
+
+.mode-toggle:active,
+.icon-button:active,
+.mini-tab:active,
+.filter-chip:active,
+.run-button:active,
+.np-button:active,
+.run-card:active,
+.preset-card:active,
+.position-card:active {
+  transition: transform 90ms var(--np-ease-press);
+  transform: scale(0.96);
+}
+
+.run-card:active,
+.preset-card:active,
+.position-card:active {
+  transform: scale(0.985);
+}
+
+/* The black run button fills from the left like the reference's next-page link. */
+.run-button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-color: var(--np-ink);
+  background: var(--np-ink);
+  color: var(--np-page);
+  box-shadow: none;
+}
+
+.run-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #3a3a3a;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 220ms var(--np-ease);
+}
+
+.run-button:hover::before,
+.run-button:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.run-button[data-hinting="true"]::before {
+  animation: next-page-scroll-hint 355ms both;
+}
+
+:root[data-theme="dark"] .run-button::before {
+  background: #d0d0d0;
+}
+
+/* Cards: square, hairline, the border darkens instead of lifting -------------------------- */
+.position-card,
+.preset-card,
+.run-card,
+.visual-panel,
+.table-panel,
+.gauge-panel,
+.graph-stage,
+.inspector-panel,
+.decision-inspector,
+.empty-state,
+.summary-strip,
+.impact-strip {
+  border-radius: 0;
+}
+
+.position-card,
+.preset-card,
+.run-card {
+  transition:
+    border-color 220ms var(--np-ease),
+    box-shadow 220ms var(--np-ease),
+    transform 360ms var(--np-ease-spring);
+}
+
+.position-card:hover,
+.position-card[data-selected="true"],
+.position-card[data-highlighted="true"],
+.preset-card:hover,
+.preset-card[data-selected="true"],
+.run-card:hover {
+  border-color: var(--np-ink);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Tooltips open from a slit (clip-path), like the reference's destination labels ---------- */
+.term-tip {
+  border: 0;
+  border-radius: 0;
+  background: var(--np-ink);
+  color: var(--np-page);
+  box-shadow: none;
+  clip-path: inset(0 calc(50% - 1px));
+  transition:
+    clip-path 0.14s var(--np-ease-standard),
+    opacity 80ms 40ms,
+    visibility 0s 0.14s;
+}
+
+.term-tip[data-open="true"] {
+  clip-path: inset(0);
+  transition:
+    clip-path 0.17s var(--np-ease-tip),
+    opacity 0.1s,
+    visibility 0s;
+}
+
+.chart-tooltip {
+  border: 0;
+  border-radius: 0;
+  background: var(--np-ink);
+  color: var(--np-page);
+  box-shadow: none;
+  animation: tag-open 0.17s var(--np-ease-tip) both;
+}
+
+.chart-tooltip strong {
+  color: var(--np-page);
+}
+
+.np-tag {
+  display: inline-block;
+  padding: 3px 4px;
+  background: var(--np-tag-red);
+  color: #000;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: tag-open 0.17s var(--np-ease-tip) both;
+}
+
+.np-tag[data-tone="blue"] { background: var(--np-tag-blue); }
+.np-tag[data-tone="green"] { background: var(--np-link-green); }
+.np-tag[data-tone="ink"] { background: var(--np-ink); color: var(--np-page); }
+
+/* Zoom into a chart: View Transition, timings from the reference --------------------------- */
+::view-transition-group(section-preview) {
+  z-index: 1;
+  animation-duration: 0.44s;
+  animation-timing-function: var(--np-ease-view);
+  animation-fill-mode: both;
+}
+
+::view-transition-image-pair(section-preview) {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+::view-transition-old(section-preview),
+::view-transition-new(section-preview) {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  animation: none;
+  transition: opacity 0.12s;
+}
+
+::view-transition-old(root) {
+  animation: 90ms ease-out both preview-root-out;
+}
+
+::view-transition-new(root) {
+  animation: 0.2s ease-out 0.16s both preview-root-in;
+}
+
+@keyframes preview-root-out { to { opacity: 0; } }
+@keyframes preview-root-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+
+  .content-pane :is(.page-stack, .scenario-layout, .decision-layout, .engine-page) > *,
+  .topbar > div:first-child > * {
+    filter: none !important;
+    opacity: 1 !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Existing bar charts grow from the left on mount, row after row. */
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.engine-bar {
+  transform-origin: left center;
+  animation: bar-grow 0.9s var(--np-ease) calc(0.15s + var(--bar-i, 0) * 60ms) both;
+}
+
+.engine-bar-row:nth-child(2) .engine-bar { --bar-i: 1; }
+.engine-bar-row:nth-child(3) .engine-bar { --bar-i: 2; }
+.engine-bar-row:nth-child(4) .engine-bar { --bar-i: 3; }
+.engine-bar-row:nth-child(5) .engine-bar { --bar-i: 4; }
+.engine-bar-row:nth-child(n + 6) .engine-bar { --bar-i: 5; }
