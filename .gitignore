@@ -6,3 +6,8 @@ __pycache__/
 .dist/
 node_modules/
 *.egg-info/
+
+# Backend credentials remain local
+.env
+.env.*
+!.env.example

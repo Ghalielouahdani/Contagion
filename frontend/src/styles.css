@@ -1272,3 +1272,17 @@ tbody tr[data-highlighted="true"] {
 
 .assistant-examples { display: flex; flex-wrap: wrap; gap: 6px; }
 .assistant-examples button { padding: 6px 8px; border: 1px solid var(--np-line); border-radius: var(--np-radius); background: var(--np-page); color: var(--np-strong); font-size: var(--np-size-0); cursor: pointer; }
+
+.risk-scenario-agent { margin-bottom: 20px; }
+.risk-scenario-agent form { display: grid; gap: 12px; margin: 16px 0; }
+.risk-scenario-agent label { display: grid; gap: 6px; }
+.risk-scenario-agent textarea { width: 100%; resize: vertical; border: 1px solid var(--np-line); border-radius: var(--np-radius); padding: 12px; background: var(--np-page); color: var(--np-strong); font: inherit; }
+.risk-agent-examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.risk-agent-examples button { padding: 8px 10px; border: 1px solid var(--np-line); border-radius: var(--np-radius); background: var(--np-page); color: var(--np-strong); text-align: left; cursor: pointer; }
+.risk-agent-cards { display: grid; gap: 16px; margin-top: 20px; }
+.risk-agent-card { border: 1px solid var(--np-line); border-radius: var(--np-radius); padding: 16px; display: grid; gap: 12px; overflow-wrap: anywhere; }
+.risk-agent-card ol { margin: 0; padding-left: 22px; }
+.risk-agent-card pre { max-width: 100%; overflow: auto; white-space: pre-wrap; font-size: 11px; }
+.risk-agent-card details { overflow: auto; }
+.risk-agent-card summary { cursor: pointer; }
+.risk-agent-card a { text-decoration: underline; }

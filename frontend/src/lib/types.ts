@@ -268,6 +268,22 @@ export type AppData = {
   analyticsIsPreset: boolean;
 };
 
+export type EngineScenarioRequest = {
+  schema_version: string; request_id: string; portfolio_id: string; graph_id: string; snapshot_id: string;
+  scenario: { scenario_id: ScenarioKind; horizon_days: number; parameters: Record<string, unknown> };
+  assumptions: { probability: string | null; source_type: string };
+};
+export type MarketNewsArticle = { id: string; title: string; summary: string; url: string; published_at: string; source: string };
+export type RiskScenarioProposal = {
+  id: string; title: string; request: EngineScenarioRequest;
+  causalChain: string[]; affectedPositions: string[]; assumptions: string[]; unmodeledRisks: string[];
+  sources: MarketNewsArticle[];
+  parameters: Array<{ name: string; value: unknown; source: string; rationale: string }>;
+};
+export type RiskAgentContext = { portfolioId: string; snapshotId: string; snapshotAsOf: string; newsStatus: string; newsFetchedAt: string | null };
+export type RiskAgentBatch = { proposals: RiskScenarioProposal[]; limitations: string[]; generatedAt: string; model: string; context: RiskAgentContext };
+export type RiskAssistantSeed = { id: string; message: string; count: number };
+
 export type ScenarioProposal = {
   scenario: ScenarioKind;
   inputs: ScenarioInputs;
@@ -298,6 +314,7 @@ export type AssistantMessage = {
   caption?: string;
   action?: DashboardAction;
   proposal?: ScenarioProposal;
+  riskBatch?: RiskAgentBatch;
 };
 
 export type AssistantRequest = {
@@ -310,10 +327,16 @@ export type AssistantRequest = {
   data?: AppData;
   fixtureSet: string;
   graph: DependencyGraph;
+  count?: number;
 };
 
 export type AssistantResponse = {
   message: string;
+  proposals?: RiskScenarioProposal[];
+  limitations?: string[];
+  generatedAt?: string;
+  model?: string;
+  context?: RiskAgentContext;
   proposal?: ScenarioProposal;
   actions?: DashboardAction[];
 };

@@ -54,6 +54,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
+import { RiskScenarioAgent, RiskScenarioCards } from "./RiskScenarioAgent";
 import { Term } from "./Term";
 import {
   availableScenarios,
@@ -63,6 +64,7 @@ import {
   fixtureSets,
   loadAppData,
   loadPortfolioData,
+  inputsFromRequest,
   type PortfolioData,
   postAssistantMessage,
   presetInputs,
@@ -70,6 +72,10 @@ import {
 import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
 import type {
   AppData,
+  EngineScenarioRequest,
+  RiskAgentBatch,
+  RiskScenarioProposal,
+  RiskAssistantSeed,
   AssistantMessage,
   DashboardAction,
   DataMode,
@@ -297,11 +303,14 @@ function App() {
   const [query, setQuery] = useState("");
   const [hasRun, setHasRun] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [riskBatches, setRiskBatches] = useState<RiskAgentBatch[]>([]);
+  const [assistantSeed, setAssistantSeed] = useState<RiskAssistantSeed | null>(null);
+  useEffect(() => { setRiskBatches([]); setAssistantSeed(null); }, [fixtureSet]);
 
   const scenarioInputs: ScenarioInputs = { shockPct, horizonDays, liquidityLossPct, ...extraInputs };
   const draft = useRef({ scenario, inputs: scenarioInputs });
   draft.current = { scenario, inputs: scenarioInputs };
-  const [submitted, setSubmitted] = useState(() => ({
+  const [submitted, setSubmitted] = useState<{ scenario: ScenarioKind; inputs: ScenarioInputs; run: number; customRequest?: EngineScenarioRequest; customTitle?: string }>(() => ({
     scenario: "usde_depeg" as ScenarioKind,
     inputs: { shockPct: 5, horizonDays: 7, liquidityLossPct: 80, ...defaultExtraInputs,
       ...presetInputs("usde_depeg", defaultFixtureSet) } as ScenarioInputs,
@@ -311,7 +320,7 @@ function App() {
     JSON.stringify(scenarioInputs) !== JSON.stringify(submitted.inputs);
   const appQuery = useQuery({
     queryKey: ["app-data", mode, fixtureSet, submitted],
-    queryFn: () => loadAppData(mode, submitted.scenario, submitted.inputs, fixtureSet),
+    queryFn: () => loadAppData(mode, submitted.scenario, submitted.inputs, fixtureSet, submitted.customRequest),
     enabled: hasRun,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -350,6 +359,10 @@ function App() {
   }, [rawData, selectedPosition]);
   // Show the decision of the selected position (the engine computes one per position).
   const data = rawData ? { ...rawData, decision: rawData.decisions[selectedPosition] ?? rawData.decision } : undefined;
+  useEffect(() => {
+    if (view === "engine" && data && submitted.customTitle && !appQuery.isFetching)
+      document.getElementById("generated-stress-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [data?.risk.simulation_id, submitted.run]);
   const selectedRisk = data?.risk.positions.find((position) => position.position_id === selectedPosition) ?? data?.risk.positions[0];
   const selectedPortfolio =
     data?.portfolio.positions.find((position) => position.position_id === selectedPosition) ?? data?.portfolio.positions[0];
@@ -357,11 +370,27 @@ function App() {
   function runScenario() {
     const next = draft.current;
     if (!availableScenarios(fixtureSet).includes(next.scenario)) return;
-    setSubmitted((current) => ({ scenario: next.scenario, inputs: { ...next.inputs }, run: current.run + 1 }));
+    setSubmitted((current) => ({ scenario: next.scenario, inputs: { ...next.inputs }, run: current.run + 1,
+      ...(view === "engine" && !hasPendingChanges && current.customRequest ? { customRequest: current.customRequest, customTitle: current.customTitle } : {}) }));
     setInspectedExitFraction(null);
     setHasRun(true);
     setSelectedEdge(null);
     setView("scenario");
+  }
+
+  function runRiskProposal(proposal: RiskScenarioProposal) {
+    if (mode !== "api" || proposal.request.portfolio_id !== baseline?.portfolio.portfolio_id) return;
+    const kind = proposal.request.scenario.scenario_id;
+    const inputs = inputsFromRequest(proposal.request, { ...scenarioInputs, ...presetInputs(kind, fixtureSet) });
+    draft.current = { scenario: kind, inputs };
+    setScenario(kind); setShockPct(inputs.shockPct); setHorizonDays(inputs.horizonDays); setLiquidityLossPct(inputs.liquidityLossPct);
+    setExtraInputs({ ltShiftPct: inputs.ltShiftPct, susdeApyPct: inputs.susdeApyPct, borrowApyPct: inputs.borrowApyPct, nodeId: inputs.nodeId, nodeLossPct: inputs.nodeLossPct });
+    setSubmitted(current => ({ scenario: kind, inputs, run: current.run + 1, customRequest: proposal.request, customTitle: proposal.title }));
+    setInspectedExitFraction(null); setSelectedEdge(null); setHasRun(true); setView("engine"); setAssistantOpen(false);
+  }
+  function generateRiskScenarios(message: string, count: number) {
+    setAssistantSeed({ id: crypto.randomUUID(), message, count });
+    setAssistantOpen(true);
   }
 
   function executeAction(action: DashboardAction) {
@@ -421,6 +450,7 @@ function App() {
   }
 
   function changeFixtureSet(set: string) {
+    setRiskBatches([]); setAssistantSeed(null);
     setFixtureSet(set);
     setHasRun(false);
     setSelectedEdge(null);
@@ -541,6 +571,13 @@ function App() {
                   {data ? <StressComparison mode={mode} data={data} inputs={submitted.inputs} /> : null}
                   </div>
                 ) : null}
+            {baseline && view === "engine" ? <RiskScenarioAgent mode={mode} batches={riskBatches.filter(batch => batch.context.portfolioId === baseline.portfolio.portfolio_id)}
+              onGenerate={generateRiskScenarios} onRun={runRiskProposal} isRunning={appQuery.isFetching}
+              onApiMode={() => changeMode("api")} /> : null}
+            {view === "engine" && submitted.customTitle && hasRun ? <section id="generated-stress-results" className="visual-panel">
+              <p className="eyebrow">Submitted generated stress case</p><h2>{submitted.customTitle}</h2>
+              <p className="microcopy">{appQuery.isFetching ? "Computing this case…" : appQuery.isError ? "This run failed; no result is available for this case." : "The results below come from the risk engine using the exact submitted parameters."}</p>
+            </section> : null}
             {view === "engine" && !hasRun ? <section className="visual-panel">
               <p className="eyebrow">Prepare → Run → Understand the impact</p>
               <h2>No stress test has been run</h2>
@@ -589,6 +626,9 @@ function App() {
           open={assistantOpen}
           setOpen={setAssistantOpen}
           stateData={data}
+          seed={assistantSeed}
+          onRiskBatch={batch => setRiskBatches(current => [batch, ...current].slice(0, 5))}
+          onRunRiskProposal={runRiskProposal}
           mode={mode}
           view={view}
           scenario={scenario}
@@ -1738,6 +1778,9 @@ function CommandPalette({
 }
 
 function AssistantDock({
+  seed,
+  onRiskBatch,
+  onRunRiskProposal,
   fixtureSet,
   graph,
   open,
@@ -1754,6 +1797,9 @@ function AssistantDock({
   open: boolean;
   setOpen: (open: boolean) => void;
   stateData?: AppData;
+  seed: RiskAssistantSeed | null;
+  onRiskBatch: (batch: RiskAgentBatch) => void;
+  onRunRiskProposal: (proposal: RiskScenarioProposal) => void;
   fixtureSet: string;
   graph: AppData["graph"];
   mode: DataMode;
@@ -1779,6 +1825,13 @@ function AssistantDock({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
   const [amplitude, setAmplitude] = useState(0.12);
+  const lastSeedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (seed && seed.id !== lastSeedRef.current && view === "engine") {
+      lastSeedRef.current = seed.id;
+      void submitMessage(seed.message, "text", seed.count);
+    }
+  }, [seed?.id]);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const recognitionFinalRef = useRef(false);
@@ -1833,7 +1886,7 @@ function AssistantDock({
     };
   }, []);
 
-  async function submitMessage(raw: string, inputMode: AssistantInputMode = "text") {
+  async function submitMessage(raw: string, inputMode: AssistantInputMode = "text", count = 3) {
     const trimmed = raw.trim();
     if (!trimmed) return;
     cancelSpeech();
@@ -1853,14 +1906,21 @@ function AssistantDock({
           data: stateData,
           fixtureSet,
           graph,
+          count,
         },
         mode,
       );
+      const riskBatch: RiskAgentBatch | undefined = response.proposals && response.context && response.generatedAt && response.model ? {
+        proposals: response.proposals, context: response.context, generatedAt: response.generatedAt,
+        model: response.model, limitations: response.limitations ?? [],
+      } : undefined;
+      if (riskBatch) onRiskBatch(riskBatch);
       const assistantMessage: AssistantMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: response.message,
         proposal: response.proposal,
+        riskBatch,
         inputMode,
       };
       setMessages((current) => [...current, assistantMessage]);
@@ -1875,13 +1935,13 @@ function AssistantDock({
       } else {
         setAssistantState("idle");
       }
-    } catch {
+    } catch (error) {
       setMessages((current) => [
         ...current,
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "The assistant could not answer. It runs in the browser from the results on screen; try rephrasing.",
+          content: error instanceof Error ? error.message : "The assistant could not answer. No scenario was generated or applied.",
         },
       ]);
       setAssistantState("idle");
@@ -2032,7 +2092,8 @@ function AssistantDock({
             <header className="assistant-header">
               <div>
                 <p className="eyebrow">Assistant</p>
-                <h2>Describe your stress</h2>
+                <h2>{view === "engine" ? "Market event → portfolio stress" : "Describe your stress"}</h2>
+                {view === "engine" ? <small>Gemini API · event and portfolio exposure context · no automatic simulation</small> : null}
               </div>
               <button className="icon-button" onClick={() => setOpen(false)} aria-label="Close assistant">
                 <X size={15} />
@@ -2049,6 +2110,7 @@ function AssistantDock({
               {messages.map((message) => (
                 <div className="assistant-message" data-role={message.role} key={message.id}>
                   <p>{message.content}</p>
+                  {message.riskBatch ? <RiskScenarioCards batch={message.riskBatch} onRun={onRunRiskProposal} canRun={mode === "api"} /> : null}
                   {message.proposal ? (
                     <div className="assistant-scenario-proposal">
                       <strong>{labelize(message.proposal.scenario)}</strong>
@@ -2067,6 +2129,7 @@ function AssistantDock({
                   {message.caption && message.role === "assistant" ? <small>{message.caption}</small> : null}
                 </div>
               ))}
+              {assistantState === "thinking" ? <p role="status" className="microcopy">{view === "engine" ? "Gemini is designing scenarios for this portfolio…" : "Preparing your response…"}</p> : null}
               {!voiceSupported ? <p className="speech-fallback">Voice is not available in this browser; typing still works.</p> : null}
             </div>
             <div className="assistant-voice-settings" aria-label="Speech settings">

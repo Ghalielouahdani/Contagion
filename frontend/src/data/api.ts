@@ -2,6 +2,8 @@ import { proposeScenario } from "../actions/scenarioDraft";
 import { parseAssistantIntent } from "../actions/assistantIntent";
 import type {
   AppData,
+  EngineScenarioRequest,
+  MarketNewsArticle,
   AssistantRequest,
   AssistantResponse,
   DataMode,
@@ -122,7 +124,9 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
+    let detail: unknown;
+    try { detail = (await response.json()).detail; } catch { /* non-JSON upstream response */ }
+    throw new Error(typeof detail === "string" ? detail : `${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<T>;
 }
@@ -171,11 +175,12 @@ function baseScenarioRequest(scenario: ScenarioKind, set: string) {
   };
 }
 
-export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs, set: string): Promise<AppData> {
+export async function loadAppData(mode: DataMode, scenario: ScenarioKind, inputs: ScenarioInputs, set: string, customRequest?: EngineScenarioRequest): Promise<AppData> {
   if (!availableScenarios(set).includes(scenario)) throw new Error(`Scenario ${scenario} is unavailable in ${set}`);
+  if (customRequest && mode !== "api") throw new Error("Generated risk scenarios require API mode to run their exact parameters.");
   if (mode === "fixture") return loadFixtureAppData(scenario, inputs, set);
 
-  const request = buildScenarioRequest(scenario, inputs, set);
+  const request = customRequest ? { ...customRequest, request_id: `risk_agent_run_${crypto.randomUUID().replaceAll("-", "_")}` } : buildScenarioRequest(scenario, inputs, set);
   // Discovery activates the graph and snapshot consumed by every downstream call.
   // Wait for it before simulating, especially when live discovery takes seconds.
   const graph = await requestJson<DependencyGraph>(`${withSet("/api/v1/discover", set)}&discovery=${discoveryMode}`, post({ schema_version: "1.0" }));
@@ -275,6 +280,10 @@ function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs, set: s
 
 
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
+  if (request.view === "engine") {
+    if (mode !== "api") throw new Error("The Gemini risk assistant requires Engine API mode.");
+    return requestJson<AssistantResponse>(withSet("/api/v1/risk/assistant", request.fixtureSet), post({ message: request.message, count: request.count ?? 3 }));
+  }
   const draft = proposeScenario(request.message,
     kind => ({ ...request.scenarioInputs, ...presetInputs(kind, request.fixtureSet) }),
     availableScenarios(request.fixtureSet), request.graph.nodes.map(node => node.id));
@@ -366,4 +375,24 @@ export async function compareRiskLevels(mode: DataMode, scenario: ScenarioKind, 
     const risk = await requestJson<RiskResult>(withSet('/api/v1/simulate', set), post(request));
     return { value, risk, param };
   }));
+}
+
+
+export function loadRiskAssistantStatus() {
+  return requestJson<{ provider: string; configured: boolean; model: string; news_configured: boolean }>("/api/v1/risk/assistant-status");
+}
+export function loadRiskNews() {
+  return requestJson<{ status: string; origin: string | null; fetched_at: string | null; articles: MarketNewsArticle[] }>("/api/v1/risk/news");
+}
+export function inputsFromRequest(request: EngineScenarioRequest, base: ScenarioInputs): ScenarioInputs {
+  const p = request.scenario.parameters;
+  const percentValue = (key: string, fallback: number) => p[key] == null ? fallback : Number(p[key]) * 100;
+  return { ...base, horizonDays: request.scenario.horizon_days,
+    shockPct: Math.abs(percentValue("usde_spot_shock_pct", base.shockPct)),
+    liquidityLossPct: percentValue("exit_liquidity_reduction_pct", base.liquidityLossPct),
+    ltShiftPct: percentValue("liquidation_threshold_shift", base.ltShiftPct),
+    susdeApyPct: percentValue("susde_apy", base.susdeApyPct),
+    borrowApyPct: percentValue("borrow_apy_override", base.borrowApyPct),
+    nodeLossPct: percentValue("loss_pct", base.nodeLossPct),
+    nodeId: typeof p.node_id === "string" ? p.node_id : base.nodeId };
 }

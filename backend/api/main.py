@@ -25,7 +25,7 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 from backend.execution.integration import decide as execution_decide
-from backend.api import discovery_state
+from backend.api import discovery_state, risk_assistant, risk_news
 from backend.risk import simulate
 from backend.risk.analytics import analyze
 from backend.risk.analytics.sensitivity import grid
@@ -189,3 +189,20 @@ def post_decide(body: dict = Body(...), set: str | None = Query(None)) -> dict:
 @app.post("/api/v1/assistant")
 def assistant() -> dict:
     raise HTTPException(501, "assistant runs client-side; no server model connected")
+
+
+@app.get("/api/v1/risk/assistant-status")
+def risk_assistant_status() -> dict:
+    return risk_assistant.status()
+
+
+@app.get("/api/v1/risk/news")
+def risk_market_news() -> dict:
+    return risk_news.fetch()
+
+
+@app.post("/api/v1/risk/assistant")
+def risk_generate_scenarios(body: dict = Body(...), set: str | None = Query(None)) -> dict:
+    # The client chooses the event, never replaces authoritative portfolio inputs.
+    news = risk_news.normalize(body["news"], "user_provided") if "news" in body else risk_news.fetch()
+    return risk_assistant.generate(body, _files(set), _validator("scenario_request.schema.json"), news)
