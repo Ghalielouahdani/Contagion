@@ -502,43 +502,67 @@ function PositionsChart({ facts }: { facts: Facts }) {
 function LiquidationChart({ positions }: { positions: RiskPosition[] }) {
   return (
     <div className="gauges">
-      {positions.map((p, i) => {
-        const m = p.risk_metric!;
-        const before = Number(m.before), after = Number(m.after), threshold = Number(m.threshold);
-        const isHf = m.type === "health_factor";
-        const lo = isHf ? Math.min(threshold, before, after) * 0.85 : 0;
-        const hi = Math.max(before, after, threshold) * (isHf ? 1.08 : 1.12);
-        const pos = (v: number) => Math.min(Math.max(((v - lo) / (hi - lo)) * 100, 0), 100);
-        const delay = 0.35 + i * 0.15;
-        const toward = isHf ? after < before : after > before;
-        return (
-          <div key={p.position_id} className="gauge">
-            <div className="gauge-head">
-              <span>{compactId(p.position_id)}</span>
-              <span className="muted">{labelize(m.type)} {before.toFixed(3)} → {after.toFixed(3)} · liquidation {isHf ? "below" : "above"} {threshold.toFixed(isHf ? 2 : 3)}</span>
-            </div>
-            <div className="gauge-track">
-              <span className="gauge-danger" style={isHf ? { left: 0, width: `${pos(threshold)}%` } : { left: `${pos(threshold)}%`, right: 0 }} />
-              <span className="gauge-threshold" style={{ left: `${pos(threshold)}%` }} />
-              <motion.span className="gauge-trail" data-toward={toward}
-                initial={{ left: `${pos(before)}%`, width: 0 }}
-                animate={{ left: `${Math.min(pos(before), pos(after))}%`, width: `${Math.abs(pos(after) - pos(before))}%` }}
-                transition={{ ...SPRING, delay }} />
-              <span className="gauge-ghost" style={{ left: `${pos(before)}%` }} />
-              <motion.span className="gauge-marker" data-liquidatable={m.liquidatable}
-                initial={{ left: `${pos(before)}%` }} animate={{ left: `${pos(after)}%` }} transition={{ ...SPRING, delay }} />
-            </div>
-            <motion.div className="gauge-foot" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: delay + 0.8 }}>
-              <span className="np-tag" data-tone={m.liquidatable ? undefined : "blue"} style={{ animationDelay: `${delay + 0.8}s` }}>
-                {m.liquidatable ? "Liquidatable" : "Safe"}
-              </span>
-              <span className="muted">
-                {m.liquidatable ? "Threshold crossed after the shock." : `Room left: ${percent(m.distance_to_liquidation_after_pct, 1)} further oracle drop (was ${percent(m.distance_to_liquidation_before_pct, 1)}).`}
-              </span>
-            </motion.div>
-          </div>
-        );
-      })}
+      {positions.map((p, i) => <MetricGauge key={p.position_id} label={compactId(p.position_id)} metric={p.risk_metric!} delay={0.35 + i * 0.15} />)}
+    </div>
+  );
+}
+
+/** One liquidation metric: the marker glides from before to after against the threshold, then a tag says the verdict. */
+export function MetricGauge({ label, metric: m, delay = 0.35 }: { label: string; metric: NonNullable<RiskPosition["risk_metric"]>; delay?: number }) {
+  const before = Number(m.before), after = Number(m.after), threshold = Number(m.threshold);
+  const isHf = m.type === "health_factor";
+  const lo = isHf ? Math.min(threshold, before, after) * 0.85 : 0;
+  const hi = Math.max(before, after, threshold) * (isHf ? 1.08 : 1.12);
+  const pos = (v: number) => Math.min(Math.max(((v - lo) / (hi - lo)) * 100, 0), 100);
+  const toward = isHf ? after < before : after > before;
+  return (
+    <div className="gauge">
+      <div className="gauge-head">
+        <span>{label}</span>
+        <span className="muted">{labelize(m.type)} {before.toFixed(3)} → {after.toFixed(3)} · liquidation {isHf ? "below" : "above"} {threshold.toFixed(isHf ? 2 : 3)}</span>
+      </div>
+      <div className="gauge-track">
+        <span className="gauge-danger" style={isHf ? { left: 0, width: `${pos(threshold)}%` } : { left: `${pos(threshold)}%`, right: 0 }} />
+        <span className="gauge-threshold" style={{ left: `${pos(threshold)}%` }} />
+        <motion.span className="gauge-trail" data-toward={toward}
+          initial={{ left: `${pos(before)}%`, width: 0 }}
+          animate={{ left: `${Math.min(pos(before), pos(after))}%`, width: `${Math.abs(pos(after) - pos(before))}%` }}
+          transition={{ ...SPRING, delay }} />
+        <span className="gauge-ghost" style={{ left: `${pos(before)}%` }} />
+        <motion.span className="gauge-marker" data-liquidatable={m.liquidatable}
+          initial={{ left: `${pos(before)}%` }} animate={{ left: `${pos(after)}%` }} transition={{ ...SPRING, delay }} />
+      </div>
+      <motion.div className="gauge-foot" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: delay + 0.8 }}>
+        <span className="np-tag" data-tone={m.liquidatable ? undefined : "blue"} style={{ animationDelay: `${delay + 0.8}s` }}>
+          {m.liquidatable ? "Liquidatable" : "Safe"}
+        </span>
+        <span className="muted">
+          {m.liquidatable ? "Threshold crossed after the shock." : `Room left: ${percent(m.distance_to_liquidation_after_pct, 1)} further oracle drop (was ${percent(m.distance_to_liquidation_before_pct, 1)}).`}
+        </span>
+      </motion.div>
+    </div>
+  );
+}
+
+/** Loss components of one position as bars that grow on springs, one after the other. */
+export function ComponentBars({ components }: { components: Record<string, string> }) {
+  const rows = Object.entries(components).map(([k, v]) => [k, Number(v)] as const)
+    .filter(([, v]) => Math.abs(v) >= 0.005).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]));
+  const max = Math.max(1, ...rows.map(([, v]) => Math.abs(v)));
+  if (!rows.length) return <p className="muted">No loss component for this position in this scenario.</p>;
+  return (
+    <div className="component-bars">
+      {rows.map(([k, v], j) => (
+        <motion.div key={k} className="component-row" initial={{ opacity: 0, filter: "blur(6px)" }}
+          animate={{ opacity: 1, filter: "blur(0px)" }} transition={{ duration: 0.4, ease: EASE, delay: 0.05 + j * 0.06 }}>
+          <span>{COMPONENT_COPY[k] ?? labelize(k)}</span>
+          <span className="component-track">
+            <motion.span data-gain={v < 0} initial={{ scaleX: 0 }} animate={{ scaleX: Math.abs(v) / max }}
+              transition={{ ...SPRING, delay: 0.15 + j * 0.08 }} />
+          </span>
+          <strong>{money(v)}</strong>
+        </motion.div>
+      ))}
     </div>
   );
 }

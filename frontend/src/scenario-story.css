@@ -1,7 +1,6 @@
 /* Scenario story (ScenarioStory.tsx). Motion tokens and tags come from theme/motion.css. */
 
-.story,
-.story-zoom {
+:root {
   --story-loss: var(--np-tag-red);
   --story-gain: var(--np-link-green);
   --story-run: var(--np-link-blue);
@@ -15,8 +14,7 @@
   padding: 24px;
 }
 
-:root[data-theme="dark"] .story,
-:root[data-theme="dark"] .story-zoom {
+:root[data-theme="dark"] {
   --story-bar: #262626;
   --story-bar-strong: #3a3a3a;
   --story-run: #6f7dff;
@@ -670,4 +668,10 @@
   margin: 6px 0 0;
   color: var(--np-caption);
   font-size: 12px;
+}
+
+.component-bars {
+  display: grid;
+  gap: 10px;
+  margin: 6px 0 4px;
 }

@@ -566,3 +566,84 @@ h3 {
 .engine-bar-row:nth-child(4) .engine-bar { --bar-i: 3; }
 .engine-bar-row:nth-child(5) .engine-bar { --bar-i: 4; }
 .engine-bar-row:nth-child(n + 6) .engine-bar { --bar-i: 5; }
+
+/* Scenario dependency graph: the shock reaches each column in turn (flowColumn in App.tsx).
+   Only the node's content animates: React Flow positions the node itself with a transform. */
+@keyframes flow-node-in {
+  from { opacity: 0; filter: blur(8px); transform: translateX(-14px); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+.react-flow__node.flow-reveal > * {
+  animation: flow-node-in 0.55s var(--np-ease) var(--flow-delay, 0s) both;
+}
+
+.react-flow__edge[class*="flow-edge-col-"],
+.react-flow__edgelabel-renderer [class*="flow-edge-col-"] {
+  animation: preview-text-in 0.45s ease-out var(--flow-delay, 0s) both;
+}
+
+.flow-col-0 > *, .react-flow__edge.flow-edge-col-0 { --flow-delay: 0.1s; }
+.flow-col-1 > * { --flow-delay: 0.32s; }
+.flow-col-2 > * { --flow-delay: 0.54s; }
+.flow-col-3 > * { --flow-delay: 0.76s; }
+.flow-col-4 > * { --flow-delay: 0.98s; }
+.flow-col-5 > * { --flow-delay: 1.2s; }
+.flow-col-6 > * { --flow-delay: 1.42s; }
+.react-flow__edge.flow-edge-col-1 { --flow-delay: 0.22s; }
+.react-flow__edge.flow-edge-col-2 { --flow-delay: 0.44s; }
+.react-flow__edge.flow-edge-col-3 { --flow-delay: 0.66s; }
+.react-flow__edge.flow-edge-col-4 { --flow-delay: 0.88s; }
+.react-flow__edge.flow-edge-col-5 { --flow-delay: 1.1s; }
+.react-flow__edge.flow-edge-col-6 { --flow-delay: 1.32s; }
+
+/* Scenario Lab before / after bars (ScenarioLabCharts.tsx). */
+.equity-bars {
+  margin-top: 12px;
+}
+
+.equity-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 6px;
+  color: var(--np-subtitle);
+  font-size: 12px;
+}
+
+.equity-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.equity-legend i {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+}
+
+.equity-legend i[data-kind="before"] { background: var(--story-bar-strong); }
+.equity-legend i[data-kind="after"] { background: var(--np-ink); }
+.equity-legend i[data-kind="loss"] { background: repeating-linear-gradient(-45deg, var(--story-loss) 0 2px, transparent 2px 4px); }
+
+.story-svg .grid {
+  stroke: var(--np-line);
+  stroke-dasharray: 3 6;
+}
+
+.story-svg .bar-before { fill: var(--story-bar-strong); }
+.story-svg .bar-after { fill: var(--np-ink); }
+.story-svg .hatch-ink { fill: var(--story-loss); }
+.story-svg .selection { fill: var(--np-ink); }
+
+.story-svg .equity-pair {
+  cursor: pointer;
+  transition: opacity 180ms ease;
+}
+
+.story-svg .equity-pair[data-dim="true"] { opacity: 0.32; }
+.story-svg .equity-pair[data-selected="true"] .equity-name { fill: var(--np-ink); }
+.story-svg .value[data-tone="loss"] { fill: var(--story-loss); }
+.story-svg .value[data-tone="gain"] { fill: var(--story-gain); }
+.story-svg .value[data-tone="flat"] { fill: var(--np-caption); }
