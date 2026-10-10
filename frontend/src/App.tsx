@@ -78,6 +78,8 @@ type AssistantState = "idle" | "listening" | "thinking" | "speaking";
 type AssistantInputMode = "text" | "voice";
 type AuthSession = { email: string; signedInAt: string; method: "password" | "webauthn" };
 type AuthStatus = "idle" | "checking" | "success" | "error";
+type AuthMode = "signin" | "signup";
+type LocalDemoAccount = { email: string; password: string; createdAt: string };
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -223,12 +225,14 @@ const demoCredential = {
   password: "demo",
 };
 const sessionStorageKey = "defi-contagion-session";
+const accountsStorageKey = "defi-contagion-demo-accounts";
+const rememberedIdentifierKey = "defi-contagion-remembered-email";
 const passkeyStorageKey = "defi-contagion-demo-passkey";
 const introSeenStorageKey = "defi-contagion-intro-seen";
 const demoUserId = "defi-contagion-demo-user";
 
 function App() {
-  const [session, setSession] = useState<AuthSession | null>(() => readStoredSession());
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [view, setView] = useState<View>("portfolio");
   const [scenario, setScenario] = useState<ScenarioKind>("usde_depeg");
   const [mode, setMode] = useState<DataMode>(defaultDataMode);
@@ -288,6 +292,10 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    clearStoredSession();
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -372,8 +380,7 @@ function App() {
     setView("portfolio");
   }
 
-  function handleAuthenticated(nextSession: AuthSession, remember: boolean) {
-    writeSession(nextSession, remember);
+  function handleAuthenticated(nextSession: AuthSession) {
     setSession(nextSession);
   }
 
@@ -669,11 +676,13 @@ function LoginScreen({
 }: {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  onAuthenticated: (session: AuthSession, remember: boolean) => void;
+  onAuthenticated: (session: AuthSession) => void;
 }) {
-  const [identifier, setIdentifier] = useState(demoCredential.email);
+  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const [identifier, setIdentifier] = useState(() => localStorage.getItem(rememberedIdentifierKey) ?? demoCredential.email);
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [rememberEmail, setRememberEmail] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<AuthStatus>("idle");
   const [error, setError] = useState("");
@@ -704,25 +713,67 @@ function LoginScreen({
     };
   }, []);
 
+  function resetAuthFeedback(nextMode: AuthMode) {
+    setAuthMode(nextMode);
+    setStatus("idle");
+    setError("");
+    setPassword("");
+    setConfirmPassword("");
+  }
+
+  function persistRememberedIdentifier(email: string) {
+    if (rememberEmail) localStorage.setItem(rememberedIdentifierKey, email);
+    else localStorage.removeItem(rememberedIdentifierKey);
+  }
+
   function submitPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedIdentifier = identifier.trim().toLowerCase();
     setError("");
+    setStatus("idle");
     if (!normalizedIdentifier) {
-      setError("Enter the demo email or username.");
+      setError("Enter an email or the demo username.");
       return;
     }
     if (!password) {
-      setError("Enter the demo password.");
+      setError("Enter a password.");
       passwordRef.current?.focus();
       return;
     }
-    if (![demoCredential.email, demoCredential.username].includes(normalizedIdentifier) || password !== demoCredential.password) {
-      setError("These demo credentials do not match.");
+
+    if (authMode === "signup") {
+      const validationError = validateSignup(normalizedIdentifier, password, confirmPassword);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+      const accounts = readDemoAccounts();
+      const exists =
+        normalizedIdentifier === demoCredential.email ||
+        accounts.some((account) => account.email.toLowerCase() === normalizedIdentifier);
+      if (exists) {
+        setError("An account with that email already exists. Switch to sign in.");
+        return;
+      }
+      const account = { email: normalizedIdentifier, password, createdAt: new Date().toISOString() };
+      writeDemoAccounts([...accounts, account]);
+      persistRememberedIdentifier(account.email);
+      setStatus("success");
+      onAuthenticated(createSession("password", account.email));
       return;
     }
+
+    const localAccount = readDemoAccounts().find((account) => account.email.toLowerCase() === normalizedIdentifier);
+    const demoMatch = [demoCredential.email, demoCredential.username].includes(normalizedIdentifier) && password === demoCredential.password;
+    const accountMatch = localAccount?.password === password;
+    if (!demoMatch && !accountMatch) {
+      setError("These credentials do not match any local demo account.");
+      return;
+    }
+    const sessionEmail = demoMatch ? demoCredential.email : localAccount?.email ?? normalizedIdentifier;
+    persistRememberedIdentifier(sessionEmail);
     setStatus("success");
-    onAuthenticated(createSession("password", demoCredential.email), remember);
+    onAuthenticated(createSession("password", sessionEmail));
   }
 
   async function signInWithPasskey() {
@@ -767,7 +818,7 @@ function LoginScreen({
         localStorage.setItem(passkeyStorageKey, bufferToBase64Url((credential as PublicKeyCredential).rawId));
       }
       setStatus("success");
-      onAuthenticated(createSession("webauthn", demoCredential.email), true);
+      onAuthenticated(createSession("webauthn", demoCredential.email));
     } catch {
       setStatus("error");
       setError(`${biometricLabel} sign-in was cancelled or is not available. Use the demo password instead.`);
@@ -796,18 +847,35 @@ function LoginScreen({
         <div className="auth-heading">
           <p className="eyebrow">Belem Capital</p>
           <h1 id="auth-title">DeFi Contagion</h1>
-          <p className="lead">Sign in to inspect dependency risk, scenario loss and exit decisions from the offline fixture portfolio.</p>
+          <p className="lead">
+            {authMode === "signin"
+              ? "Sign in to inspect dependency risk, scenario loss and exit decisions from the offline fixture portfolio."
+              : "Create a local prototype account for this browser, then enter the dashboard without a backend."}
+          </p>
+        </div>
+
+        <div className="auth-switch" role="tablist" aria-label="Authentication mode">
+          <button type="button" role="tab" aria-selected={authMode === "signin"} onClick={() => resetAuthFeedback("signin")}>
+            Sign in
+          </button>
+          <button type="button" role="tab" aria-selected={authMode === "signup"} onClick={() => resetAuthFeedback("signup")}>
+            Create account
+          </button>
         </div>
 
         <form className="auth-form" onSubmit={submitPassword} noValidate>
           <label className="field-label" htmlFor="demo-identifier">
-            Account
+            {authMode === "signin" ? "Account" : "Email"}
           </label>
           <input
             id="demo-identifier"
             autoComplete="username"
+            type={authMode === "signup" ? "email" : "text"}
             value={identifier}
-            onChange={(event) => setIdentifier(event.target.value)}
+            onChange={(event) => {
+              setIdentifier(event.target.value);
+              setError("");
+            }}
             aria-invalid={Boolean(error && !identifier.trim())}
           />
 
@@ -819,9 +887,12 @@ function LoginScreen({
               id="demo-password"
               ref={passwordRef}
               type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
+              autoComplete={authMode === "signup" ? "new-password" : "current-password"}
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setError("");
+              }}
               aria-invalid={Boolean(error)}
               aria-describedby="auth-feedback auth-demo-note"
             />
@@ -830,42 +901,66 @@ function LoginScreen({
             </button>
           </div>
 
+          {authMode === "signup" ? (
+            <>
+              <label className="field-label" htmlFor="demo-confirm-password">
+                Confirm password
+              </label>
+              <input
+                id="demo-confirm-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => {
+                  setConfirmPassword(event.target.value);
+                  setError("");
+                }}
+                aria-invalid={Boolean(error && password !== confirmPassword)}
+                aria-describedby="auth-feedback auth-demo-note"
+              />
+            </>
+          ) : null}
+
           <div className="auth-row">
             <label className="check-row">
-              <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
-              <span>Remember this demo session</span>
+              <input type="checkbox" checked={rememberEmail} onChange={(event) => setRememberEmail(event.target.checked)} />
+              <span>Remember email only</span>
             </label>
             <span className="demo-credential">{demoCredential.email} / demo</span>
           </div>
 
           <button className="run-button auth-submit" type="submit">
-            Sign in
+            {authMode === "signin" ? "Sign in" : "Create account"}
           </button>
         </form>
 
-        <div className="auth-divider">
-          <span>or</span>
-        </div>
+        {authMode === "signin" ? (
+          <>
+            <div className="auth-divider">
+              <span>or</span>
+            </div>
 
-        <button
-          className="biometric-button"
-          type="button"
-          onClick={signInWithPasskey}
-          disabled={!webauthnSupported || status === "checking"}
-          aria-describedby="auth-demo-note"
-        >
-          <Fingerprint size={17} />
-          {status === "checking" ? `Waiting for ${biometricLabel}` : `Sign in with ${biometricLabel}`}
-        </button>
+            <button
+              className="biometric-button"
+              type="button"
+              onClick={signInWithPasskey}
+              disabled={!webauthnSupported || status === "checking"}
+              aria-describedby="auth-demo-note"
+            >
+              <Fingerprint size={17} />
+              {status === "checking" ? `Waiting for ${biometricLabel}` : `Sign in with ${biometricLabel}`}
+            </button>
+          </>
+        ) : null}
 
         <div className="auth-feedback" id="auth-feedback" aria-live="polite">
           {error ? <p role="alert">{error}</p> : null}
-          {status === "success" ? <p>Signed in. Opening the dashboard.</p> : null}
-          {!webauthnSupported ? <p>{biometricLabel} is not available here; password sign-in is ready.</p> : null}
+          {status === "success" ? <p>{authMode === "signin" ? "Signed in." : "Account created."} Opening the dashboard.</p> : null}
+          {authMode === "signin" && !webauthnSupported ? <p>{biometricLabel} is not available here; password sign-in is ready.</p> : null}
         </div>
 
         <p className="auth-note" id="auth-demo-note">
-          Demo authentication only. Use {demoCredential.email} or username {demoCredential.username} with password {demoCredential.password}; no real credentials are stored or verified by a server.
+          Prototype authentication only. Use {demoCredential.email} or username {demoCredential.username} with password {demoCredential.password}, or create a local account saved in this browser. Login sessions are never persisted after reload.
         </p>
       </motion.section>
     </main>
@@ -876,24 +971,32 @@ function createSession(method: AuthSession["method"], email: string): AuthSessio
   return { email, method, signedInAt: new Date().toISOString() };
 }
 
-function readStoredSession(): AuthSession | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(sessionStorageKey) ?? sessionStorage.getItem(sessionStorageKey);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<AuthSession>;
-    if (parsed.email && parsed.signedInAt && (parsed.method === "password" || parsed.method === "webauthn")) return parsed as AuthSession;
-  } catch {
-    clearStoredSession();
-  }
-  return null;
+function validateSignup(email: string, password: string, confirmPassword: string) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
+  if (password.length < 6) return "Use at least 6 characters for the prototype password.";
+  if (password !== confirmPassword) return "Passwords do not match.";
+  return "";
 }
 
-function writeSession(session: AuthSession, remember: boolean) {
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(sessionStorageKey, JSON.stringify(session));
-  if (remember) sessionStorage.removeItem(sessionStorageKey);
-  else localStorage.removeItem(sessionStorageKey);
+function readDemoAccounts(): LocalDemoAccount[] {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(accountsStorageKey);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (account): account is LocalDemoAccount =>
+        typeof account?.email === "string" && typeof account?.password === "string" && typeof account?.createdAt === "string",
+    );
+  } catch {
+    localStorage.removeItem(accountsStorageKey);
+    return [];
+  }
+}
+
+function writeDemoAccounts(accounts: LocalDemoAccount[]) {
+  localStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
 }
 
 function clearStoredSession() {
