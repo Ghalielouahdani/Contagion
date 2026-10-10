@@ -34,6 +34,11 @@ of stress runs. Editing sliders changes the draft only. Run updates Scenario Lab
 contagion overlay, Risk Engine and Decision Engine; baseline holdings, dependency labels
 and evidence stay unchanged. Portfolio cards open their original dependencies.
 
+No stress calculation runs on startup. Scenario Lab shows configuration and a
+not-run state until Run is clicked; Risk Engine directs users back to that setup.
+After a successful run, Scenario Lab links to the engine's explanation. Reset or
+changing the data source clears results without triggering a simulation.
+
 Two modes, same screens. Choose a scenario, adjust its parameters, then click **Run scenario** to submit it against the selected portfolio. The unified stress portfolio is the default for all seven scenarios. See [portfolio composition](../docs/stress_portfolio.md). Editing controls keeps the last run visible with a pending-changes notice; graph paths, decisions and assistant context describe that last submitted run.
 
 | Mode | How | Risk numbers |

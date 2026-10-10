@@ -25,6 +25,7 @@ import ReactFlow, {
 } from "reactflow";
 import {
   AlertTriangle,
+  ArrowRight,
   ArrowUpDown,
   BadgeCheck,
   BarChart3,
@@ -292,7 +293,7 @@ function App() {
   }
   const [commandOpen, setCommandOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [hasRun, setHasRun] = useState(true);
+  const [hasRun, setHasRun] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
 
   const scenarioInputs: ScenarioInputs = { shockPct, horizonDays, liquidityLossPct, ...extraInputs };
@@ -309,6 +310,9 @@ function App() {
   const appQuery = useQuery({
     queryKey: ["app-data", mode, fixtureSet, submitted],
     queryFn: () => loadAppData(mode, submitted.scenario, submitted.inputs, fixtureSet),
+    enabled: hasRun,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
   const baselineQuery = useQuery({
     queryKey: ["portfolio-baseline", mode, fixtureSet],
@@ -317,7 +321,7 @@ function App() {
   });
   const baseline = baselineQuery.data;
   const isBaselineView = view === "portfolio" || view === "graph";
-  const visibleQuery = isBaselineView ? baselineQuery : appQuery;
+  const visibleQuery = isBaselineView || !hasRun ? baselineQuery : appQuery;
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -335,7 +339,7 @@ function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const rawData = appQuery.data;
+  const rawData = hasRun ? appQuery.data : undefined;
   useEffect(() => {
     const positions = rawData?.portfolio.positions;
     if (positions?.length && !positions.some((position) => position.position_id === selectedPosition)) {
@@ -394,12 +398,18 @@ function App() {
       setInspectedExitFraction(action.fraction);
       setView("decision");
     }
-    if (action.type === "toggle_data_mode") setMode((current) => (current === "fixture" ? "api" : "fixture"));
+    if (action.type === "toggle_data_mode") changeMode(mode === "fixture" ? "api" : "fixture");
     if (action.type === "toggle_theme") setTheme((current) => (current === "light" ? "dark" : "light"));
+  }
+
+  function changeMode(next: DataMode) {
+    setHasRun(false);
+    setMode(next);
   }
 
   function changeFixtureSet(set: string) {
     setFixtureSet(set);
+    setHasRun(false);
     setSelectedEdge(null);
     setInspectedExitFraction(null);
     const kinds = availableScenarios(set);
@@ -407,7 +417,7 @@ function App() {
     if (next) {
       selectScenario(next, set);
       const inputs = { ...scenarioInputs, ...presetInputs(next, set) };
-      setSubmitted((current) => ({ scenario: next, inputs, run: current.run + 1 }));
+      setSubmitted((current) => ({ scenario: next, inputs, run: current.run }));
     }
   }
 
@@ -416,8 +426,7 @@ function App() {
     setSubmitted((current) => ({ scenario: "usde_depeg", inputs: {
       shockPct: 5, horizonDays: 7, liquidityLossPct: 80, ...defaultExtraInputs,
       ...presetInputs("usde_depeg", fixtureSet),
-    }, run: current.run + 1 }));
-    setMode("fixture");
+    }, run: current.run }));
     setSelectedPosition("aave_01");
     setSelectedEdge(null);
     const preset = presetInputs("usde_depeg", fixtureSet);
@@ -426,7 +435,7 @@ function App() {
     setLiquidityLossPct(80);
     setExtraInputs(defaultExtraInputs);
     setInspectedExitFraction(null);
-    setHasRun(true);
+    setHasRun(false);
     setView("portfolio");
   }
 
@@ -436,7 +445,7 @@ function App() {
         view={view}
         setView={setView}
         mode={mode}
-        setMode={setMode}
+        setMode={changeMode}
         fixtureSet={fixtureSet}
         setFixtureSet={changeFixtureSet}
         theme={theme}
@@ -451,7 +460,7 @@ function App() {
             <h1>{viewMeta[view].label}</h1>
             <p className="lead">{isBaselineView ? (view === "portfolio" ? "Original holdings, debt and equity at the recorded market snapshot." : "Original dependencies between positions, assets, protocols, oracles and exit venues.") : scenarioCopy[scenario].summary}</p>
             <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.{fixtureSet === "stress_portfolio_01" ? " Synthetic allocations on real markets · recorded market observations." : ""}</p>
-            {!isBaselineView && hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {scenarioCopy[submitted.scenario].title}.</p> : null}
+            {!isBaselineView && data && hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {scenarioCopy[submitted.scenario].title}.</p> : null}
           </div>
           <div className="topbar-actions">
             <button className="icon-button text-button" onClick={() => setCommandOpen(true)}>
@@ -477,7 +486,7 @@ function App() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
-            {visibleQuery.isLoading ? <SkeletonView /> : null}
+            {visibleQuery.isLoading && view !== "scenario" ? <SkeletonView /> : null}
             {visibleQuery.isError ? <ErrorView mode={mode} /> : null}
             {baseline && view === "portfolio" ? <PortfolioDashboard data={baseline}
               selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition} setView={setView}
@@ -486,12 +495,14 @@ function App() {
               selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition}
               selectedEdge={baselineEdge} setSelectedEdge={setBaselineEdge}
               hoveredPosition={baselineHover} setHoveredPosition={setBaselineHover} /></ReactFlowProvider> : null}
-            {data && !isBaselineView ? (
-              <>
-                {view === "scenario" ? (
+                {baseline && view === "scenario" ? (
                   <div className="page-stack">
                   <ScenarioLab
                     data={data}
+                    baseline={baseline}
+                    fixtureSet={fixtureSet}
+                    isRunning={appQuery.isFetching}
+                    onAnalyze={() => setView("engine")}
                     scenario={scenario}
                     setScenario={selectScenario}
                     selectedPosition={selectedPosition}
@@ -508,15 +519,23 @@ function App() {
                     setExtraInput={setExtraInput}
                     runScenario={runScenario}
                   />
-                  <ReactFlowProvider>
+                  {data ? <ReactFlowProvider>
                     <DependencyGraphView graph={data.graph} risk={data.risk} scenario={data.risk.scenario_id as ScenarioKind}
                       selectedPosition={selectedPosition} setSelectedPosition={setSelectedPosition}
                       selectedEdge={selectedEdge} setSelectedEdge={setSelectedEdge}
                       hoveredPosition={hoveredPosition} setHoveredPosition={setHoveredPosition} />
-                  </ReactFlowProvider>
-                  {submitted.run > 0 ? <StressComparison mode={mode} data={data} inputs={submitted.inputs} /> : null}
+                  </ReactFlowProvider> : null}
+                  {data ? <StressComparison mode={mode} data={data} inputs={submitted.inputs} /> : null}
                   </div>
                 ) : null}
+            {view === "engine" && !hasRun ? <section className="visual-panel">
+              <p className="eyebrow">Prepare → Run → Understand the impact</p>
+              <h2>No stress test has been run</h2>
+              <p className="microcopy">Review your portfolio and dependencies, choose a scenario, then run it. Its losses, contagion and calculation trace will appear here.</p>
+              <button className="run-card" onClick={() => setView("scenario")}>Prepare a scenario <ArrowRight size={16} /></button>
+            </section> : null}
+            {data && !isBaselineView ? (
+              <>
                 {view === "engine" ? <RiskEngine data={data} onExecute={() => setView("decision")} /> : null}
                 {view === "decision" ? (
                   <DecisionEngine
@@ -1077,6 +1096,10 @@ function DependencyGraphView({
 
 function ScenarioLab({
   data,
+  baseline,
+  fixtureSet,
+  isRunning,
+  onAnalyze,
   scenario,
   setScenario,
   selectedPosition,
@@ -1093,7 +1116,11 @@ function ScenarioLab({
   setExtraInput,
   runScenario,
 }: {
-  data: AppData;
+  data?: AppData;
+  baseline: PortfolioData;
+  fixtureSet: string;
+  isRunning: boolean;
+  onAnalyze: () => void;
   scenario: ScenarioKind;
   setScenario: (scenario: ScenarioKind) => void;
   selectedPosition: string;
@@ -1110,9 +1137,9 @@ function ScenarioLab({
   setExtraInput: <K extends keyof ExtraInputs>(key: K, value: ExtraInputs[K]) => void;
   runScenario: () => void;
 }) {
-  const selectedRisk = data.risk.positions.find((position) => position.position_id === selectedPosition) ?? data.risk.positions[0];
+  const selectedRisk = data?.risk.positions.find((position) => position.position_id === selectedPosition) ?? data?.risk.positions[0];
   // Real engine results for the current sliders (API: live; offline: precomputed surface).
-  const valuationData = data.risk.positions.map((position) => ({
+  const valuationData = (data?.risk.positions ?? []).map((position) => ({
     id: position.position_id,
     name: compactId(position.position_id),
     before: Number(position.net_equity_before_usd),
@@ -1120,23 +1147,23 @@ function ScenarioLab({
   }));
   const controls = scenarioControls[scenario];
   // node_shock prices these node kinds; oracles and venues belong to other scenarios.
-  const shockableNodes = data.graph.nodes.filter((node) => ["asset", "protocol", "market", "offchain_entity"].includes(node.type));
-  const nodeLabel = (id: string) => data.graph.nodes.find((node) => node.id === id)?.label ?? id;
+  const shockableNodes = baseline.graph.nodes.filter((node) => ["asset", "protocol", "market", "offchain_entity"].includes(node.type));
+  const nodeLabel = (id: string) => baseline.graph.nodes.find((node) => node.id === id)?.label ?? id;
   const sourceCopy = {
     engine: "Live risk engine result for the last submitted run.",
     surface: "Risk engine results precomputed for the main slider (offline mode).",
     fixture: "Static fixture result: inputs are not applied.",
-  }[data.riskSource];
-  const ignoredCopy = data.ignoredInputs.length
+  }[data?.riskSource ?? "engine"];
+  const ignoredCopy = data?.ignoredInputs.length
     ? ` Offline, ${data.ignoredInputs.map(labelize).join(", ")} stay at the preset; switch to Live API to apply them.`
     : "";
 
   return (
     <div className="scenario-layout">
       <section className="preset-grid">
-        {scenarioOrder.filter((kind) => availableScenarios(data.health.fixtureSet).includes(kind)).map((kind) => (
+        {scenarioOrder.filter((kind) => availableScenarios(fixtureSet).includes(kind)).map((kind) => (
           <button key={kind} className="preset-card" data-selected={scenario === kind} onClick={() => setScenario(kind)}>
-            <span>{presetLabel(kind, data.health.fixtureSet)}</span>
+            <span>{presetLabel(kind, fixtureSet)}</span>
             <strong>{scenarioCopy[kind].title}</strong>
             <p>{scenarioCopy[kind].summary}</p>
           </button>
@@ -1214,16 +1241,28 @@ function ScenarioLab({
         <Control label="Decision horizon" value={`${horizonDays} days`}>
           <input type="range" min="1" max="30" value={horizonDays} onChange={(event) => setHorizonDays(Number(event.target.value))} />
         </Control>
-        <button className="run-card" onClick={runScenario}>
+        <button className="run-card" onClick={runScenario} disabled={isRunning}>
           <Play size={16} />
-          Run risk engine
+          {isRunning ? "Running risk engine…" : "Run risk engine"}
         </button>
       </section>
 
+      {!data && !isRunning ? <section className="visual-panel" aria-label="Scenario not run">
+        <p className="eyebrow">Ready to simulate</p>
+        <h2>Choose your stress, then run the engine</h2>
+        <p className="microcopy">The same {baseline.portfolio.positions.length} positions will be tested. No losses, liquidations or propagation have been calculated yet.</p>
+      </section> : null}
+      {isRunning ? <section className="visual-panel" role="status"><h2>Computing this stress test…</h2><p className="microcopy">Results will appear when this run finishes.</p></section> : null}
+      {data && selectedRisk ? <>
       <section className="impact-strip scenario-results" aria-label="Latest run results">
         <Stat label="Portfolio equity before" value={money(data.risk.positions.reduce((sum, position) => sum + Number(position.net_equity_before_usd), 0))} detail="Same selected portfolio" />
         <Stat label="Portfolio equity after" value={money(data.risk.portfolio.net_equity_after_usd as string | null)} detail="Last submitted run" />
         <Stat label="Conditional loss / gain" value={money(data.risk.portfolio.total_conditional_loss_usd)} detail={data.risk.portfolio.aggregation_status} />
+      </section>
+      <section className="visual-panel">
+        <p className="eyebrow">Next · Understand the result</p>
+        <p className="microcopy">Risk Engine explains the cause-and-effect chain, calculation inputs and uncertainty for this run.</p>
+        <button className="run-card" onClick={onAnalyze}>Open Risk Engine <ArrowRight size={16} /></button>
       </section>
       <section className="visual-panel">
         <div className="panel-heading">
@@ -1321,6 +1360,7 @@ function ScenarioLab({
           </div>
         </section>
       ) : null}
+      </> : null}
     </div>
   );
 }
