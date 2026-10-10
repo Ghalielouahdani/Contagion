@@ -8,6 +8,7 @@ Sortie : un dict au format decision_result.json (section 11.8).
 from decimal import Decimal as D, ROUND_HALF_UP
 
 FRACTIONS = [D("0.00"), D("0.25"), D("0.50"), D("0.75"), D("1.00")]
+SCENARIO_LABELS = {"usde_depeg": "depeg", "liquidity_crisis": "liquidity crisis"}
 
 
 def usd(x):   # arrondi 2 décimales, seulement à la sortie
@@ -34,13 +35,17 @@ def annual_carry(position, yields):
     return gross * D(yields["token_apy"])
 
 
-def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=None):
+def option_label(x):
+    return "Exiting fully" if x == 1 else f"Reducing by {int(x * 100)}%"
+
+
+def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=None, scenario_id=None):
     pid = position["position_id"]
     venue = snapshot["exit_venues"][position["exit_venue_id"]]
     depth = D(venue["effective_depth_usd"])          # profondeur AVANT la crise
     fee_rate = D(venue["fee_rate"])
     gas = D(venue["gas_usd"])
-    quote_status = venue["quote_method"]             # executable_quote / pool_reserves / proxy
+    quote_status = "proxy"                           # méthode réellement utilisée : seul le proxy existe (étape 4)
 
     gross = D(position["gross_value_usd"])           # on vend x × la garantie (ou le token)
     loss0 = D(conditional_loss_usd)
@@ -70,18 +75,27 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
             "break_even_probability": ratio(p_star) if p_star is not None else None,
             "objective_usd": usd(objective) if objective is not None else None,
             "quote_status": quote_status,
-            "_objective": objective,   # interne, retiré plus bas
+            "_objective": objective,   # internes, retirés plus bas
+            "_p_star": p_star,
         })
 
     warnings = []
     if quote_status == "proxy":
         warnings.append("Exit costs use the constant-product proxy on assumed depth; replace with executable quotes.")
+    if venue["quote_method"] != "proxy":
+        warnings.append(f"Venue {position['exit_venue_id']} declares quote_method={venue['quote_method']} "
+                        f"but no quote adapter is wired in P3 yet; proxy used.")
 
     if p is None:
         mode, rec, rec_x = "conditional_stress", "INSUFFICIENT_DATA", None
-        best_partial = options[1]
-        reason = (f"No scenario probability supplied. Reducing by 25% beats staying if the user's "
-                  f"probability of this scenario exceeds {D(best_partial['break_even_probability']) * 100:.2f}%.")
+        reason = "No scenario probability supplied"
+        reason += " and all quotes are proxies." if quote_status == "proxy" else "."
+        candidates = [o for o in options if o["_p_star"] is not None]
+        if candidates:
+            best = min(candidates, key=lambda o: o["_p_star"])   # option rentable au p le plus bas
+            scenario = SCENARIO_LABELS.get(scenario_id, "scenario")
+            reason += (f" {option_label(D(best['exit_fraction']))} beats staying if the user's probability "
+                       f"of this {scenario} exceeds {D(best['break_even_probability']) * 100:.2f}%.")
     else:
         mode = "expected_cost"
         best = min(options, key=lambda o: o["_objective"])
@@ -93,7 +107,7 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
             warnings.append("proxy_quotes: recommendation relies on proxy exit costs.")
 
     for o in options:
-        del o["_objective"]
+        del o["_objective"], o["_p_star"]
 
     return {
         "schema_version": "1.0",
@@ -126,11 +140,13 @@ if __name__ == "__main__":
         ("19039.38", "733.56", "0.1758"),
         ("32742.97", "978.08", "0.2248"),
     ]
-    out = decide(position, snapshot, "150000.00", 7)
+    out = decide(position, snapshot, "150000.00", 7, scenario_id="usde_depeg")
     for o, (c, f, p) in zip(out["exit_options"], expected):
         got = (o["estimated_exit_cost_usd"], o["foregone_yield_usd"], o["break_even_probability"])
         print(o["exit_fraction"], got, "OK" if got == (c, f, p) else f"ATTENDU {(c, f, p)}")
-    print(out["recommendation"], "|", out["reason"])
+    expected_reason = ("No scenario probability supplied and all quotes are proxies. Reducing by 25% beats "
+                       "staying if the user's probability of this depeg exceeds 7.75%.")
+    print(out["recommendation"], "| reason", "OK" if out["reason"] == expected_reason else f"KO: {out['reason']}")
     for prob in ["0.05", "0.15", "0.40"]:
         r = decide(position, snapshot, "150000.00", 7, prob)
         print(f"p={prob} ->", r["recommendation"], r["recommended_exit_fraction"])
