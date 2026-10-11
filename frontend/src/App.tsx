@@ -1165,9 +1165,6 @@ function PortfolioDashboard({
         risk={data.risk}
         analytics={data.analytics}
         analyticsIsPreset={data.analyticsIsPreset}
-        selectedPosition={selectedPortfolio.position_id}
-        hoveredPosition={hoveredPosition}
-        setHoveredPosition={setHoveredPosition}
       />
       <motion.section className="position-master-detail" aria-label="Position selector" variants={riseItem}>
         <motion.article
@@ -1319,17 +1316,11 @@ function SummaryStrip({
   risk,
   analytics,
   analyticsIsPreset,
-  selectedPosition,
-  hoveredPosition,
-  setHoveredPosition,
 }: {
   portfolio: Portfolio;
   risk: AppData["risk"];
   analytics: AppData["analytics"];
   analyticsIsPreset: boolean;
-  selectedPosition: string;
-  hoveredPosition: string | null;
-  setHoveredPosition: (id: string | null) => void;
 }) {
   const headline = analytics?.headline;
   const tenPctNav = analytics?.breaking_points.nav_drawdown.find((row) => Number(row.nav_drawdown_pct) === 0.1);
@@ -1339,16 +1330,13 @@ function SummaryStrip({
   };
   return (
     <motion.section className="summary-strip" variants={staggerGroup}>
-      <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" highlightId={selectedPosition} highlighted={hoveredPosition === selectedPosition} setHoveredPosition={setHoveredPosition} />
-      <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" highlightId={selectedPosition} highlighted={hoveredPosition === selectedPosition} setHoveredPosition={setHoveredPosition} />
-      <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" highlightId={selectedPosition} highlighted={hoveredPosition === selectedPosition} setHoveredPosition={setHoveredPosition} />
+      <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" />
+      <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" />
+      <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" />
       <Stat
         label="Conditional loss"
         value={kpiMoney(risk.portfolio.total_conditional_loss_usd)}
         detail={risk.portfolio.aggregation_status}
-        highlightId={selectedPosition}
-        highlighted={hoveredPosition === selectedPosition}
-        setHoveredPosition={setHoveredPosition}
       />
       {headline ? (
         <>
