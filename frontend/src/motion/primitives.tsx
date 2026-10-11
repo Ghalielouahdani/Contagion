@@ -4,8 +4,9 @@
  * - useCountUp / Figure: Fuse-style figures that count to their value, cents greyed;
  * - withViewTransition: zoom between two states through the View Transitions API (section-preview).
  */
-import { animate, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { animate, useInView, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { money } from "../lib/format";
 import { flushSync } from "react-dom";
 
 type Bezier = [number, number, number, number];
@@ -66,16 +67,36 @@ export function splitMoney(value: number) {
   };
 }
 
-/** Fuse-style money figure: dollars in ink, cents greyed; counts up to its value. */
+/** Fuse-style money figure: dollars in ink, cents greyed; counts up to its value once it is on screen. */
 export function Figure({ value, delay = 0, className = "" }: { value: number; delay?: number; className?: string }) {
-  const shown = useCountUp(value, 1.1, delay);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.6 });
+  const shown = useCountUp(inView ? value : 0, 1.1, delay);
   const { whole, cents } = splitMoney(shown);
   return (
-    <span className={`np-figure ${className}`} aria-label={`${splitMoney(value).whole}${splitMoney(value).cents}`}>
+    <span ref={ref} className={`np-figure ${className}`} aria-label={`${splitMoney(value).whole}${splitMoney(value).cents}`}>
       {whole}
       <span className="np-cents">{cents}</span>
     </span>
   );
+}
+
+/** A money amount (app format) that counts up from 0 once it is on screen. */
+export function CountMoney({ value }: { value: number | null }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.6 });
+  const shown = useCountUp(inView && value !== null ? value : 0, 1.1);
+  return <span ref={ref} aria-label={value === null ? "n/a" : money(value)}>{value === null ? "n/a" : money(shown)}</span>;
+}
+
+/**
+ * Mounts its children only once they scroll into view, so their mount animations (bars growing, lines
+ * drawing, markers gliding) play in front of the reader instead of below the fold. Reserves the height.
+ */
+export function RevealOnView({ children, minHeight, className }: { children: ReactNode; minHeight: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.2 });
+  return <div ref={ref} className={className} style={inView ? undefined : { minHeight }}>{inView ? children : null}</div>;
 }
 
 type TransitionDocument = Document & { startViewTransition?: (update: () => void) => unknown };

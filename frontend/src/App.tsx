@@ -54,7 +54,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
-import { InteractiveLabel } from "./motion/primitives";
+import { CountMoney, InteractiveLabel, RevealOnView } from "./motion/primitives";
 import { NODE_H, NODE_W, STEP, columnLayout, columnOfX, edgeTypes, layeredLayout } from "./graphMotion";
 import { EquityBars } from "./ScenarioLabCharts";
 import { ComponentBars, MetricGauge } from "./ScenarioStory";
@@ -339,6 +339,11 @@ function App() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  // Every navigation and every run starts at the top of the page, so the new numbers animate in view.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [view, submitted.run]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -545,7 +550,8 @@ function App() {
             exit={{ opacity: 0, filter: "blur(8px)", transition: { duration: 0.28, ease: "easeInOut" } }}
           >
             {visibleQuery.isLoading && view !== "scenario" ? <SkeletonView /> : null}
-            {visibleQuery.isError ? <ErrorView mode={mode} /> : null}
+            {visibleQuery.isError ? <ErrorView mode={mode} error={visibleQuery.error} retrying={visibleQuery.isFetching}
+              onRetry={() => { baselineQuery.refetch(); if (hasRun) appQuery.refetch(); }} onOffline={() => changeMode("fixture")} /> : null}
             {baseline && view === "portfolio" ? <PortfolioDashboard data={baseline}
               selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition} setView={setView}
               hoveredPosition={baselineHover} setHoveredPosition={setBaselineHover} /> : null}
@@ -1455,9 +1461,9 @@ function ScenarioLab({
       {isRunning ? <section className="visual-panel" role="status"><h2>Computing this stress test…</h2><p className="microcopy">Results will appear when this run finishes.</p></section> : null}
       {data && selectedRisk ? <>
       <section className="impact-strip scenario-results" aria-label="Latest run results">
-        <Stat label="Portfolio equity before" value={money(data.risk.positions.reduce((sum, position) => sum + Number(position.net_equity_before_usd), 0))} detail="Same selected portfolio" />
-        <Stat label="Portfolio equity after" value={money(data.risk.portfolio.net_equity_after_usd as string | null)} detail="Last submitted run" />
-        <Stat label="Conditional loss / gain" value={money(data.risk.portfolio.total_conditional_loss_usd)} detail={data.risk.portfolio.aggregation_status} />
+        <Stat label="Portfolio equity before" value={<CountMoney value={data.risk.positions.reduce((sum, position) => sum + Number(position.net_equity_before_usd), 0)} />} detail="Same selected portfolio" />
+        <Stat label="Portfolio equity after" value={<CountMoney value={numberOrNull(data.risk.portfolio.net_equity_after_usd as string | null)} />} detail="Last submitted run" />
+        <Stat label="Conditional loss / gain" value={<LossOrGainCount value={numberOrNull(data.risk.portfolio.total_conditional_loss_usd)} />} detail={data.risk.portfolio.aggregation_status} />
       </section>
       <section className="visual-panel">
         <p className="eyebrow">Next · Understand the result</p>
@@ -1484,8 +1490,10 @@ function ScenarioLab({
             ))}
           </select>
         </div>
-        <EquityBars key={data.risk.simulation_id} rows={valuationData} selected={selectedPosition} hovered={hoveredPosition}
-          onSelect={setSelectedPosition} onHover={setHoveredPosition} />
+        <RevealOnView key={data.risk.simulation_id} minHeight={380}>
+          <EquityBars rows={valuationData} selected={selectedPosition} hovered={hoveredPosition}
+            onSelect={setSelectedPosition} onHover={setHoveredPosition} />
+        </RevealOnView>
         <p className="microcopy">Each pair of bars represents one position. Negative equity means the modeled loss exceeds that position's initial equity.</p>
       </section>
 
@@ -1499,14 +1507,17 @@ function ScenarioLab({
             : "LTV = debt value ÷ oracle collateral value. Above the market's LLTV, this position is liquidatable."}</p> : null}
           <p>Liquidatable does not mean fully liquidated; it means the protocol threshold has been breached.</p>
         </div>
-        {selectedRisk.risk_metric ? <MetricGauge key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} label={compactId(selectedRisk.position_id)}
-          metric={selectedRisk.risk_metric} delay={0.25} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
+        {selectedRisk.risk_metric ? <RevealOnView key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} minHeight={90}>
+          <MetricGauge label={compactId(selectedRisk.position_id)} metric={selectedRisk.risk_metric} delay={0.25} />
+        </RevealOnView> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
       </section>
 
       <section className="visual-panel scenario-results">
         <p className="eyebrow">What caused the impact · {compactId(selectedPosition)}</p>
         <h2>Loss breakdown</h2>
-        <ComponentBars key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} components={selectedRisk.loss_components} />
+        <RevealOnView key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} minHeight={60}>
+          <ComponentBars components={selectedRisk.loss_components} />
+        </RevealOnView>
         <WarningList warnings={selectedRisk.warnings} />
       </section>
       <section className="visual-panel scenario-results">
@@ -1998,17 +2009,17 @@ function AssistantDock({
               {isRiskAssistant && mode === "api" ? <div className="microcopy">
                 {assistantStatus.data && !assistantStatus.data.configured ? <p role="alert">Set GEMINI_API_KEY on the backend to enable scenario generation.</p> : null}
                 <p>News: {news.isError ? "unavailable" : news.data?.status ?? "loading"}. {news.data?.status === "not_configured" ? "Typed events are hypothetical." : ""}</p>
-                {news.data?.articles.length ? <><details><summary>Supplied market news</summary>{news.data.articles.map(article => <p key={article.id}><a href={article.url} target="_blank" rel="noreferrer">{article.title}</a> · {article.source} · {new Date(article.published_at).toLocaleString()}</p>)}</details><button onClick={() => setInput("Analyse les news fournies et propose des scénarios qui challengent les positions de mon portefeuille. Cite les articles utilisés et sépare faits rapportés et hypothèses.")}>Use supplied news</button></> : null}
+                {news.data?.articles.length ? <><details><summary>Supplied market news</summary>{news.data.articles.map(article => <p key={article.id}><a href={article.url} target="_blank" rel="noreferrer">{article.title}</a> · {article.source} · {new Date(article.published_at).toLocaleString()}</p>)}</details><button onClick={() => setInput("Analyse the supplied news and propose scenarios that challenge my portfolio positions. Cite the articles used and separate reported facts from assumptions.")}>Use supplied news</button></> : null}
               </div> : null}
               <div className="assistant-examples" aria-label="Scenario prompt examples">
                 {(isRiskAssistant ? [
-                  ["US rate cut", "USD INTEREST RATE FALLS BY 3 PTN"],
-                  ["Weaker dollar", "Si le dollar se déprécie face à l’euro, comment mon portefeuille est-il exposé ?"],
-                  ["Challenge portfolio", "Propose trois scénarios adverses adaptés aux positions de mon portefeuille."],
+                  ["US rate cut", "US interest rates fall by 3 percentage points: how is my portfolio exposed?"],
+                  ["Weaker dollar", "If the dollar weakens against the euro, how is my portfolio exposed?"],
+                  ["Challenge portfolio", "Propose three adverse scenarios tailored to my portfolio positions."],
                 ] : [
-                  ["Depeg + liquidity", "USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours"],
-                  ["Cascade", "Crée une cascade avec USDe -8 %, liquidité -60 %, sur 7 jours"],
-                  ["Carry squeeze", "Rendement sUSDe 0 %, emprunt 60 % sur 30 jours"],
+                  ["Depeg + liquidity", "USDe drops 10%, liquidity drops 80%, over 7 days"],
+                  ["Cascade", "Create a cascade with USDe -8%, liquidity -60%, over 7 days"],
+                  ["Carry squeeze", "sUSDe yield 0%, borrow rate 60% over 30 days"],
                 ]).map(([label, prompt]) => <button key={label} onClick={() => setInput(prompt)}>{label}</button>)}
               </div>
               {messages.map((message) => (
@@ -2176,7 +2187,17 @@ function Control({ label, value, children }: { label: string; value: string; chi
   );
 }
 
-function Stat({ label, value, detail }: { label: string; value: string; detail?: string }) {
+/** A loss that counts up; a negative loss reads as a gain, like lossOrGain. */
+function LossOrGainCount({ value }: { value: number | null }) {
+  if (value === null) return <>n/a</>;
+  return <>{value < 0 ? "gain " : ""}<CountMoney value={Math.abs(value)} /></>;
+}
+
+function numberOrNull(value: string | number | null | undefined) {
+  return value === null || value === undefined ? null : Number(value);
+}
+
+function Stat({ label, value, detail }: { label: string; value: React.ReactNode; detail?: string }) {
   return (
     <div className="stat">
       <span>
@@ -2251,8 +2272,27 @@ function SkeletonView() {
   );
 }
 
-function ErrorView({ mode }: { mode: DataMode }) {
-  return <EmptyState title="Data unavailable" detail={`The ${mode} data source did not respond. Switch back to fixture mode for the offline demo.`} />;
+/** Shown when the API (or the recorded data) cannot be reached: says why and offers a retry or the offline mode. */
+function ErrorView({ mode, error, onRetry, onOffline, retrying }: {
+  mode: DataMode; error: unknown; onRetry: () => void; onOffline: () => void; retrying: boolean;
+}) {
+  const detail = error instanceof Error ? error.message : String(error ?? "");
+  return (
+    <section className="visual-panel" role="alert">
+      <p className="eyebrow">Data unavailable</p>
+      <h2>{mode === "api" ? "The risk engine API is not responding" : "The recorded results could not be loaded"}</h2>
+      <p className="microcopy">
+        {mode === "api"
+          ? "No result can be computed until the backend answers on /api. Start it from the repository root with: .venv/bin/uvicorn backend.api.main:app --port 8000, then retry. Or switch to the recorded results to keep demoing offline."
+          : "The fixture files did not load. Retry, or switch back to the live engine API."}
+      </p>
+      {detail ? <p className="microcopy">Details: {detail}</p> : null}
+      <div className="toolbar-row">
+        <button className="run-button" onClick={onRetry} disabled={retrying}><RefreshCw size={14} /> {retrying ? "Retrying…" : "Retry"}</button>
+        {mode === "api" ? <button className="np-button" onClick={onOffline}>Use recorded results</button> : null}
+      </div>
+    </section>
+  );
 }
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number }>; label?: string }) {

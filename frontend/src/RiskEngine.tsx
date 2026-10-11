@@ -19,6 +19,7 @@ import { AssumptionRegister, PositionSheets } from "./RiskPositions";
 import { RiskCausalChain } from "./RiskCausalChain";
 import { ScenarioStory } from "./ScenarioStory";
 import { COMPONENT_COPY } from "./lib/lossComponents";
+import { CountMoney, RevealOnView } from "./motion/primitives";
 
 type TraceInput = { name: string; value: string | boolean | null; unit: string; source: string };
 type TraceStep = {
@@ -142,10 +143,11 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
       ) : null}
 
       <section className="impact-strip">
-        <div className="stat"><span><Term>Net equity before</Term></span><strong>{money(navBefore)}</strong><small>Sum of positions, gross and debt netted</small></div>
-        <div className="stat"><span><Term>Conditional loss</Term></span><strong>{total === null ? "incomplete" : lossOrGain(total)}</strong>
+        <div className="stat"><span><Term>Net equity before</Term></span><strong><CountMoney value={navBefore} /></strong><small>Sum of positions, gross and debt netted</small></div>
+        {/* A negative loss is a gain (carry scenarios): "gain $67,270", counted up like the other figures. */}
+        <div className="stat"><span><Term>Conditional loss</Term></span><strong>{total === null ? "incomplete" : <>{total < 0 ? "gain " : ""}<CountMoney value={Math.abs(total)} /></>}</strong>
           <small>{total !== null && navBefore ? `${percent(total / navBefore, 2)} of net equity` : risk.portfolio.aggregation_status}</small></div>
-        <div className="stat"><span><Term>Net equity after</Term></span><strong>{money(risk.portfolio.net_equity_after_usd as string | null)}</strong><small>If the scenario occurs</small></div>
+        <div className="stat"><span><Term>Net equity after</Term></span><strong><CountMoney value={risk.portfolio.net_equity_after_usd === null ? null : Number(risk.portfolio.net_equity_after_usd)} /></strong><small>If the scenario occurs</small></div>
         <div className="stat"><span><Term>Inputs resting on observed data</Term></span><strong>{provenance.all ? percent(provenance.trusted / provenance.all, 0) : "n/a"}</strong>
           <small>{Object.entries(provenance.counts).map(([s, n]) => `${n} ${SOURCE_COPY[s] ?? s}`).join(" · ")}</small></div>
       </section>
@@ -161,7 +163,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
         <p className="eyebrow">Step 3 · Where the portfolio loss comes from</p>
         <h2>Loss by mechanism, whole portfolio</h2>
         <p className="microcopy">Each mechanism is computed once and never double counted; the shared exit-venue penalty exists only for the portfolio.</p>
-        <div className="engine-bars">
+        <RevealOnView className="engine-bars" minHeight={mechanisms.length * 36}>
           {mechanisms.map(([key, value]) => (
             <div key={key} className="engine-bar-row">
               <span>{COMPONENT_COPY[key] ?? labelize(key)}</span>
@@ -170,7 +172,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
             </div>
           ))}
           {!mechanisms.length ? <p className="muted">No loss in this scenario.</p> : null}
-        </div>
+        </RevealOnView>
       </section>
 
       <PositionSheets data={data} />
@@ -317,7 +319,8 @@ function Simulations({ data, analytics }: {
           <h3>Loss curve: {labelize(grid.x_param)} × {labelize(grid.y_param)}</h3>
           <p className="microcopy">Each point is a full engine run. Where curves fan out, the second assumption decides the outcome.</p>
           <div className="chart-frame">
-            <ResponsiveContainer width="100%" height={280}>
+            <RevealOnView minHeight={280}>
+              <ResponsiveContainer width="100%" height={280}>
               <LineChart data={curve}>
                 <CartesianGrid stroke="var(--np-line)" vertical={false} />
                 <XAxis dataKey="x" tickFormatter={(v) => percent(v, 0)} />
@@ -330,6 +333,7 @@ function Simulations({ data, analytics }: {
                 {total(risk) !== null ? <ReferenceLine y={total(risk) as number} stroke="var(--np-soft)" strokeDasharray="4 4" label="this run" /> : null}
               </LineChart>
             </ResponsiveContainer>
+            </RevealOnView>
           </div>
         </>
       ) : null}
@@ -339,7 +343,8 @@ function Simulations({ data, analytics }: {
           <h3>Loss by position along {labelize(curves.x_param)}</h3>
           <p className="microcopy">Each position's loss for every severity of this scenario (same engine, one run per point). The dashed line is the portfolio.</p>
           <div className="chart-frame">
-            <ResponsiveContainer width="100%" height={280}>
+            <RevealOnView minHeight={280}>
+              <ResponsiveContainer width="100%" height={280}>
               <LineChart data={byPosition}>
                 <CartesianGrid stroke="var(--np-line)" vertical={false} />
                 <XAxis dataKey="x" tickFormatter={(v) => percent(v, 0)} />
@@ -352,6 +357,7 @@ function Simulations({ data, analytics }: {
                 <Line dataKey="portfolio" stroke="var(--np-strong)" strokeDasharray="5 4" dot={false} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
+            </RevealOnView>
           </div>
         </>
       ) : null}
@@ -379,7 +385,7 @@ function Simulations({ data, analytics }: {
         <>
           <h3>Which assumption moves the result most</h3>
           <p className="microcopy">One assumption at a time, from its low to its high value; every other input fixed.</p>
-          <div className="engine-bars">
+          <RevealOnView className="engine-bars" minHeight={tornado.length * 36}>
             {tornado.map((t) => (
               <div key={t.assumption} className="engine-bar-row">
                 <span>{t.assumption} <small>({t.low_value} → {t.high_value})</small></span>
@@ -387,7 +393,7 @@ function Simulations({ data, analytics }: {
                 <strong>{money(t.loss_at_low_usd)} → {money(t.loss_at_high_usd)}</strong>
               </div>
             ))}
-          </div>
+          </RevealOnView>
         </>
       ) : null}
 
@@ -473,7 +479,8 @@ function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) 
           <h3>Distribution of portfolio stress loss</h3>
           <p className="microcopy">Horizontal: portfolio loss in USD. Vertical: number of model runs in each loss interval.</p>
           <div className="chart-frame">
-            <ResponsiveContainer width="100%" height={200}>
+            <RevealOnView minHeight={200}>
+              <ResponsiveContainer width="100%" height={200}>
               <BarChart data={histogram}>
                 <CartesianGrid stroke="var(--np-line)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
@@ -482,6 +489,7 @@ function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) 
                 <Bar name="Model runs" dataKey="draws" fill="var(--np-accent-periwinkle)" />
               </BarChart>
             </ResponsiveContainer>
+            </RevealOnView>
           </div>
         </div>
         <div>
