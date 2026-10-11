@@ -239,3 +239,102 @@ Negative conditional losses (carry gains) stay signed in residual results.
 Offline `risk_surface.json` decisions are generated through this same adapter. The Scenario
 Lab displays a position's exit table next to its risk result; the Decision Engine page keeps
 the detailed view. P3 produces decision analysis, not on-chain trade submission.
+
+---
+
+# Crisis mode (scenario assumed certain)
+
+The prevention mode above answers "should I act in case it happens?" with break-even probabilities. The crisis mode answers the risk analyst's question: **"this scenario happens — what do I do with each position to lose the least?"** No probability is used. Both modes coexist; `decision_result` is unchanged.
+
+## Modules
+
+```
+backend/execution/
+├── crisis.py     CrisisModel: every action priced per position (early / late), portfolio strategies
+├── hedging.py    hedge universe (USDC, USDT, PYUSD, RLUSD), scenario shock check, rotation strategies
+├── advisor.py    AI advisor: explanation + 3 strategies built from available actions, re-priced by the engine
+└── tests/        test_crisis.py · test_crisis_portfolio.py · test_advisor.py · test_crisis_api.py
+```
+
+## Model (one line each)
+
+- **Loss if kept** = P2 conditional loss minus `execution_haircut` (a forced-sale cost is only paid when selling).
+- **Exit cost** = fees + gas + price impact on the exit venue at the scenario's depth `k = 1 − exit_liquidity_reduction_pct` (P2 `exit_cost`, executable KyberSwap curves).
+- **Total of an action** = exit cost + foregone yield + loss still suffered on what is kept; lowest total wins, ties keep.
+- **Early reaction**: act at pre-shock prices; price loss, liquidation penalty and lender bad debt are avoidable.
+- **Late reaction**: the price loss is already incurred (`already_incurred_usd`, never shown as avoidable); only the liquidation penalty remains avoidable.
+- **Actions**: hold · sell 25/50/75/100 % (pro rata) · deleverage to safety (P2 `deleverage_needed`: HF 1.05 / 95 % of LLTV) · withdraw (lenders, within idle market liquidity).
+- **Portfolio strategy** = one action per position; sales on a shared venue are priced jointly (`shared_venue_penalty_usd`).
+- **Candidates**: `hold_all`, `exit_all`, `min_loss` (per-position best, then coordinated for shared venues), `protect_liquidations`, `rotate_into_<stable>` (on-demand quotes only); duplicates carry `same_as`.
+
+## Hedge universe
+
+USDC, USDT, PYUSD, RLUSD with issuer (P1 registry), snapshot price, `shocked_in_scenario` (a shocked asset is never a hedge) and routes: `snapshot_quotes` (USDC venues), `on_demand_quote` (P1's KyberSwap route, network, opt-in), `unavailable` (with reason). Short perps, options and depeg cover are listed as **not priced**: no price source exists in the project.
+
+## AI advisor
+
+The engine computes; the LLM explains and composes. Context = computed figures only (no addresses, no secrets). Output = schema-bound JSON: `scenario_explanation`, `position_assessments`, exactly 3 `strategies` (timing + actions from the available list), `recommended_strategy_index`, `hedging_notes`, `caveats`.
+
+Safeguards: every AI strategy is re-priced by `CrisisModel.evaluate` (`computed_result` is the only source of figures); an unavailable action, an unknown position or a schema violation rejects the advice while keeping the plan; numbers absent from the context are listed in `ungrounded_numbers`.
+
+Configuration (backend only, `.env` is git-ignored):
+
+```dotenv
+GEMINI_API_KEY=...
+ADVISOR_MODEL=            # optional; defaults to RISK_ASSISTANT_MODEL (P2's Gemini setting)
+```
+
+The client is pluggable (`llm(system, context, schema) -> dict`); `GeminiClient` follows P2's `backend/api/risk_assistant.py` protocol.
+
+## Endpoint: `POST /api/v1/crisis-advice`
+
+| Field | Meaning |
+|---|---|
+| `request` | a scenario request (any of the seven scenarios), or |
+| `simulation_id` | a saved `/simulate` run (exact same risk result) |
+| `advice` | `true` (default) to ask the AI; `false` for the computed plan only |
+| `on_demand_quotes` | `true` to price hedge routes live on KyberSwap (network) |
+
+```json
+{ "request": { "...": "contracts/fixtures/stress_portfolio_01/scenario_request_combined.json" }, "advice": false }
+```
+
+Response (combined crisis, trimmed):
+
+```json
+{
+  "plan": {
+    "scenario_id": "combined_crisis", "horizon_days": 7, "depth_factor": "0.2",
+    "positions": [{
+      "position_id": "ethena_susde_01", "holding_loss_usd": "150223.60",
+      "early": { "best": { "action": "sell", "fraction": "1.00", "total_loss_usd": "11907.20", "saving_vs_hold_usd": "138316.40" } },
+      "late":  { "already_incurred_usd": "150223.60", "best": { "action": "hold", "fraction": null, "total_loss_usd": "0.00" } }
+    }],
+    "strategies": { "early": [{
+      "strategy_id": "min_loss",
+      "choices": { "ethena_susde_01": { "action": "sell", "fraction": "0.75" }, "aave_01": { "action": "sell", "fraction": "1.00" },
+                   "morpho_01": { "action": "sell", "fraction": "1.00" }, "pendle_01": { "action": "sell", "fraction": "0.50" },
+                   "lend_susde_01": { "action": "withdraw", "fraction": "1.00" }, "lend_usde_01": { "action": "withdraw", "fraction": "1.00" } },
+      "total_loss_usd": "200047.41", "saving_vs_hold_all_usd": "796653.34", "shared_venue_penalty_usd": "79939.20"
+    }]},
+    "hedging": { "shocked_assets": { "USDe": "USDe depeg in this scenario" }, "assets": [{ "asset": "USDC", "usable_as_hedge": true }] }
+  },
+  "advice": null,
+  "advice_error": null
+}
+```
+
+With `advice: true`, `advice` holds the AI output with a `computed_result` per strategy. If the AI fails (no key, rejected key, quota, invalid output), `advice` is `null`, `advice_error` explains why (`{status, message}`) and the plan is still returned — never a 500, never invented advice.
+
+## Limitations
+
+- Late exits in `combined_crisis` ignore liquidators selling ahead of us (cost understated).
+- Late lender withdrawals are not modelled; lender withdrawal fees and gas are not in the snapshot (shown as zero).
+- Offline, USDC is the only priced hedge; USDT has no snapshot price; PT-sUSDe and RLUSD are not in P1's token registry.
+- Deleverage keeps the price loss proportional to the collateral kept (approximation).
+
+## Tests
+
+```bash
+.venv/bin/python -m pytest backend/execution -q     # prevention + crisis mode
+```

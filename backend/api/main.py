@@ -24,6 +24,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
+from backend.execution.advisor import advise as crisis_advise
+from backend.execution.crisis import crisis_plan
+from backend.execution.hedging import kyberswap_quote_source
 from backend.execution.integration import decide as execution_decide
 from backend.api import discovery_state, risk_assistant, risk_news
 from backend.risk import simulate
@@ -184,6 +187,31 @@ def post_decide(body: dict = Body(...), set: str | None = Query(None)) -> dict:
         simulate, files["portfolio"], files["market_snapshot"], request, files["dependency_graph"])
     portfolio, snapshot = (cached[2], cached[3]) if cached and not body.get("request") else (files["portfolio"], files["market_snapshot"])
     return _run(execution_decide, portfolio, snapshot, request, position_id, risk)
+
+
+def _crisis_inputs(files: dict, body: dict) -> tuple[dict, dict, dict, dict]:
+    """(portfolio, snapshot, request, risk_result) from a scenario request or a saved /simulate run."""
+    cached = _simulations.get((files["portfolio"]["portfolio_id"], body.get("simulation_id", "")))
+    if body.get("simulation_id") and not body.get("request"):
+        if cached is None:
+            raise HTTPException(404, "simulation not found for the selected portfolio; run the scenario first")
+        return cached[2], cached[3], _valid_request(cached[0]), cached[1]
+    request = _valid_request(_active_request(files, body.get("request") or files["scenario_request"]))
+    risk = _run(simulate, files["portfolio"], files["market_snapshot"], request, files["dependency_graph"])
+    return files["portfolio"], files["market_snapshot"], request, risk
+
+
+@app.post("/api/v1/crisis-advice")
+def post_crisis_advice(body: dict = Body(default={}), set: str | None = Query(None)) -> dict:
+    """P3 crisis mode (scenario assumed certain). Body: {request | simulation_id, advice: bool = true,
+    on_demand_quotes: bool = false}. The computed plan is always returned; an AI failure is reported in
+    advice_error, never as a 500 and never replaced by invented advice."""
+    portfolio, snapshot, request, risk = _crisis_inputs(_files(set), body)
+    quote_source = kyberswap_quote_source(snapshot) if body.get("on_demand_quotes") else None
+    if body.get("advice", True):
+        return _run(crisis_advise, portfolio, snapshot, request, risk, None, quote_source)
+    plan = _run(crisis_plan, portfolio, snapshot, request, risk, True, quote_source)
+    return {"plan": plan, "advice": None, "advice_error": None}
 
 
 @app.post("/api/v1/assistant")

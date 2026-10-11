@@ -2,7 +2,7 @@
 
 > Module P3 : *Decision, Liquidity & Exit Optimization*
 > Branche : `feat/p3` (poussée sur GitHub)
-> État : les 8 étapes sont terminées
+> État : les 8 étapes du mode prévention sont terminées ; nouveau mode « crise en cours » : étapes 9 à 12 faites (branche `feat/p3-crisis-advisor`)
 
 ---
 
@@ -572,3 +572,209 @@ Les 8 étapes sont terminées. Ce qui reste relève de l'intégration avec l'éq
 | P1 | Brancher un vrai devis via `ExitCostEstimator(executable=...)` ; corriger le rendement de la garantie morpho_01 |
 | P2 | Vérifier que le `risk_result` de `feat/risk-engine` a le format lu par P3 ; discuter la perte résiduelle en crise de liquidité |
 | Équipe | Trancher les points ouverts (schéma nullable, STAY par dominance) ; ouvrir la PR `feat/p3` → `main` |
+
+---
+
+## 9. Nouveau mode : « crise en cours » (branche `feat/p3-crisis-advisor`)
+
+**Pourquoi ce mode.** Le mode prévention répond à « dois-je agir au cas où ? » avec un seuil de probabilité p\*. Le nouveau mode répond à la question d'un risk analyst : **« ce scénario arrive, que faire de chaque position pour perdre le moins ? »**. Il n'y a **aucune probabilité** : le scénario est supposé certain. Le mode prévention reste intact.
+
+**Base de travail.** La branche part de `feat/risk-engine` (P2), qui contient déjà `feat/p3`, P1, le portefeuille `stress_portfolio_01` (6 positions sur marchés réels, dont 2 prêteurs) et les 7 scénarios. Son lien de suivi vers la branche de P2 a été retiré, pour ne jamais pousser chez lui par erreur.
+
+### Étape 9 : le moteur déterministe (`crisis.py`)
+
+**L'idée centrale : séparer deux montants.**
+- **Perte de garder** = la perte du scénario calculée par P2, **sans** la composante `execution_haircut`. Cette composante est le coût d'une vente forcée : on ne le paie que si l'on vend.
+- **Coût de vendre** = frais + gas + impact de prix, avec la profondeur **du scénario** : `k = 1 − exit_liquidity_reduction_pct`. Ça donne 20 % de la normale en crise de liquidité ou combinée, 50 % en cascade, 100 % sinon. Aucune valeur n'est inventée.
+
+Total d'une action = coût de vendre + rendement perdu + perte encore subie sur ce qu'on garde. On choisit le total le plus petit. En cas d'égalité, on garde.
+
+**Deux moments de réaction :**
+
+| | Tôt | Tard |
+|---|---|---|
+| Prix de vente | d'avant le choc | déjà tombé |
+| Ce qu'on peut éviter | perte de prix, pénalité de liquidation, mauvaise dette (prêteurs) | la pénalité de liquidation seulement |
+| Actions | garder, vendre 25 / 50 / 75 / 100 %, désendetter juste assez (emprunts), retirer (prêteurs, dans la limite de la liquidité du marché) | garder, vendre, désendetter (fenêtre de l'oracle) |
+| Perte déjà subie | – | affichée à part, **jamais** comme évitable |
+
+**Réutilisé de P2 :** `exit_cost` (vraies courbes KyberSwap), `deleverage_needed` (désendettement jusqu'à HF 1,05 ou 95 % du LLTV) et `lending.withdrawable` (liquidité retirable par un prêteur).
+
+**Résultats marquants sur `stress_portfolio_01` :**
+- **Crise de liquidité pure** : garder ne perd rien, donc **garder** partout. Vendre ne ferait que payer la pool mince.
+- **Pendle en depeg** : la pool ne fait que 3,8 M$, donc vendre **25 %** est optimal et tout vendre coûterait plus.
+- **Cascade** : les prêteurs perdraient 846 000 $ de mauvaise dette ; **retirer tôt** les sauve presque entièrement.
+- **Réaction tardive** : sur une simple détention, rien à sauver (garder). Sur un emprunt liquidable (Morpho en depeg, Aave en gouvernance), désendetter ou vendre sauve la pénalité : environ 11 700 $ et 17 000 $.
+- **Totaux négatifs** (Aave) : l'emprunt coûte 4,65 %/an et la garantie rapporte 0,24 %. Vendre **économise** des intérêts : c'est un gain.
+
+**Garde-fous :**
+- dans `carry_squeeze`, le carry est déjà dans la perte (`negative_carry`), donc il n'est pas recompté ;
+- un `risk_result` d'un autre scénario est refusé ;
+- sans `risk_result`, le moteur le recalcule avec P2.
+
+**Tests (`tests/test_crisis.py`, 17 tests) :** les 8 scénarios × 6 positions sont chiffrés, et total = coût + rendement + perte restante. Ils vérifient aussi : crise de liquidité → garder ; profondeur du scénario respectée ; sortie partielle dans une pool mince ; perte subie jamais évitable en réaction tardive ; pénalité sauvée en désendettant ; pas de double comptage du carry ; prêteurs (retrait tôt, rien tard) ; rejet d'un `risk_result` étranger.
+
+Suite complète du repo : **415 tests verts**.
+
+### Étape 10 : stratégies de portefeuille et univers de couverture
+
+**Évaluer une stratégie complète (`CrisisModel.evaluate`).** Une stratégie, c'est une action par position. Le point clé : **les ventes sur une même pool sont chiffrées ensemble**. Ethena et Morpho vendent tous les deux du sUSDe dans la même pool, et l'impact de prix se calcule sur la somme vendue, puis se répartit au prorata. Le surcoût par rapport aux ventes séparées s'affiche (`shared_venue_penalty_usd`).
+
+**Les stratégies candidates calculées par le code**, pour la réaction tôt et la réaction tard :
+
+| Stratégie | Idée |
+|---|---|
+| `hold_all` | tout garder (la référence) |
+| `exit_all` | tout vendre ou retirer |
+| `min_loss` | la meilleure action par position, **puis ajustée** pour les pools partagées (on essaie chaque option de chaque position tant que le total baisse) |
+| `protect_liquidations` | garder l'exposition, et désendetter seulement les positions que le scénario rend liquidables |
+| `rotate_into_<stable>` | vendre l'exposition USDe vers un stablecoin non choqué, via des cotations à la demande |
+
+Si deux stratégies aboutissent à la même combinaison, la seconde porte `same_as`, pour ne jamais présenter deux fois la même chose.
+
+**Exemple frappant (crise combinée, réaction tôt) :** seule, Ethena serait vendue à 100 %. Avec Morpho dans la même pool, la stratégie `min_loss` n'en vend que **75 %** et fait mieux que « tout vendre » d'environ 18 000 $.
+
+**L'univers de couverture (`hedging.py`) :**
+- Stablecoins candidats non liés à Ethena : **USDC, USDT, PYUSD, RLUSD**.
+- Pour chacun : émetteur (registre P1), prix (snapshot), **touché ou non par le scénario**, routes chiffrables depuis chaque actif exposé.
+- Routes :
+  - `snapshot_quotes` : la route vers USDC est déjà cotée par P1 dans le snapshot ;
+  - `on_demand_quote` : même API KyberSwap que P1, appelée seulement si on l'active (réseau) ;
+  - `unavailable` : avec la raison. Par exemple, le PT-sUSDe n'est pas dans le registre de P1, donc il n'a pas de cotation.
+- **Un stablecoin choqué par le scénario n'est pas une couverture.** Si le scénario `node_shock` vise `asset:PYUSD`, aucune rotation vers PYUSD n'est proposée.
+- **Non chiffrés, listés tels quels** : vente à découvert d'USDe ou d'ENA, options, assurance contre le depeg. Aucune source de prix dans le projet.
+- Avertissement utile : Aave valorise la garantie USDe avec un flux USDT/USD (découverte P1). Un choc sur l'USDT touche donc aussi l'oracle d'Aave.
+
+**Limites :**
+- Sans réseau, seul l'USDC est une couverture chiffrable.
+- Le snapshot ne donne pas de prix pour l'USDT : il reste inutilisable tant que P1 ne l'ajoute pas.
+- Une position sans route chiffrée vers le stablecoin visé est **gardée** et listée dans `unpriced_positions`.
+
+**Tests (`tests/test_crisis_portfolio.py`, 26 tests) :**
+- garder tout = la perte publiée par P2 ;
+- vente groupée plus chère et surcoût exact ;
+- `min_loss` ≤ toutes les autres stratégies (8 scénarios × 2 moments) ;
+- effet de la pool partagée ;
+- doublons marqués ;
+- pas de retrait tardif des prêteurs ;
+- actifs choqués selon le scénario ;
+- univers hors ligne limité à l'USDC ;
+- rotation avec cotation simulée ;
+- aucune rotation vers un stablecoin choqué.
+
+Suite complète du repo : **441 tests verts**.
+
+### Étape 11 : le conseiller IA (`advisor.py`)
+
+**Le principe : le code calcule, l'IA explique et compose.**
+
+```
+plan calculé (crisis + hedging) ──► contexte JSON ──► Gemini (réponse JSON imposée)
+                                                          │
+          résultats recalculés par CrisisModel.evaluate ◄─┘ 3 stratégies (actions, sans chiffres)
+```
+
+**Ce que l'IA reçoit** (`build_context`) :
+- le scénario, ses paramètres et la profondeur de crise ;
+- pour chaque position : la perte si on garde, le HF / LTV (liquidable ou non), la perte déjà subie en réaction tardive, et **la liste des actions disponibles** avec leurs résultats chiffrés ;
+- les stratégies candidates de l'étape 10 ;
+- les couvertures utilisables et non chiffrées.
+
+Elle ne reçoit **aucune adresse ni aucun secret**.
+
+**Ce qu'elle doit rendre** (schéma `OUTPUT_SCHEMA`, vérifié côté serveur) :
+- une explication simple du scénario ;
+- un diagnostic par position ;
+- **exactement 3 stratégies**, chacune avec un moment (tôt / tard), des actions par position, une justification, des avantages et des inconvénients ;
+- l'index de la stratégie recommandée et sa justification ;
+- des notes de couverture, où ce qui n'est pas chiffré est indiqué comme tel ;
+- des mises en garde.
+
+C'est l'IA qui décide quelles positions garder (« conviction »), à partir des chiffres qu'elle voit.
+
+**Les garde-fous :**
+1. **Recalcul systématique** : chaque stratégie de l'IA est réévaluée par le moteur (vente groupée comprise). Le champ `computed_result` est la seule source de chiffres à afficher.
+2. **Action impossible ou position inconnue** : toute la réponse est rejetée. Le plan calculé reste disponible, et `advice_error` explique pourquoi.
+3. **Schéma non respecté** (par exemple 2 stratégies au lieu de 3) : rejet.
+4. **Chiffres inventés** : tout nombre écrit par l'IA qui n'existe pas dans les données envoyées, sous une forme acceptable (tel quel, en %, en milliers ou millions, arrondi), est listé dans `ungrounded_numbers`.
+5. **Sans clé** : erreur claire (« requires GEMINI_API_KEY »), sans appel réseau.
+
+**Fournisseur interchangeable :** un client est une simple fonction `llm(system, context, schema) -> dict`. `GeminiClient` reprend le protocole de l'agent de scénarios de P2 :
+- même URL, même en-tête ;
+- `responseJsonSchema` ;
+- clé lue dans la variable d'environnement ou dans `.env` (exclu de git) ;
+- modèle réglable avec `ADVISOR_MODEL`, sinon celui de P2.
+
+Pour passer à Claude ou OpenAI, il suffit d'écrire un autre client.
+
+**Tests (`tests/test_advisor.py`, 6 tests, IA simulée, sans réseau) :**
+- les résultats affichés sont ceux du moteur, pas de l'IA ;
+- le contexte ne contient ni adresse ni clé ;
+- une action indisponible est rejetée mais le plan reste ;
+- une position inconnue et une violation du schéma sont rejetées ;
+- un chiffre inventé est signalé, alors que « 75 % » (présent dans les données) ne l'est pas ;
+- sans clé, l'erreur est claire.
+
+Suite complète du repo : **447 tests verts**.
+
+**À faire de ton côté :** ajouter ta clé dans un fichier `.env` à la racine (`GEMINI_API_KEY=...`). Ce fichier n'est jamais commité.
+
+### Étape 12 : point d'entrée API et README
+
+**La route `POST /api/v1/crisis-advice`** (dans `backend/api/main.py`, ajout de 28 lignes sans rien supprimer) :
+
+| Champ | Rôle |
+|---|---|
+| `request` | une requête de scénario (n'importe lequel des 7)… |
+| `simulation_id` | … ou une simulation déjà lancée avec `/simulate` (même résultat de risque exactement) |
+| `advice` | `true` par défaut : on demande l'avis de l'IA ; `false` : seulement le plan calculé |
+| `on_demand_quotes` | `true` : chiffrer les couvertures en direct sur KyberSwap (réseau) |
+
+La réponse contient toujours `plan` (positions, stratégies, couverture). `advice` contient l'avis de l'IA avec le résultat recalculé de chaque stratégie, ou `null`. Dans ce cas, `advice_error` dit pourquoi : clé absente ou refusée, quota, réponse invalide. **Jamais d'erreur 500, jamais de conseil inventé.**
+
+**Le README** : la section « Crisis mode » est ajoutée en bas, en anglais pour l'équipe. Elle couvre le modèle (une ligne par formule), l'univers de couverture, le conseiller IA et sa configuration, la route avec un exemple réel tiré de la crise combinée, les limites et les tests.
+
+**Tests (`tests/test_crisis_api.py`, 4 tests)** :
+- le plan seul contient positions, stratégies et couverture ;
+- un échec de l'IA garde le plan et explique l'erreur ;
+- une simulation enregistrée est bien réutilisée ;
+- une simulation inconnue donne une erreur 404.
+
+Les tests forcent une clé vide : aucun appel réseau, même si `.env` contient une clé.
+
+**Essai réel avec Gemini :** l'appel a atteint Google, mais la clé du `.env` a été refusée (« API key not valid »). Ça a révélé que Gemini signale une clé invalide avec le code 400 (raison `API_KEY_INVALID`). C'est corrigé (commit `5796aff`) et testé. À refaire avec une clé valide.
+
+**Fusion sur `main` :** Ismail (P2) a fusionné `feat/p3-crisis-advisor` sur `main` après l'étape 10 (commit `2e10b74`). Les étapes 11 et 12 n'y sont pas encore.
+
+Suite complète du repo : **452 tests verts**.
+
+### Étape 12 bis : premier vrai essai avec Gemini et corrections
+
+**L'essai réel** (crise combinée, clé valide) a marché du premier coup techniquement : réponse en 5 secondes, schéma respecté, aucun chiffre inventé. Mais trois défauts de **raisonnement** sont apparus :
+
+| Défaut observé | Correction |
+|---|---|
+| Les 3 stratégies de l'IA recopiaient exactement les candidats du code | Consigne : au moins une stratégie différente. Le code marque chaque stratégie (`matches_candidate`) et **relance une fois** avec une remarque si les 3 sont des copies ; si elle recopie encore, c'est signalé |
+| Le texte parlait de « changements de taux » dans un scénario sans taux, et disait qu'un prêt ne pouvait pas être retiré alors que le retrait était possible | Contrôles de cohérence (`consistency_warnings`) contre les données envoyées |
+| L'IA recommandait une stratégie perdant environ 450 000 $ de plus que la meilleure, pour « garder du potentiel de hausse », alors que le scénario est certain | Consigne : l'objectif est la perte la plus faible, autre choix seulement avec une raison tirée des données. Le code signale l'écart en dollars (calculé par le moteur) sans remplacer le choix |
+
+**Résultat après correction** (vrai appel) : recommandation = « Minimum Loss Execution » (200 047 $), une stratégie nouvelle (« Partial Depeg Defense », 535 272 $), aucune incohérence, aucun chiffre inventé. La relance porte le temps de réponse à environ 12 secondes.
+
+**Leçon :** les garde-fous sur les chiffres ne suffisent pas. Une IA peut respecter tous les chiffres et quand même mal raisonner (recommander plus cher, recopier). Il faut aussi vérifier ses **conclusions** contre l'objectif.
+
+**Tests ajoutés** (`test_advisor.py`, 14 tests au total) :
+- relance quand tout est recopié ;
+- signalement si elle recopie encore, et pas de relance si la réponse est déjà nouvelle ;
+- retrait faussement « impossible » signalé ;
+- taux signalés seulement si le scénario n'en a pas ;
+- écart de recommandation signalé, et absent si la meilleure est recommandée.
+
+Suite complète du repo : **459 tests verts**.
+
+### Suite possible
+
+| Qui | Action |
+|---|---|
+| P4 | Afficher le mode crise dans le dashboard (route `/api/v1/crisis-advice`) |
+| P1 | Ajouter le prix de l'USDT au snapshot et le PT-sUSDe au registre, pour élargir les couvertures chiffrables |
+| Équipe | Fusionner les étapes 11 et 12 sur `main` par une PR |
