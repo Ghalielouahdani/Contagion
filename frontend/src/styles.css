@@ -1412,21 +1412,54 @@ tbody tr[data-highlighted="true"] {
 
 .scenario-layout {
   grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: clamp(18px, 2.2vw, 34px);
 }
 
 .preset-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--np-grid-gap);
+  overflow: hidden;
+  border: 1px solid var(--np-line);
+  background:
+    linear-gradient(135deg, var(--np-scenario-wash), transparent 58%),
+    var(--np-line);
+  box-shadow: var(--np-shadow);
 }
 
 .preset-card span {
-  color: var(--np-accent-coral);
+  color: var(--np-accent);
+  font-size: 10px;
+  font-weight: var(--np-weight-strong);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.preset-card strong {
+  color: var(--np-strong);
+  font-family: var(--np-font-display);
+  font-size: clamp(20px, 1.75vw, 30px);
+  font-weight: 500;
+  line-height: 0.98;
+}
+
+.preset-card p {
+  margin: 0;
+  color: var(--np-muted);
+  font-size: var(--np-size-0);
+  line-height: 1.48;
 }
 
 .control-panel {
+  position: sticky;
+  top: 42px;
   display: grid;
-  gap: 12px;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--np-line);
+  background: var(--np-line);
+  box-shadow: var(--np-shadow);
 }
 
 .control-row,
@@ -1435,10 +1468,22 @@ tbody tr[data-highlighted="true"] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
-  padding: 16px;
-  border: 1px solid var(--np-line);
-  border-radius: var(--np-radius);
-  background: var(--np-page);
+  padding: 17px 18px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(135deg, transparent, var(--np-scenario-wash)),
+    var(--np-page);
+  transition:
+    background var(--np-fast) ease,
+    transform var(--np-fast) ease;
+}
+
+.control-row:hover {
+  background:
+    linear-gradient(135deg, var(--np-scenario-wash), transparent 78%),
+    var(--np-surface);
+  transform: translateX(-2px);
 }
 
 .control-row input {
@@ -1446,11 +1491,75 @@ tbody tr[data-highlighted="true"] {
   accent-color: var(--np-strong);
 }
 
+.control-row span {
+  color: var(--np-muted);
+  font-size: 10px;
+  font-weight: var(--np-weight-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.control-row strong {
+  color: var(--np-strong);
+  font-family: var(--np-font-mono);
+  font-size: var(--np-size-0);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.control-row input[type="range"] {
+  height: 18px;
+  appearance: none;
+  background: transparent;
+}
+
+.control-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: var(--np-radius-pill);
+  background: linear-gradient(90deg, var(--np-accent), var(--np-line-strong));
+}
+
+.control-row input[type="range"]::-webkit-slider-thumb {
+  width: 17px;
+  height: 17px;
+  margin-top: -7.5px;
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--np-accent) 62%, var(--np-page));
+  border-radius: 50%;
+  background: var(--np-page);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--np-accent) 10%, transparent),
+    0 8px 20px var(--np-glow-accent);
+}
+
+.control-row input[type="range"]::-moz-range-track {
+  height: 2px;
+  border-radius: var(--np-radius-pill);
+  background: linear-gradient(90deg, var(--np-accent), var(--np-line-strong));
+}
+
+.control-row input[type="range"]::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
+  border: 1px solid color-mix(in srgb, var(--np-accent) 62%, var(--np-page));
+  border-radius: 50%;
+  background: var(--np-page);
+  box-shadow: 0 8px 20px var(--np-glow-accent);
+}
+
 .run-card {
   min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  color: var(--np-page);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--np-accent) 88%, var(--np-strong)), var(--np-accent));
+  box-shadow: none;
+}
+
+.run-card:hover {
+  box-shadow: 0 20px 46px var(--np-glow-accent);
 }
 
 .visual-panel,
@@ -1465,11 +1574,20 @@ tbody tr[data-highlighted="true"] {
 .gauge-panel {
   display: grid;
   align-content: start;
+  gap: 18px;
+  background:
+    linear-gradient(180deg, var(--np-panel-wash), transparent),
+    var(--np-page);
 }
 
 .chart-frame {
   width: 100%;
   min-height: 260px;
+  overflow: hidden;
+  border-top: 1px solid var(--np-line);
+  background:
+    linear-gradient(90deg, transparent 0, transparent calc(25% - 1px), var(--np-plot-grid) 25%, transparent calc(25% + 1px)),
+    linear-gradient(180deg, color-mix(in srgb, var(--np-scenario-wash) 78%, transparent), transparent 62%);
 }
 
 .chart-tooltip {
@@ -1679,6 +1797,14 @@ tbody tr[data-highlighted="true"] {
   border-radius: 50%;
   background: transparent;
   color: var(--np-page);
+  transition:
+    transform var(--np-medium) var(--np-spring),
+    filter var(--np-medium) ease;
+}
+
+.assistant-orb-button:hover {
+  transform: translateY(-3px) scale(1.025);
+  filter: saturate(1.08);
 }
 
 .assistant-orb-button:focus-visible {
@@ -1691,7 +1817,10 @@ tbody tr[data-highlighted="true"] {
   height: 76px;
   overflow: visible;
   transform: scale(var(--orb-scale, 1));
-  filter: drop-shadow(0 16px 34px color-mix(in srgb, var(--np-strong) 18%, transparent));
+  filter:
+    drop-shadow(0 16px 34px color-mix(in srgb, var(--np-strong) 18%, transparent))
+    drop-shadow(0 0 24px var(--np-glow-accent));
+  animation: orb-breathe 4.6s var(--np-ease) infinite;
 }
 
 .orb-icon {
@@ -1708,11 +1837,15 @@ tbody tr[data-highlighted="true"] {
   max-height: min(680px, calc(100vh - 150px));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  border: 1px solid var(--np-line);
-  border-radius: var(--np-radius);
-  background: color-mix(in srgb, var(--np-page) 96%, transparent);
-  box-shadow: var(--np-shadow-hover);
-  backdrop-filter: blur(16px);
+  border: 1px solid var(--np-line-strong);
+  border-radius: var(--np-radius-tight);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--np-scenario-wash) 76%, transparent), transparent 48%),
+    color-mix(in srgb, var(--np-page) 94%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--np-strong) 7%, transparent),
+    0 30px 90px color-mix(in srgb, var(--np-strong) 15%, transparent);
+  backdrop-filter: blur(18px) saturate(1.05);
 }
 
 .assistant-header {
@@ -1720,34 +1853,40 @@ tbody tr[data-highlighted="true"] {
   align-items: start;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 18px 12px;
+  padding: 20px 20px 14px;
   border-bottom: 1px solid var(--np-line);
 }
 
 .assistant-header h2 {
   margin-bottom: 0;
+  font-family: var(--np-font-display);
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 500;
+  line-height: 0.96;
 }
 
 .assistant-messages {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 12px;
   overflow: auto;
-  padding: 16px 18px;
+  padding: 18px 20px;
 }
 
 .assistant-message {
   width: fit-content;
   max-width: 92%;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--np-line);
-  border-radius: var(--np-radius);
-  background: var(--np-page);
+  border-radius: var(--np-radius-tight);
+  background: color-mix(in srgb, var(--np-page) 92%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--np-strong) 5%, transparent);
 }
 
 .assistant-message[data-role="user"] {
   justify-self: end;
-  border-color: var(--np-strong);
+  border-color: color-mix(in srgb, var(--np-accent) 44%, var(--np-strong));
+  background: color-mix(in srgb, var(--np-accent-soft) 26%, var(--np-page));
 }
 
 .assistant-message-pending {
@@ -1775,8 +1914,8 @@ tbody tr[data-highlighted="true"] {
 .assistant-input {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
-  gap: 8px;
-  padding: 12px;
+  gap: 9px;
+  padding: 13px;
   border-top: 1px solid var(--np-line);
 }
 
@@ -1786,8 +1925,14 @@ tbody tr[data-highlighted="true"] {
   border: 1px solid var(--np-line-strong);
   border-radius: var(--np-radius-pill);
   padding: 0 12px;
-  background: var(--np-page);
+  background: color-mix(in srgb, var(--np-page) 86%, transparent);
   color: var(--np-strong);
+}
+
+.assistant-input input:focus {
+  border-color: var(--np-accent);
+  box-shadow: 0 0 0 5px var(--np-focus);
+  outline: 0;
 }
 
 @keyframes assistant-pending {
@@ -1796,6 +1941,16 @@ tbody tr[data-highlighted="true"] {
   }
   to {
     background-position: -120% 0;
+  }
+}
+
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(var(--orb-scale, 1)) rotate(0deg);
+  }
+  48% {
+    transform: scale(calc(var(--orb-scale, 1) * 1.035)) rotate(2deg);
   }
 }
 

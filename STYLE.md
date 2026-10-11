@@ -75,3 +75,16 @@ Dark mode:
 - The chosen font pairing is:
   - Display: `Newsreader`, then system serif fallbacks for high-end editorial tension.
   - UI/text: `IBM Plex Sans`, then `Inter`/system for precise controls and dense financial labels.
+
+## Scenario Lab Vertical Slice
+
+- Scenario Lab is the second slice and the reference for interactive controls.
+- The layout reads like an editorial stress-testing desk: presets form a low, gridded index; controls sit in a tighter right rail; charts occupy the main reading plane.
+- Preset cards should not look like equal SaaS tiles. They use hairline dividers, a small accent rule, quiet uppercase labels and only one elevated selected state.
+- Controls are tactile but restrained: thin range tracks, accent-filled thumbs, small-caps labels, tabular values, and a single accent run button.
+- Data visuals use the same neutral/accent encoding everywhere:
+  - Before/current/reference values: muted neutral.
+  - After/stressed/selected values: strong ink.
+  - Risk movement: semantic low/mid/high colors, never neon.
+- Assistant surface follows the same craft: translucent editorial panel, sentence captions, soft alive orb, no generic chat-bubble color palette.
+- Motion is staggered and quiet: cards rise 1-3px, panels fade/rise, orb breathes while idle, all disabled under reduced motion.
