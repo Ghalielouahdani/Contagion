@@ -1807,13 +1807,46 @@ tbody tr[data-highlighted="true"] td:first-child {
     linear-gradient(180deg, color-mix(in srgb, var(--np-scenario-wash) 78%, transparent), transparent 62%);
 }
 
+.chart-frame .recharts-cartesian-grid line {
+  stroke: var(--np-plot-grid);
+}
+
+.chart-frame .recharts-cartesian-axis-tick-value {
+  fill: var(--np-muted);
+  font-family: var(--np-font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-frame .recharts-tooltip-cursor {
+  fill: color-mix(in srgb, var(--np-accent) 7%, transparent);
+  stroke: color-mix(in srgb, var(--np-accent) 24%, transparent);
+}
+
+.chart-frame .recharts-rectangle,
+.chart-frame .recharts-line-curve,
+.chart-frame .recharts-dot {
+  transition:
+    opacity var(--np-fast) ease,
+    filter var(--np-fast) ease,
+    transform var(--np-fast) ease;
+}
+
+.chart-frame .recharts-line-curve {
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--np-strong) 6%, transparent));
+}
+
+.chart-frame .recharts-active-dot {
+  filter: drop-shadow(0 0 10px var(--np-glow-accent));
+}
+
 .decision-chart-frame {
   position: relative;
   border: 1px solid var(--np-line);
   border-top-color: var(--np-line-strong);
   background:
     linear-gradient(90deg, transparent 0, transparent calc(20% - 1px), var(--np-plot-grid) 20%, transparent calc(20% + 1px)),
-    linear-gradient(180deg, color-mix(in srgb, var(--np-accent-coral) 8%, transparent), transparent 44%),
+    linear-gradient(180deg, color-mix(in srgb, var(--np-accent) 8%, transparent), transparent 44%),
     var(--np-page);
 }
 
@@ -1828,12 +1861,6 @@ tbody tr[data-highlighted="true"] td:first-child {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   pointer-events: none;
-}
-
-.decision-chart-frame .recharts-cartesian-axis-tick-value {
-  fill: var(--np-muted);
-  font-family: var(--np-font-mono);
-  font-size: 11px;
 }
 
 .decision-chart-frame .recharts-brush-slide {

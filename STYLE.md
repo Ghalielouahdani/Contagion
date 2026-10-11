@@ -125,3 +125,9 @@ Dark mode:
 - Orb states are explicit: idle breathes slowly, listening/speaking lift and glow, thinking subtly shimmers.
 - The panel keeps one accent rail and translucent editorial surface. Messages use restrained plaque styling, not bright chat bubbles.
 - Captions and speech diagnostics are quiet secondary evidence with their own small bordered surfaces.
+
+## Global Chart Finish
+
+- Recharts primitives are styled globally inside `.chart-frame`: tabular axis labels, quiet plot grid, bordeaux hover cursor, soft line shadow and subtle active-dot glow.
+- Scenario bars use neutral-before and ink-after tokens; decision curves use bordeaux cost and ink residual tokens.
+- Data visuals should inherit tokens rather than hard-coding palette values in components.

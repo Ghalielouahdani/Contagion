@@ -1770,16 +1770,16 @@ function ScenarioLab({
                 if (active?.id) setSelectedPosition(active.id);
               }}
             >
-              <CartesianGrid stroke="var(--np-line)" vertical={false} />
+              <CartesianGrid stroke="var(--np-plot-grid)" vertical={false} />
               <XAxis dataKey="name" tickLine={false} axisLine={false} />
               <YAxis tickFormatter={(value) => money(value).replace(".00", "")} tickLine={false} axisLine={false} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="before" fill="var(--np-soft)" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="before" fill="var(--np-data-before)" radius={[4, 4, 0, 0]}>
                 {valuationData.map((entry) => (
                   <Cell key={`before-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
                 ))}
               </Bar>
-              <Bar dataKey="after" fill="var(--np-strong)" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="after" fill="var(--np-data-after)" radius={[4, 4, 0, 0]}>
                 {valuationData.map((entry) => (
                   <Cell key={`after-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
                 ))}
@@ -1905,14 +1905,14 @@ function DecisionEngine({
                   if (active?.fraction) setInspectedExitFraction(active.fraction);
                 }}
               >
-                <CartesianGrid stroke="var(--np-line)" vertical={false} />
+                <CartesianGrid stroke="var(--np-plot-grid)" vertical={false} />
                 <XAxis dataKey="exit" tickLine={false} axisLine={false} />
                 <YAxis tickFormatter={(value) => money(value)} tickLine={false} axisLine={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="cost"
-                  stroke="var(--np-accent-coral)"
+                  stroke="var(--np-data-cost)"
                   strokeWidth={2}
                   dot={{ r: 3, strokeWidth: 1.5 }}
                   activeDot={{ r: 6, strokeWidth: 2 }}
@@ -1920,7 +1920,7 @@ function DecisionEngine({
                 <Line
                   type="monotone"
                   dataKey="residual"
-                  stroke="var(--np-strong)"
+                  stroke="var(--np-data-residual)"
                   strokeWidth={2}
                   strokeDasharray="4 5"
                   dot={{ r: 3, strokeWidth: 1.5 }}

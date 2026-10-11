@@ -30,6 +30,8 @@
   --np-scenario-wash: rgba(122, 31, 53, 0.06);
   --np-data-before: rgba(35, 31, 25, 0.22);
   --np-data-after: #15130f;
+  --np-data-cost: #7a1f35;
+  --np-data-residual: #15130f;
   --np-plot-grid: rgba(35, 31, 25, 0.08);
   --np-glow-accent: rgba(122, 31, 53, 0.18);
   --np-graph-surface: #f3eee4;
@@ -100,6 +102,8 @@
   --np-scenario-wash: rgba(200, 107, 130, 0.085);
   --np-data-before: rgba(246, 238, 221, 0.2);
   --np-data-after: #f9f2e5;
+  --np-data-cost: #c86b82;
+  --np-data-residual: #f9f2e5;
   --np-plot-grid: rgba(246, 238, 221, 0.09);
   --np-glow-accent: rgba(200, 107, 130, 0.24);
   --np-graph-surface: #16130f;
