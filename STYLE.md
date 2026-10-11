@@ -111,3 +111,10 @@ Dark mode:
 - The chart keeps brush/zoom but styles it as part of the product, not a default Recharts widget.
 - Position tabs use the same hover/selected language as the portfolio cards, so cross-highlighting feels consistent across views.
 - The inspector uses one accent rule and editorial type for the verdict; warning and loss breakdown data stay quieter underneath.
+
+## Login And Intro Vertical Slice
+
+- The intro is a short cinematic brand reveal, not a loader: restrained orbit, accent line, grain, large editorial wordmark and calm fade into login.
+- The login screen keeps the same minimal centered composition but gains a crafted product surface with one accent rail, hairline border and subtle depth.
+- Forms remain quiet and accessible. Validation/focus states use the accent line and focus wash, not loud default outlines.
+- Touch ID / passkey controls share the same physical hover language as the rest of the app.

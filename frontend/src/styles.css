@@ -71,10 +71,22 @@ select:focus-visible {
   place-items: center;
   overflow: hidden;
   background:
+    radial-gradient(circle at 18% 46%, color-mix(in srgb, var(--np-accent) 13%, transparent), transparent 28%),
+    radial-gradient(circle at 84% 50%, color-mix(in srgb, var(--np-strong) 7%, transparent), transparent 30%),
     linear-gradient(90deg, color-mix(in srgb, var(--np-page) 94%, transparent), color-mix(in srgb, var(--np-surface) 82%, transparent)),
     var(--np-page);
   color: var(--np-strong);
   cursor: default;
+}
+
+.intro-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: clamp(28px, 11vw, 170px);
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--np-line-strong), transparent);
 }
 
 .intro-noise {
@@ -102,6 +114,7 @@ select:focus-visible {
     radial-gradient(circle at 68% 72%, color-mix(in srgb, var(--np-strong) 10%, transparent), transparent 34%);
   filter: blur(0.2px);
   transform: translateY(-50%);
+  animation: intro-orbit-breathe 5.8s var(--np-ease) infinite;
 }
 
 .intro-panel {
@@ -153,7 +166,7 @@ select:focus-visible {
   max-width: none;
   margin: 0;
   font-family: var(--np-font-display);
-  font-size: clamp(30px, 8.4vw, 112px);
+  font-size: clamp(30px, 7.2vw, 96px);
   line-height: 0.88;
   letter-spacing: 0;
   white-space: nowrap;
@@ -179,18 +192,48 @@ select:focus-visible {
   transform-origin: left;
 }
 
+@keyframes intro-orbit-breathe {
+  0%,
+  100% {
+    transform: translateY(-50%) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.035) rotate(3deg);
+  }
+}
+
 .auth-shell {
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: clamp(28px, 6vw, 72px);
   background:
+    radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--np-accent) 10%, transparent), transparent 26%),
+    linear-gradient(90deg, transparent 0, transparent calc(50% - 1px), var(--np-line) 50%, transparent calc(50% + 1px)),
     linear-gradient(180deg, transparent 0, transparent 74%, var(--np-line) 74%, transparent calc(74% + 1px)),
     var(--np-page);
 }
 
 .auth-panel {
+  position: relative;
   width: min(100%, 486px);
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid color-mix(in srgb, var(--np-line) 72%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--np-surface) 64%, transparent), transparent 70%),
+    color-mix(in srgb, var(--np-page) 92%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--np-strong) 6%, transparent),
+    0 34px 90px color-mix(in srgb, var(--np-strong) 8%, transparent);
+  backdrop-filter: blur(14px) saturate(1.03);
+}
+
+.auth-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--np-accent);
 }
 
 .auth-topline {
@@ -221,6 +264,7 @@ select:focus-visible {
   gap: 0;
   margin-bottom: 24px;
   border: 1px solid var(--np-line-strong);
+  background: color-mix(in srgb, var(--np-page) 72%, transparent);
 }
 
 .auth-switch button {
@@ -242,7 +286,7 @@ select:focus-visible {
 }
 
 .auth-switch button[aria-selected="true"] {
-  background: var(--np-strong);
+  background: var(--np-accent);
   color: var(--np-page);
 }
 
@@ -270,7 +314,16 @@ select:focus-visible {
   padding: 0;
   transition:
     border-color var(--np-fast) ease,
-    background var(--np-fast) ease;
+    background var(--np-fast) ease,
+    box-shadow var(--np-fast) ease;
+}
+
+.auth-form input[type="text"]:focus,
+.auth-form input[type="password"]:focus,
+.auth-form input:not([type]):focus {
+  border-color: var(--np-accent);
+  box-shadow: 0 7px 0 -5px var(--np-focus);
+  outline: 0;
 }
 
 .auth-form input[aria-invalid="true"] {
@@ -347,17 +400,19 @@ select:focus-visible {
   gap: 9px;
   border: 1px solid var(--np-line-strong);
   border-radius: var(--np-radius-pill);
-  background: var(--np-page);
+  background: color-mix(in srgb, var(--np-page) 86%, transparent);
   color: var(--np-strong);
   transition:
     border-color var(--np-fast) ease,
     transform var(--np-fast) ease,
-    color var(--np-fast) ease;
+    color var(--np-fast) ease,
+    box-shadow var(--np-fast) ease;
 }
 
 .biometric-button:not(:disabled):hover {
   border-color: var(--np-strong);
   transform: translateY(-1px);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--np-strong) 8%, transparent);
 }
 
 .biometric-button:disabled {
