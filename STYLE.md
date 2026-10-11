@@ -25,14 +25,14 @@ Light mode:
 - Ink: near-black with brown undertone.
 - Muted text: graphite.
 - Lines: low-contrast warm grey hairlines.
-- Accent: mineral green, used for primary action and selected state.
+- Accent: deep bordeaux, used for primary action and selected state.
 - Risk semantics: amber, clay, and deep red. They should feel analytical, not alarming.
 
 Dark mode:
 - Page: charred black, not flat black.
 - Ink: warm ivory.
 - Lines: translucent warm grey.
-- Accent: softer mineral green.
+- Accent: softer luminous bordeaux.
 - Data surfaces stay low-glow and precise.
 
 ## Layout
@@ -70,7 +70,7 @@ Dark mode:
 - The Portfolio Dashboard is the first fully art-directed slice.
 - The KPI strip behaves like a financial table: one shared four-row grid for label, figure, spacer and footnote.
 - The positions area is master-detail: one large selected position panel, three smaller peer cards, and temporary hover emphasis only on the card under interaction.
-- Selected state uses the single mineral-green accent through surface tint, a hairline accent rule and a restrained active shadow.
+- Selected state uses the single bordeaux accent through surface tint, a hairline accent rule and a restrained active shadow.
 - Figures use tabular numerals and animated count-up for legibility and polish.
 - Each position card carries a low-profile stress rail derived from conditional loss over gross exposure. It adds risk texture without changing compact card dimensions.
 - Cross-highlighting links KPI hover, selected detail card, peer cards and table rows. Nothing should feel stuck; hover is temporary, selection is explicit.
