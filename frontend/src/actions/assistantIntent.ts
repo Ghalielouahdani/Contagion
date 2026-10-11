@@ -78,8 +78,9 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
     const didRun = actions.some((action) => action.type === "run_simulation");
     // New inputs: the engine recomputes on screen; quoting the previous result would contradict it.
     const changesInputs = actions.some((action) => ["set_scenario", "set_shock", "set_horizon", "set_liquidity_loss"].includes(action.type));
+    const finalActions = dedupeActions(changesInputs ? [...actions, { type: "navigate_view", view: "scenario" }] : actions);
     return {
-      actions: dedupeActions(actions),
+      actions: finalActions,
       message: `${notes.length ? `Set ${notes.join(", ")} — ` : ""}${didRun ? "running now" : "showing it now"}. ${
         changesInputs ? "The risk engine recomputes the results on screen for these inputs." : summarizeCurrentOutcome(context)
       }`,
@@ -165,6 +166,12 @@ function dedupeActions(actions: DashboardAction[]) {
   const result: DashboardAction[] = [];
   for (const action of actions) {
     const key = JSON.stringify(action);
+    if (action.type === "navigate_view") {
+      const existing = result.findIndex((item) => item.type === "navigate_view" && item.view === action.view);
+      if (existing >= 0) result.splice(existing, 1);
+      result.push(action);
+      continue;
+    }
     if (!result.some((item) => JSON.stringify(item) === key)) result.push(action);
   }
   return result;
