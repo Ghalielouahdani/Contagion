@@ -55,6 +55,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
 import { InteractiveLabel } from "./motion/primitives";
+import { NODE_H, NODE_W, STEP, columnLayout, columnOfX, edgeTypes, layeredLayout } from "./graphMotion";
 import { EquityBars } from "./ScenarioLabCharts";
 import { ComponentBars, MetricGauge } from "./ScenarioStory";
 import { GeneratedScenarioCard } from "./RiskScenarioAgent";
@@ -210,40 +211,10 @@ const scenarioControls: Record<ScenarioKind, Array<"shock" | "liquidity" | "ltSh
 const defaultExtraInputs = { ltShiftPct: -5, susdeApyPct: 0, borrowApyPct: 60, nodeId: "offchain:ethena_backing", nodeLossPct: 10 };
 type ExtraInputs = typeof defaultExtraInputs;
 
-// Left to right follows the direction of dependency: position -> market / exit venue -> oracle -> asset -> protocol.
-const graphColumn: Record<string, number> = {
-  position: 0,
-  market: 1,
-  venue: 1,
-  oracle: 2,
-  contract: 2,
-  asset: 3,
-  protocol: 4,
-  offchain_entity: 4,
-  chain: 4,
-};
-const typeOrder = ["position", "market", "venue", "oracle", "contract", "asset", "protocol", "offchain_entity", "chain"];
 
-function layoutGraph(nodes: GraphNode[]): Record<string, { x: number; y: number }> {
-  const columns = new Map<number, GraphNode[]>();
-  for (const node of nodes) {
-    const column = graphColumn[node.type] ?? 4;
-    columns.set(column, [...(columns.get(column) ?? []), node]);
-  }
-  const positions: Record<string, { x: number; y: number }> = {};
-  columns.forEach((items, column) => {
-    items
-      .sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type) || a.id.localeCompare(b.id))
-      .forEach((node, row) => {
-        positions[node.id] = { x: 40 + column * 270, y: 30 + row * 96 };
-      });
-  });
-  return positions;
-}
-
-// Scenario view: columns follow the shock, from the scenario factor (left) to the positions (right).
-// A path lists nodes position -> ... -> factor, so a node's column is its distance from the factor.
-function layoutPaths(paths: ContagionPath[], positionIds: string[]): Record<string, { x: number; y: number }> {
+// Scenario view: a node's column is its distance from the scenario factor (the shock travels left to right).
+// A path lists nodes position -> ... -> factor; positions sit in the last column.
+function layoutPaths(paths: ContagionPath[], positionIds: string[], links: Array<{ source: string; target: string }>) {
   const column = new Map<string, number>();
   const order = new Map<string, number>();
   for (const path of paths) {
@@ -254,24 +225,9 @@ function layoutPaths(paths: ContagionPath[], positionIds: string[]): Record<stri
       if (!order.has(id)) order.set(id, order.size);
     });
   }
-  const last = Math.max(0, ...column.values()) + 1;
+  const last = Math.max(-1, ...column.values()) + 1;
   positionIds.forEach((id) => column.set(id, last));
-  const columns = new Map<number, string[]>();
-  column.forEach((col, id) => columns.set(col, [...(columns.get(col) ?? []), id]));
-  const positions: Record<string, { x: number; y: number }> = {};
-  columns.forEach((ids, col) => {
-    ids
-      .sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0) || a.localeCompare(b))
-      .forEach((id, row) => {
-        positions[id] = { x: 40 + col * 290, y: 30 + row * 110 };
-      });
-  });
-  return positions;
-}
-
-/** Column of a node in the scenario layout (layoutPaths: x = 40 + column x 290), capped for the motion delays. */
-function flowColumn(position?: { x: number }) {
-  return Math.min(Math.max(Math.round(((position?.x ?? 40) - 40) / 290), 0), 6);
+  return columnLayout(column, order, links);
 }
 
 const confidenceTone: Record<string, string> = {
@@ -1007,8 +963,22 @@ function DependencyGraphView({
   // Positions the scenario cannot reach stay visible, so "no path" reads as "not exposed here".
   const shownPositionIds = useMemo(() => (pathScope === "all" ? positions.map((p) => `position:${p.position_id}`) :
     [`position:${selectedPosition}`]), [pathScope, positions, selectedPosition]);
-  const layout = useMemo(() => (scenarioOnly ? layoutPaths(displayedPaths, shownPositionIds) : layoutGraph(graph.nodes)),
-    [scenarioOnly, displayedPaths, shownPositionIds, graph.nodes]);
+  const layout = useMemo(() => (scenarioOnly
+    ? layoutPaths(displayedPaths, shownPositionIds, graph.edges.filter((e) => criticalEdges.has(e.id)))
+    : layeredLayout(graph.nodes, graph.edges)),
+    [scenarioOnly, displayedPaths, shownPositionIds, graph.nodes, graph.edges, criticalEdges]);
+  // Shock timeline (scenario graph): column c is reached at c x STEP; nodes of one column follow each other closely.
+  const nodeDelay = useMemo(() => {
+    const seen = new Map<number, number>();
+    const delays = new Map<string, number>();
+    Object.entries(layout).sort((a, b) => a[1].x - b[1].x || a[1].y - b[1].y).forEach(([id, p]) => {
+      const col = columnOfX(p.x), i = seen.get(col) ?? 0;
+      seen.set(col, i + 1);
+      delays.set(id, col * STEP + i * 0.06);
+    });
+    return delays;
+  }, [layout]);
+  const [replay, setReplay] = useState(0);
   const nodeLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
   const visibleNodeIds = useMemo(() => {
     const scenarioNodes = new Set([...criticalNodes, ...shownPositionIds]);
@@ -1026,10 +996,12 @@ function DependencyGraphView({
       .filter((node) => visibleNodeIds.has(node.id))
       .map((node) => ({
         id: node.id,
-        position: layout[node.id] ?? { x: 160, y: 160 },
-        ...(scenarioOnly ? { sourcePosition: Position.Right, targetPosition: Position.Left,
-          // Motion: the shock reaches each column in turn, from the scenario factor to the positions.
-          className: `flow-reveal flow-col-${flowColumn(layout[node.id])}` } : {}),
+        position: layout[node.id] ?? { x: 0, y: 0 },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+        style: { width: NODE_W, height: NODE_H, ...(scenarioOnly ? { ["--node-delay" as string]: `${nodeDelay.get(node.id) ?? 0}s` } : {}) },
+        // Motion: the shock reaches each column in turn, from the scenario factor to the positions.
+        ...(scenarioOnly ? { className: "flow-reveal" } : {}),
         data: {
           label: (
             <div
@@ -1058,7 +1030,7 @@ function DependencyGraphView({
         },
         draggable: true,
       }));
-  }, [graph.nodes, layout, selectedPosition, hoveredPosition, setSelectedPosition, visibleNodeIds, criticalNodes, roots, positionRisks, scenarioOnly]);
+  }, [graph.nodes, layout, nodeDelay, selectedPosition, hoveredPosition, setSelectedPosition, visibleNodeIds, criticalNodes, roots, positionRisks, scenarioOnly]);
 
   const flowEdges = useMemo<Edge[]>(() => {
     if (scenarioOnly) {
@@ -1070,10 +1042,11 @@ function DependencyGraphView({
           source: edge.target,
           target: edge.source,
           label: edgeLabel(edge.relation),
-          animated: true,
-          className: `edge-${edge.confidence} edge-critical flow-edge-col-${flowColumn(layout[edge.target])}`,
-          markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
-          data: edge,
+          type: "shock",
+          className: `edge-${edge.confidence} edge-critical edge-shock`,
+          markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+          // Drawn once the dependency (its drawn source) is on screen, so the shock arrives with the next column.
+          data: { ...edge, delay: (nodeDelay.get(edge.target) ?? 0) + 0.3 },
         }));
     }
     return graph.edges
@@ -1088,10 +1061,10 @@ function DependencyGraphView({
         data: edge,
         style: { opacity: criticalEdges.size && !criticalEdges.has(edge.id) ? 0.2 : 1 },
       }));
-  }, [criticalEdges, graph.edges, visibleNodeIds, scenarioOnly]);
+  }, [criticalEdges, graph.edges, visibleNodeIds, scenarioOnly, nodeDelay]);
 
   const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
-  const flowKey = `${scope}-${activeFactor}-${risk?.simulation_id ?? graph.graph_id}-${risk?.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
+  const flowKey = `${scope}-${replay}-${activeFactor}-${risk?.simulation_id ?? graph.graph_id}-${risk?.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
 
   return (
     <div className="page-stack">
@@ -1157,13 +1130,20 @@ function DependencyGraphView({
             if (node.id.startsWith("position:")) setHoveredPosition(node.id.replace("position:", ""));
           }}
           onNodeMouseLeave={() => setHoveredPosition(null)}
+          edgeTypes={edgeTypes}
           fitView
-          minZoom={0.35}
+          fitViewOptions={{ padding: scenarioOnly ? 0.25 : 0.08, maxZoom: 1 }}
+          minZoom={0.2}
           maxZoom={1.35}
         >
           <Background gap={28} size={1} color="var(--np-line-strong)" />
-          <MiniMap pannable zoomable nodeColor={(node) => nodeTypeColor[(graph.nodes.find((item) => item.id === node.id) as GraphNode)?.type] ?? "var(--np-soft)"} />
+          {scenarioOnly ? null : <MiniMap pannable zoomable nodeColor={(node) => nodeTypeColor[(graph.nodes.find((item) => item.id === node.id) as GraphNode)?.type] ?? "var(--np-soft)"} />}
           <Controls />
+          {scenarioOnly && displayedPaths.length ? <Panel position="top-right" className="flow-panel">
+            <button className="np-button" onClick={() => setReplay((n) => n + 1)}>
+              <RefreshCw size={12} /> <InteractiveLabel>Replay the shock</InteractiveLabel>
+            </button>
+          </Panel> : null}
           {scenarioOnly && !displayedPaths.length ? <Panel position="top-center" className="flow-panel">
             <span className="microcopy">No dependency path for this selection: the scenario does not reach it.</span>
           </Panel> : null}
