@@ -1,0 +1,1437 @@
+{
+  "simulation_id": "result_sim_live_001",
+  "portfolio_id": "live_ethena_01",
+  "scenario_id": "usde_depeg",
+  "horizon_days": 7,
+  "depth_factor": "1.0",
+  "positions": [
+    {
+      "position_id": "ethena_susde_01",
+      "position_type": "token_holding",
+      "holding_loss_usd": "100147.63",
+      "early": {
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "100147.63",
+            "total_loss_usd": "100147.63",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "500738.17",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "114.29",
+            "exit_cost_usd": "121.60",
+            "foregone_yield_usd": "475.31",
+            "residual_loss_usd": "75110.72",
+            "total_loss_usd": "75707.64",
+            "saving_vs_hold_usd": "24439.99",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "1001476.35",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "457.17",
+            "exit_cost_usd": "464.48",
+            "foregone_yield_usd": "950.62",
+            "residual_loss_usd": "50073.82",
+            "total_loss_usd": "51488.92",
+            "saving_vs_hold_usd": "48658.71",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "1502214.52",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "1028.64",
+            "exit_cost_usd": "1035.95",
+            "foregone_yield_usd": "1425.93",
+            "residual_loss_usd": "25036.91",
+            "total_loss_usd": "27498.79",
+            "saving_vs_hold_usd": "72648.84",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2002952.69",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "1828.70",
+            "exit_cost_usd": "1836.01",
+            "foregone_yield_usd": "1901.24",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "3737.25",
+            "saving_vs_hold_usd": "96410.38",
+            "quote_status": "executable"
+          }
+        ],
+        "best": {
+          "action": "sell",
+          "fraction": "1.00",
+          "total_loss_usd": "3737.25",
+          "saving_vs_hold_usd": "96410.38"
+        }
+      },
+      "late": {
+        "already_incurred_usd": "100147.63",
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "475701.26",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "103.15",
+            "exit_cost_usd": "110.46",
+            "foregone_yield_usd": "475.31",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "585.77",
+            "saving_vs_hold_usd": "-585.77",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "951402.53",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "412.60",
+            "exit_cost_usd": "419.91",
+            "foregone_yield_usd": "950.62",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "1370.53",
+            "saving_vs_hold_usd": "-1370.53",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "1427103.79",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "928.35",
+            "exit_cost_usd": "935.66",
+            "foregone_yield_usd": "1425.93",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "2361.59",
+            "saving_vs_hold_usd": "-2361.59",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "1902805.05",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "1650.40",
+            "exit_cost_usd": "1657.71",
+            "foregone_yield_usd": "1901.24",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "3558.95",
+            "saving_vs_hold_usd": "-3558.95",
+            "quote_status": "executable"
+          }
+        ],
+        "best": {
+          "action": "hold",
+          "fraction": null,
+          "total_loss_usd": "0.00",
+          "saving_vs_hold_usd": "0.00"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "position_id": "aave_01",
+      "position_type": "collateralized_borrow",
+      "holding_loss_usd": "149939.52",
+      "early": {
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "149939.52",
+            "total_loss_usd": "149939.52",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "749697.62",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "80.22",
+            "exit_cost_usd": "83.04",
+            "foregone_yield_usd": "-406.61",
+            "residual_loss_usd": "112454.64",
+            "total_loss_usd": "112131.06",
+            "saving_vs_hold_usd": "37808.46",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "1499395.23",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "320.87",
+            "exit_cost_usd": "323.69",
+            "foregone_yield_usd": "-813.23",
+            "residual_loss_usd": "74969.76",
+            "total_loss_usd": "74480.22",
+            "saving_vs_hold_usd": "75459.30",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "2249092.85",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "721.96",
+            "exit_cost_usd": "724.78",
+            "foregone_yield_usd": "-1219.84",
+            "residual_loss_usd": "37484.88",
+            "total_loss_usd": "36989.81",
+            "saving_vs_hold_usd": "112949.71",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2998790.46",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "1283.48",
+            "exit_cost_usd": "1286.30",
+            "foregone_yield_usd": "-1626.46",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-340.16",
+            "saving_vs_hold_usd": "150279.68",
+            "quote_status": "executable"
+          }
+        ],
+        "best": {
+          "action": "sell",
+          "fraction": "1.00",
+          "total_loss_usd": "-340.16",
+          "saving_vs_hold_usd": "150279.68"
+        }
+      },
+      "late": {
+        "already_incurred_usd": "149939.52",
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "712212.74",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "72.40",
+            "exit_cost_usd": "75.22",
+            "foregone_yield_usd": "-406.61",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-331.40",
+            "saving_vs_hold_usd": "331.40",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "1424425.47",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "289.59",
+            "exit_cost_usd": "292.41",
+            "foregone_yield_usd": "-813.23",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-520.82",
+            "saving_vs_hold_usd": "520.82",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "2136638.21",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "651.57",
+            "exit_cost_usd": "654.39",
+            "foregone_yield_usd": "-1219.84",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-565.46",
+            "saving_vs_hold_usd": "565.46",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2848850.94",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "1158.34",
+            "exit_cost_usd": "1161.16",
+            "foregone_yield_usd": "-1626.46",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-465.30",
+            "saving_vs_hold_usd": "465.30",
+            "quote_status": "executable"
+          }
+        ],
+        "best": {
+          "action": "sell",
+          "fraction": "0.75",
+          "total_loss_usd": "-565.46",
+          "saving_vs_hold_usd": "565.46"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "position_id": "morpho_01",
+      "position_type": "collateralized_borrow",
+      "holding_loss_usd": "150221.45",
+      "early": {
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "150221.45",
+            "total_loss_usd": "150221.45",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "751107.26",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "257.16",
+            "exit_cost_usd": "264.47",
+            "foregone_yield_usd": "-5.97",
+            "residual_loss_usd": "112666.09",
+            "total_loss_usd": "112924.58",
+            "saving_vs_hold_usd": "37296.87",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "1502214.52",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "1028.64",
+            "exit_cost_usd": "1035.95",
+            "foregone_yield_usd": "-11.95",
+            "residual_loss_usd": "75110.73",
+            "total_loss_usd": "76134.73",
+            "saving_vs_hold_usd": "74086.72",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "2253321.77",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "2427.39",
+            "exit_cost_usd": "2434.70",
+            "foregone_yield_usd": "-17.92",
+            "residual_loss_usd": "37555.36",
+            "total_loss_usd": "39972.14",
+            "saving_vs_hold_usd": "110249.31",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "3004429.03",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "4716.95",
+            "exit_cost_usd": "4724.26",
+            "foregone_yield_usd": "-23.89",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "4700.37",
+            "saving_vs_hold_usd": "145521.08",
+            "quote_status": "executable"
+          }
+        ],
+        "best": {
+          "action": "sell",
+          "fraction": "1.00",
+          "total_loss_usd": "4700.37",
+          "saving_vs_hold_usd": "145521.08"
+        }
+      },
+      "late": {
+        "already_incurred_usd": "150221.45",
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "713551.90",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "232.09",
+            "exit_cost_usd": "239.40",
+            "foregone_yield_usd": "-5.97",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "233.42",
+            "saving_vs_hold_usd": "-233.42",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "1427103.79",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "928.35",
+            "exit_cost_usd": "935.66",
+            "foregone_yield_usd": "-11.95",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "923.71",
+            "saving_vs_hold_usd": "-923.71",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "2140655.69",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "2147.80",
+            "exit_cost_usd": "2155.11",
+            "foregone_yield_usd": "-17.92",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "2137.19",
+            "saving_vs_hold_usd": "-2137.19",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2854207.58",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "4199.82",
+            "exit_cost_usd": "4207.13",
+            "foregone_yield_usd": "-23.89",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "4183.24",
+            "saving_vs_hold_usd": "-4183.24",
+            "quote_status": "executable"
+          }
+        ],
+        "best": {
+          "action": "hold",
+          "fraction": null,
+          "total_loss_usd": "0.00",
+          "saving_vs_hold_usd": "0.00"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "position_id": "pendle_01",
+      "position_type": "pt_holding",
+      "holding_loss_usd": "110339.75",
+      "early": {
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "110339.75",
+            "total_loss_usd": "110339.75",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "516564.73",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "199.14",
+            "exit_cost_usd": "201.70",
+            "foregone_yield_usd": "496.43",
+            "residual_loss_usd": "82754.81",
+            "total_loss_usd": "83452.93",
+            "saving_vs_hold_usd": "26886.82",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "1033129.45",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "796.54",
+            "exit_cost_usd": "799.10",
+            "foregone_yield_usd": "992.85",
+            "residual_loss_usd": "55169.88",
+            "total_loss_usd": "56961.83",
+            "saving_vs_hold_usd": "53377.92",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "1549694.18",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "1792.22",
+            "exit_cost_usd": "1794.78",
+            "foregone_yield_usd": "1489.28",
+            "residual_loss_usd": "27584.94",
+            "total_loss_usd": "30869.00",
+            "saving_vs_hold_usd": "79470.75",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2066258.90",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "3186.17",
+            "exit_cost_usd": "3188.73",
+            "foregone_yield_usd": "1985.70",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "5174.43",
+            "saving_vs_hold_usd": "105165.32",
+            "quote_status": "proxy"
+          }
+        ],
+        "best": {
+          "action": "sell",
+          "fraction": "1.00",
+          "total_loss_usd": "5174.43",
+          "saving_vs_hold_usd": "105165.32"
+        }
+      },
+      "late": {
+        "already_incurred_usd": "110339.75",
+        "options": [
+          {
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "action": "sell",
+            "fraction": "0.25",
+            "sold_usd": "488979.79",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "178.44",
+            "exit_cost_usd": "181.00",
+            "foregone_yield_usd": "496.43",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "677.42",
+            "saving_vs_hold_usd": "-677.42",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.50",
+            "sold_usd": "977959.58",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "713.74",
+            "exit_cost_usd": "716.30",
+            "foregone_yield_usd": "992.85",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "1709.15",
+            "saving_vs_hold_usd": "-1709.15",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "1466939.37",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "1605.92",
+            "exit_cost_usd": "1608.48",
+            "foregone_yield_usd": "1489.28",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "3097.76",
+            "saving_vs_hold_usd": "-3097.76",
+            "quote_status": "executable"
+          },
+          {
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "1955919.16",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "2854.97",
+            "exit_cost_usd": "2857.53",
+            "foregone_yield_usd": "1985.70",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "4843.23",
+            "saving_vs_hold_usd": "-4843.23",
+            "quote_status": "executable"
+          }
+        ],
+        "best": {
+          "action": "hold",
+          "fraction": null,
+          "total_loss_usd": "0.00",
+          "saving_vs_hold_usd": "0.00"
+        }
+      },
+      "warnings": []
+    }
+  ],
+  "strategies": {
+    "early": [
+      {
+        "strategy_id": "hold_all",
+        "description": "Keep every position.",
+        "choices": {},
+        "same_as": null,
+        "timing": "early",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "100147.63",
+            "total_loss_usd": "100147.63",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "aave_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "149939.52",
+            "total_loss_usd": "149939.52",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "150221.45",
+            "total_loss_usd": "150221.45",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "110339.75",
+            "total_loss_usd": "110339.75",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          }
+        ],
+        "total_loss_usd": "510648.35",
+        "saving_vs_hold_all_usd": "0.00",
+        "shared_venue_penalty_usd": "0.00"
+      },
+      {
+        "strategy_id": "exit_all",
+        "description": "Exit every position that can be exited (sell or withdraw 100%).",
+        "choices": {
+          "ethena_susde_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "aave_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "morpho_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "pendle_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          }
+        },
+        "same_as": null,
+        "timing": "early",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2002952.69",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "258192.62",
+            "exit_cost_usd": "258199.93",
+            "foregone_yield_usd": "1901.24",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "260101.17",
+            "saving_vs_hold_usd": "-159953.54",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "aave_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2998790.46",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "1283.48",
+            "exit_cost_usd": "1286.30",
+            "foregone_yield_usd": "-1626.46",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-340.16",
+            "saving_vs_hold_usd": "150279.68",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "3004429.03",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "387288.93",
+            "exit_cost_usd": "387296.24",
+            "foregone_yield_usd": "-23.89",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "387272.35",
+            "saving_vs_hold_usd": "-237050.90",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2066258.90",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "3186.17",
+            "exit_cost_usd": "3188.73",
+            "foregone_yield_usd": "1985.70",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "5174.43",
+            "saving_vs_hold_usd": "105165.32",
+            "quote_status": "proxy"
+          }
+        ],
+        "total_loss_usd": "652207.79",
+        "saving_vs_hold_all_usd": "-141559.44",
+        "shared_venue_penalty_usd": "638935.90"
+      },
+      {
+        "strategy_id": "min_loss",
+        "description": "Lowest total loss: best action per position, adjusted for shared exit venues.",
+        "choices": {
+          "ethena_susde_01": {
+            "action": "hold",
+            "fraction": null
+          },
+          "aave_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "morpho_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "pendle_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          }
+        },
+        "same_as": null,
+        "timing": "early",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "100147.63",
+            "total_loss_usd": "100147.63",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "aave_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2998790.46",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "1283.48",
+            "exit_cost_usd": "1286.30",
+            "foregone_yield_usd": "-1626.46",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-340.16",
+            "saving_vs_hold_usd": "150279.68",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "3004429.03",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "4716.95",
+            "exit_cost_usd": "4724.26",
+            "foregone_yield_usd": "-23.89",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "4700.37",
+            "saving_vs_hold_usd": "145521.08",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2066258.90",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "3186.17",
+            "exit_cost_usd": "3188.73",
+            "foregone_yield_usd": "1985.70",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "5174.43",
+            "saving_vs_hold_usd": "105165.32",
+            "quote_status": "proxy"
+          }
+        ],
+        "total_loss_usd": "109682.28",
+        "saving_vs_hold_all_usd": "400966.07",
+        "shared_venue_penalty_usd": "0.00"
+      },
+      {
+        "strategy_id": "protect_liquidations",
+        "description": "Keep exposure; only deleverage positions the scenario makes liquidatable.",
+        "choices": {},
+        "same_as": "hold_all",
+        "timing": "early",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "100147.63",
+            "total_loss_usd": "100147.63",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "aave_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "149939.52",
+            "total_loss_usd": "149939.52",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "150221.45",
+            "total_loss_usd": "150221.45",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "110339.75",
+            "total_loss_usd": "110339.75",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          }
+        ],
+        "total_loss_usd": "510648.35",
+        "saving_vs_hold_all_usd": "0.00",
+        "shared_venue_penalty_usd": "0.00"
+      }
+    ],
+    "late": [
+      {
+        "strategy_id": "hold_all",
+        "description": "Keep every position.",
+        "choices": {},
+        "same_as": null,
+        "timing": "late",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "aave_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          }
+        ],
+        "total_loss_usd": "0.00",
+        "saving_vs_hold_all_usd": "0.00",
+        "shared_venue_penalty_usd": "0.00"
+      },
+      {
+        "strategy_id": "exit_all",
+        "description": "Exit every position that can be exited (sell or withdraw 100%).",
+        "choices": {
+          "ethena_susde_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "aave_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "morpho_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          },
+          "pendle_01": {
+            "action": "sell",
+            "fraction": "1.00"
+          }
+        },
+        "same_as": null,
+        "timing": "late",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "1902805.05",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "214996.04",
+            "exit_cost_usd": "215003.35",
+            "foregone_yield_usd": "1901.24",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "216904.59",
+            "saving_vs_hold_usd": "-216904.59",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "aave_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2848850.94",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "1158.34",
+            "exit_cost_usd": "1161.16",
+            "foregone_yield_usd": "-1626.46",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-465.30",
+            "saving_vs_hold_usd": "465.30",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "2854207.58",
+            "fees_usd": "0.00",
+            "gas_usd": "7.31",
+            "price_impact_usd": "322494.06",
+            "exit_cost_usd": "322501.37",
+            "foregone_yield_usd": "-23.89",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "322477.48",
+            "saving_vs_hold_usd": "-322477.48",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "sell",
+            "fraction": "1.00",
+            "sold_usd": "1955919.16",
+            "fees_usd": "0.00",
+            "gas_usd": "2.56",
+            "price_impact_usd": "2854.97",
+            "exit_cost_usd": "2857.53",
+            "foregone_yield_usd": "1985.70",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "4843.23",
+            "saving_vs_hold_usd": "-4843.23",
+            "quote_status": "executable"
+          }
+        ],
+        "total_loss_usd": "543760.00",
+        "saving_vs_hold_all_usd": "-543760.00",
+        "shared_venue_penalty_usd": "531639.88"
+      },
+      {
+        "strategy_id": "min_loss",
+        "description": "Lowest total loss: best action per position, adjusted for shared exit venues.",
+        "choices": {
+          "ethena_susde_01": {
+            "action": "hold",
+            "fraction": null
+          },
+          "aave_01": {
+            "action": "sell",
+            "fraction": "0.75"
+          },
+          "morpho_01": {
+            "action": "hold",
+            "fraction": null
+          },
+          "pendle_01": {
+            "action": "hold",
+            "fraction": null
+          }
+        },
+        "same_as": null,
+        "timing": "late",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "aave_01",
+            "action": "sell",
+            "fraction": "0.75",
+            "sold_usd": "2136638.21",
+            "fees_usd": "0.00",
+            "gas_usd": "2.82",
+            "price_impact_usd": "651.57",
+            "exit_cost_usd": "654.39",
+            "foregone_yield_usd": "-1219.84",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "-565.46",
+            "saving_vs_hold_usd": "565.46",
+            "quote_status": "executable"
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          }
+        ],
+        "total_loss_usd": "-565.46",
+        "saving_vs_hold_all_usd": "565.46",
+        "shared_venue_penalty_usd": "0.00"
+      },
+      {
+        "strategy_id": "protect_liquidations",
+        "description": "Keep exposure; only deleverage positions the scenario makes liquidatable.",
+        "choices": {},
+        "same_as": "hold_all",
+        "timing": "late",
+        "positions": [
+          {
+            "position_id": "ethena_susde_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "aave_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "morpho_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          },
+          {
+            "position_id": "pendle_01",
+            "action": "hold",
+            "fraction": null,
+            "sold_usd": "0.00",
+            "fees_usd": "0.00",
+            "gas_usd": "0.00",
+            "price_impact_usd": "0.00",
+            "exit_cost_usd": "0.00",
+            "foregone_yield_usd": "0.00",
+            "residual_loss_usd": "0.00",
+            "total_loss_usd": "0.00",
+            "saving_vs_hold_usd": "0.00",
+            "quote_status": null
+          }
+        ],
+        "total_loss_usd": "0.00",
+        "saving_vs_hold_all_usd": "0.00",
+        "shared_venue_penalty_usd": "0.00"
+      }
+    ]
+  },
+  "hedging": {
+    "shocked_assets": {
+      "USDe": "USDe depeg in this scenario",
+      "sUSDe": "USDe depeg in this scenario",
+      "PT-sUSDe": "USDe depeg in this scenario"
+    },
+    "assets": [
+      {
+        "asset": "USDC",
+        "issuer": "circle",
+        "price_usd": "0.9998651",
+        "shocked_in_scenario": false,
+        "shock_reason": null,
+        "usable_as_hedge": true,
+        "routes": [
+          {
+            "from": "USDe",
+            "status": "snapshot_quotes",
+            "venue_id": "venue:usde_usdc"
+          },
+          {
+            "from": "sUSDe",
+            "status": "snapshot_quotes",
+            "venue_id": "venue:susde_usdc"
+          }
+        ]
+      },
+      {
+        "asset": "USDT",
+        "issuer": "tether",
+        "price_usd": "0.99905453",
+        "shocked_in_scenario": false,
+        "shock_reason": null,
+        "usable_as_hedge": false,
+        "routes": [
+          {
+            "from": "USDe",
+            "status": "unavailable",
+            "reason": "no quote in snapshot; on-demand quotes disabled"
+          },
+          {
+            "from": "sUSDe",
+            "status": "unavailable",
+            "reason": "no quote in snapshot; on-demand quotes disabled"
+          }
+        ]
+      },
+      {
+        "asset": "PYUSD",
+        "issuer": "paxos",
+        "price_usd": "1.000067",
+        "shocked_in_scenario": false,
+        "shock_reason": null,
+        "usable_as_hedge": false,
+        "routes": [
+          {
+            "from": "USDe",
+            "status": "unavailable",
+            "reason": "no quote in snapshot; on-demand quotes disabled"
+          },
+          {
+            "from": "sUSDe",
+            "status": "unavailable",
+            "reason": "no quote in snapshot; on-demand quotes disabled"
+          }
+        ]
+      },
+      {
+        "asset": "RLUSD",
+        "issuer": null,
+        "price_usd": null,
+        "shocked_in_scenario": false,
+        "shock_reason": null,
+        "usable_as_hedge": false,
+        "routes": [
+          {
+            "from": "USDe",
+            "status": "unavailable",
+            "reason": "USDe or RLUSD not in P1 token registry"
+          },
+          {
+            "from": "sUSDe",
+            "status": "unavailable",
+            "reason": "sUSDe or RLUSD not in P1 token registry"
+          }
+        ]
+      }
+    ],
+    "unpriced_instruments": [
+      {
+        "instrument": "Short USDe or ENA perpetual futures",
+        "why_unpriced": "No perpetual venue or funding-rate source in the project APIs."
+      },
+      {
+        "instrument": "Put options on USDe / sUSDe",
+        "why_unpriced": "No options market data in the project APIs."
+      },
+      {
+        "instrument": "USDe depeg cover (insurance)",
+        "why_unpriced": "No cover provider pricing in the project APIs."
+      }
+    ],
+    "warnings": [
+      "Aave prices USDe collateral with a capped USDT/USD feed (P1 discovery): a USDT shock also moves the Aave oracle."
+    ]
+  },
+  "warnings": [
+    "Scenario assumed certain: no probability is used. Totals = exit cost + foregone yield + loss still suffered on what is kept.",
+    "This scenario does not reduce exit liquidity: exits are priced at normal depth."
+  ]
+}

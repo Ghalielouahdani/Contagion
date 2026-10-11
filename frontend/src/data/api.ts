@@ -28,7 +28,7 @@ import type {
 const FIXTURES = "../../../contracts/fixtures";
 export const defaultFixtureSet: string = import.meta.env.VITE_FIXTURE_SET || "stress_portfolio_01";
 
-const smallFixtures = import.meta.glob(["../../../contracts/fixtures/*/*.json", "!**/risk_surface.json"], {
+const smallFixtures = import.meta.glob(["../../../contracts/fixtures/*/*.json", "!**/risk_surface.json", "!**/crisis_plan*.json"], {
   eager: true,
   import: "default",
 }) as Record<string, unknown>;
@@ -395,4 +395,79 @@ export function inputsFromRequest(request: EngineScenarioRequest, base: Scenario
     borrowApyPct: percentValue("borrow_apy_override", base.borrowApyPct),
     nodeLossPct: percentValue("loss_pct", base.nodeLossPct),
     nodeId: typeof p.node_id === "string" ? p.node_id : base.nodeId };
+}
+
+// ---------------------------------------------------------------------------------------------
+// P3 crisis mode: the scenario is assumed to happen; for each position, which action loses the least
+// (backend/execution/crisis.py). No probability anywhere. The AI analyst (backend/execution/advisor.py)
+// explains and proposes alternatives; every figure it shows is recomputed by the engine.
+
+export type CrisisChoice = { action: string; fraction: string | null };
+export type CrisisBest = { action: string; fraction: string | null; total_loss_usd: string; saving_vs_hold_usd: string };
+export type CrisisStrategy = {
+  strategy_id: string;
+  description: string;
+  choices: Record<string, CrisisChoice>;
+  same_as: string | null;
+  total_loss_usd: string;
+  saving_vs_hold_all_usd: string;
+  shared_venue_penalty_usd: string;
+};
+export type CrisisPlan = {
+  scenario_id: string;
+  horizon_days: number;
+  depth_factor: string;
+  positions: Array<{
+    position_id: string;
+    position_type: string;
+    holding_loss_usd: string;
+    early: { best: CrisisBest };
+    late: { already_incurred_usd: string; best: CrisisBest };
+    warnings: string[];
+  }>;
+  strategies: { early: CrisisStrategy[]; late: CrisisStrategy[] };
+  hedging: { shocked_assets: Record<string, string>; assets: Array<{ asset: string; usable_as_hedge: boolean }>; unpriced_instruments?: string[]; warnings: string[] };
+  warnings: string[];
+};
+export type CrisisAdvice = {
+  scenario_explanation: string;
+  position_assessments: Array<{ position_id: string; situation: string; key_risk: string }>;
+  strategies: Array<{
+    name: string;
+    timing: "early" | "late";
+    rationale: string;
+    pros: string[];
+    cons: string[];
+    actions: Array<{ position_id: string; action: string; fraction: string; rationale: string }>;
+    matches_candidate: string | null;
+    computed_result: { total_loss_usd: string; saving_vs_hold_all_usd: string; total_including_incurred_usd?: string; already_incurred_usd?: string };
+  }>;
+  recommended_strategy_index: number;
+  recommendation_rationale: string;
+  hedging_notes: string[];
+  caveats: string[];
+  consistency_warnings: string[];
+  ungrounded_numbers: string[];
+};
+export type CrisisResponse = { plan: CrisisPlan; advice: CrisisAdvice | null; advice_error: { status: number; message: string } | null };
+
+// Offline crisis plans (backend.risk.regenerate --crisis-only), loaded on demand like the risk surfaces.
+const crisisPlanLoaders = import.meta.glob("../../../contracts/fixtures/*/crisis_plan*.json", { import: "default" }) as Record<
+  string,
+  () => Promise<unknown>
+>;
+
+/** Engine verdict for the run. API: the exact saved /simulate run; offline: the plan precomputed at the preset. */
+export async function loadCrisisPlan(mode: DataMode, set: string, scenario: ScenarioKind, simulationId: string): Promise<CrisisPlan | null> {
+  if (mode === "api") {
+    const body = await requestJson<CrisisResponse>(withSet("/api/v1/crisis-advice", set), post({ simulation_id: simulationId, advice: false }));
+    return body.plan;
+  }
+  const loader = crisisPlanLoaders[`${FIXTURES}/${set}/crisis_plan${fileSuffix[scenario]}.json`];
+  return loader ? ((await loader()) as CrisisPlan) : null;
+}
+
+/** AI analyst on the same run (API only: it calls the model on the backend; never invents figures). */
+export function loadCrisisAdvice(set: string, simulationId: string): Promise<CrisisResponse> {
+  return requestJson<CrisisResponse>(withSet("/api/v1/crisis-advice", set), post({ simulation_id: simulationId, advice: true }));
 }

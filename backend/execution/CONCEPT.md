@@ -119,3 +119,33 @@ curl -s -X POST "$S/decide?set=$SET" -H "$H" -d "{\"simulation_id\": \"$SIM\", \
 ```
 
 Dans le dashboard : vue **Decision Engine**, après avoir lancé un scénario.
+
+## Mode crise : le vrai verdict, sans probabilité
+
+Le mode « prévention » ci-dessus répond par des seuils de probabilité, et sans probabilité il dit `INSUFFICIENT_DATA`. Le **mode crise** (`crisis.py`, Hamza) pose la question du gérant en pleine crise : **« le scénario arrive, que fait-on de chaque position pour perdre le moins ? »**
+
+- **Les actions comparées** : garder, vendre 25 à 100 %, se désendetter jusqu'au seuil de sécurité, retirer (prêteurs). Réagir **avant** le mouvement (la perte de prix est évitable) ou **après** (seule la pénalité de liquidation l'est encore).
+- **Le verdict** : la combinaison qui perd le moins (`min_loss`), avec les ventes sur une même venue chiffrées ensemble. C'est ce qu'affiche la page **Decision** du dashboard, à côté des autres stratégies (tout garder, tout vendre, seulement éviter les liquidations).
+
+Exemple, portefeuille de stress, depeg −5 % : garder tout coûte **127 515 $** ; le verdict du moteur ramène la perte à **13 681 $** en agissant avant le mouvement.
+
+## L'analyste IA (Gemini) : évaluation, 11 octobre 2026
+
+Fonctionnement : le moteur calcule, l'IA explique et compose trois stratégies à partir des seules actions disponibles. Chaque stratégie de l'IA est **recalculée par le moteur**, et les chiffres de son texte sont confrontés aux données.
+
+Évaluation sur le portefeuille de stress, scénarios A, C, D et G, avec le vrai modèle :
+
+| Critère | Constat |
+|---|---|
+| Chiffres inventés | **Aucun** : les garde-fous fonctionnent (`ungrounded_numbers` vide) |
+| Temps de réponse | 5 à 10 s, sans bloquer le verdict du moteur (0,02 s) |
+| Stratégie recommandée | Le plus souvent, **la même que le verdict du moteur**. Une fois (crise combinée), une stratégie qui perdait **27 443 $ de plus**, sans justification chiffrée. Variable d'une exécution à l'autre. |
+| Explication (avant correction) | Générique, sans le mécanisme de perte : l'IA ne recevait ni la décomposition des pertes ni la cascade |
+| Stratégies « après le mouvement » (avant correction) | Totaux **non comparables** aux stratégies « avant » : ils excluaient la perte déjà subie. Une réaction tardive dans la cascade affichait 390 $, alors qu'elle coûte en réalité 1,34 M$ |
+| Contradictions | Parfois « ce prêteur ne peut pas sortir » alors que le plan propose un retrait. C'est détecté et signalé |
+
+Corrections faites :
+- l'IA reçoit maintenant les composantes de perte de chaque position, la cascade et les exécutions de référence, et doit nommer les positions les plus touchées et leur canal. Ses explications sont devenues spécifiques au portefeuille (bad debt des prêteurs, boucle de liquidation) ;
+- chaque stratégie tardive porte `total_including_incurred_usd`, et le dashboard compare toujours sur cette base.
+
+**Conclusion** : le verdict reste celui du moteur, déterministe et vérifiable. L'IA apporte une explication lisible et des alternatives chiffrées, mais elle n'est **pas fiable comme décideur**. Le dashboard affiche donc « l'analyste perd X $ de plus que le verdict : le verdict reste » quand elle s'en écarte.

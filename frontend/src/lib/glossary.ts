@@ -142,6 +142,13 @@ export const glossary: Record<string, string> = {
   "used by": "Which calculations rely on this input.",
   "leg": "One side of the position: the asset held, the collateral, or the debt.",
 
+  // crisis verdict (scenario assumed to happen)
+  "total loss": "What the plan loses if the scenario happens: exit costs + yield given up + loss still suffered on what is kept. Lower is better.",
+  "saving vs keeping everything": "How much less this plan loses than keeping every position untouched.",
+  "shared venue penalty": "Extra cost because several positions sell into the same exit venue at once.",
+  "loss if kept": "What the position loses if the scenario happens and nothing is done.",
+  "already incurred if late": "Price loss already suffered when reacting after the move; only liquidation penalties can still be avoided.",
+
   // graph and evidence
   "contagion paths": "Chains of dependencies through which the shock reaches the position, each with its evidence.",
   "contagion hubs": "Nodes several positions depend on at once: one failure there hits all of them.",

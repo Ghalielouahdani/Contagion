@@ -18,6 +18,9 @@ try {
       assert.equal(data.risk.portfolio_id, data.portfolio.portfolio_id);
       assert.equal(data.risk.provenance.input_snapshot_id, data.marketSnapshot.snapshot_id);
       assert.equal(data.risk.scenario_id, scenario);
+      const plan = await api.loadCrisisPlan('fixture', set.id, scenario, data.risk.simulation_id);
+      assert.ok(plan, `${set.id} ${scenario}: offline crisis plan`);
+      assert.equal(plan.scenario_id, scenario);
       assert.deepEqual(Object.keys(data.decisions).sort(), data.portfolio.positions.map(p => p.position_id).sort());
       assert.equal(data.decision.portfolio_id, data.portfolio.portfolio_id);
       const nodes = new Set(data.graph.nodes.map(node => node.id));

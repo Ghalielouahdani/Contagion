@@ -18,7 +18,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-from backend.execution.crisis import CrisisModel, TIMINGS, plan_from_model
+from backend.execution.crisis import CrisisModel, TIMINGS, plan_from_model, usd
 
 ROOT = Path(__file__).resolve().parents[2]
 ACTIONS = ["hold", "sell", "deleverage", "withdraw"]
@@ -73,8 +73,11 @@ SYSTEM = """You are a senior DeFi risk analyst advising a portfolio manager. Rep
 The stress scenario is ASSUMED TO HAPPEN: never discuss its probability. Every figure in the data was computed by
 a deterministic engine (losses, exit costs on executable quotes, liquidation metrics, candidate strategies).
 Tasks:
-1. scenario_explanation: explain simply what the engine computed - which positions lose and through which channel
-   (price move, liquidation penalty, lender bad debt, exit liquidity, carry) and what can still be avoided.
+1. scenario_explanation: explain simply what the engine computed. Name the two or three positions that lose the
+   most (use loss_if_kept_usd to rank them, without writing amounts) and, for each, the channel from its
+   loss_components (price move, liquidation penalty, lender bad debt, exit liquidity, carry). If a cascade block is
+   present, explain the feedback loop it shows (liquidations sell collateral, the price falls further, more
+   borrowers are liquidated). Then say what can still be avoided. Be specific to this portfolio, not generic.
 2. position_assessments: one short diagnosis per position_id.
 3. strategies: EXACTLY 3 distinct portfolio strategies. Each has one timing: "early" = act at pre-shock prices
    before the move; "late" = the market already moved, the price loss is already incurred and only liquidation
@@ -83,7 +86,9 @@ Tasks:
    (conviction) from the computed numbers. Prefer different risk profiles (lowest loss, keep core exposure with
    protection, liquidity-aware partial exits...). Positions you omit are kept. Use fraction "none" for hold and
    deleverage.
-4. recommended_strategy_index and recommendation_rationale: pick one and explain the trade-off. The objective is the
+4. recommended_strategy_index and recommendation_rationale: pick one and explain the trade-off. A "late" total
+   excludes the price loss already incurred, so it is NOT comparable with an "early" total: compare a late strategy
+   only through its total_including_incurred_usd. The objective is the
    lowest total loss given that the scenario happens; there is no upside to wait for. Recommending a strategy that is
    not the lowest-loss one needs a concrete reason taken from the data (for example extrapolated exit quotes).
 Rules: never invent positions, actions, prices, hedging instruments or numbers. Do NOT write monetary amounts or
@@ -179,10 +184,12 @@ def _metric(row: dict) -> dict | None:
 def build_context(plan: dict, risk_result: dict, scenario_request: dict) -> dict:
     """Données envoyées à l'IA : uniquement des chiffres calculés, sans adresses ni secrets."""
     metrics = {row["position_id"]: _metric(row) for row in risk_result["positions"]}
+    components = {row["position_id"]: row["loss_components"] for row in risk_result["positions"]}
     positions = []
     for row in plan["positions"]:
         entry = {"position_id": row["position_id"], "position_type": row["position_type"],
                  "loss_if_kept_usd": row["holding_loss_usd"], "liquidation_metric": metrics.get(row["position_id"]),
+                 "loss_components": {k: v for k, v in components.get(row["position_id"], {}).items() if D(v) != 0},
                  "notes": row["warnings"], "available_actions": {}}
         for timing in TIMINGS:
             block = row[timing]
@@ -201,6 +208,11 @@ def build_context(plan: dict, risk_result: dict, scenario_request: dict) -> dict
                      "parameters": scenario_request["scenario"].get("parameters", {}),
                      "exit_depth_factor": plan["depth_factor"], "engine_warnings": plan["warnings"]},
         "portfolio_loss_if_everything_kept_usd": risk_result["portfolio"]["total_conditional_loss_usd"],
+        # How the loss propagates, when the scenario computes it (cascade rounds, reference runs).
+        "cascade": {k: risk_result["cascade"][k] for k in ("initial_moves", "final_moves", "amplification",
+                                                           "liquidated_debt_usd", "bad_debt_usd", "stuck_debt_usd")
+                    if k in risk_result["cascade"]} if risk_result.get("cascade") else None,
+        "comparison": risk_result.get("comparison"),
         "positions": positions,
         "candidate_strategies": strategies,
         "hedging": {"usable_hedge_assets": [a["asset"] for a in hedging["assets"] if a["usable_as_hedge"]],
@@ -250,8 +262,11 @@ def ungrounded_numbers(advice: dict, context: dict) -> list[str]:
     return [str(n) for n in sorted(_numbers_in(text)) if n not in allowed]
 
 
-def _apply(model: CrisisModel, advice: dict) -> list[dict]:
-    """Recalcule chaque stratégie de l'IA ; une action indisponible invalide toute la réponse."""
+def _apply(model: CrisisModel, advice: dict, incurred_if_late: D = D(0)) -> list[dict]:
+    """Recalcule chaque stratégie de l'IA ; une action indisponible invalide toute la réponse.
+
+    Une stratégie « late » exclut la perte de prix déjà subie : `total_including_incurred_usd` l'ajoute pour qu'elle
+    se compare à une stratégie « early » sur la même base."""
     known = set(model.contexts)
     results = []
     for strategy in advice["strategies"]:
@@ -266,6 +281,9 @@ def _apply(model: CrisisModel, advice: dict) -> list[dict]:
                 raise AdvisorError(502, f"AI proposed an unavailable action: {exc}.") from exc
             choices[a["position_id"]] = (a["action"], fraction)
         computed = model.evaluate(strategy["timing"], choices)
+        if strategy["timing"] == "late":
+            computed["already_incurred_usd"] = usd(incurred_if_late)
+            computed["total_including_incurred_usd"] = usd(computed["_total"] + incurred_if_late)
         del computed["_total"]
         computed["chosen"] = {pid: {"action": a, "fraction": f} for pid, (a, f) in choices.items()}   # retiré par _ask
         results.append({**strategy, "computed_result": computed})
@@ -319,12 +337,12 @@ def _recommendation_gap(advice: dict, plan: dict) -> list[str]:
             f"same timing ({timing})."]
 
 
-def _ask(llm, context: dict, model: CrisisModel, candidates: dict) -> dict:
+def _ask(llm, context: dict, model: CrisisModel, candidates: dict, incurred_if_late: D = D(0)) -> dict:
     advice = llm(SYSTEM, context, OUTPUT_SCHEMA)
     errors = sorted(Draft202012Validator(OUTPUT_SCHEMA).iter_errors(advice), key=lambda e: list(e.path))
     if errors:
         raise AdvisorError(502, f"AI output does not match the schema: {errors[0].message}")
-    strategies = _apply(model, advice)
+    strategies = _apply(model, advice, incurred_if_late)
     for s in strategies:   # quelle stratégie du code l'IA recopie-t-elle ?
         choices = {pid: (c["action"], c["fraction"]) for pid, c in s["computed_result"]["chosen"].items()}
         s["matches_candidate"] = candidates[s["timing"]].get(_signature(choices))
@@ -343,11 +361,12 @@ def advise(portfolio: dict, snapshot: dict, scenario_request: dict, risk_result:
     llm = llm or GeminiClient()
     context = build_context(plan, risk_result, scenario_request)
     candidates = _candidate_signatures(plan)
+    incurred = sum((D(row["late"]["already_incurred_usd"]) for row in plan["positions"]), D(0))
     out = {"plan": plan, "advice": None, "advice_error": None}
     try:
-        advice, retried = _ask(llm, context, model, candidates), False
+        advice, retried = _ask(llm, context, model, candidates, incurred), False
         if all(s["matches_candidate"] for s in advice["strategies"]):   # une seule relance, avec la remarque
-            advice, retried = _ask(llm, {**context, "feedback": NOVELTY_FEEDBACK}, model, candidates), True
+            advice, retried = _ask(llm, {**context, "feedback": NOVELTY_FEEDBACK}, model, candidates, incurred), True
         warnings = consistency_warnings(advice, context) + _recommendation_gap(advice, plan)
         if all(s["matches_candidate"] for s in advice["strategies"]):
             warnings.append("All three AI strategies copy computed candidate strategies.")

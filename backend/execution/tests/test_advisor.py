@@ -204,3 +204,25 @@ def test_recommending_the_lowest_loss_strategy_is_not_flagged():
         *answer()["strategies"][1:]], recommended_strategy_index=0)
     advice = advise(*inputs(), llm=FakeLLM(best))["advice"]
     assert not any(w.startswith("The recommended strategy loses") for w in advice["consistency_warnings"])
+
+
+def test_late_strategy_total_is_made_comparable_with_early_ones():
+    # A late total leaves out the price loss already incurred; ranking it next to early totals would mislead.
+    out = advise(*inputs(), llm=FakeLLM(answer()))
+    incurred = sum(D(row["late"]["already_incurred_usd"]) for row in out["plan"]["positions"])
+    late = next(s for s in out["advice"]["strategies"] if s["timing"] == "late")["computed_result"]
+    assert D(late["already_incurred_usd"]) == incurred > 0
+    assert D(late["total_including_incurred_usd"]) == D(late["total_loss_usd"]) + incurred
+    early = next(s for s in out["advice"]["strategies"] if s["timing"] == "early")["computed_result"]
+    assert "total_including_incurred_usd" not in early
+
+
+def test_the_ai_is_given_the_loss_mechanism_not_only_totals():
+    llm = FakeLLM(answer())
+    advise(*inputs("_cascade"), llm=llm)
+    system, context, _ = llm.calls[0]
+    morpho = next(p for p in context["positions"] if p["position_id"] == "morpho_01")
+    assert morpho["loss_components"]  # e.g. market_repricing, liquidation_penalty
+    assert all(D(v) != 0 for v in morpho["loss_components"].values())
+    assert context["cascade"]["amplification"] is not None  # the feedback loop it must explain
+    assert "total_including_incurred_usd" in system and "loss_components" in system

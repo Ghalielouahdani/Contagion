@@ -4,10 +4,9 @@
  * Read top to bottom: what was simulated -> what the portfolio loses and why (by mechanism)
  * -> which positions carry it -> every calculation step with its formula, inputs and their
  * provenance -> the family of simulations around this run (loss curves, breaking points,
- * sensitivity, reference runs, cascade) -> probabilities, only from weights the risk manager
- * enters -> hand-off to execution. Everything shown comes from /simulate (risk_result, with its
- * calculation trace) and /analyze (risk_analytics); nothing is recomputed here except the
- * probability-weighted statistics, which are explicit arithmetic on the engine's loss curve.
+ * sensitivity, reference runs, cascade) -> hand-off to the decision page (what to do if it happens).
+ * Everything shown comes from /simulate (risk_result, with its calculation trace) and /analyze
+ * (risk_analytics); nothing is recomputed here.
  */
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -132,8 +131,8 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
         <p className="eyebrow">Step 1 · What was simulated</p>
         <h2>{labelize(String(risk.scenario_id))} · {risk.horizon_days}-day horizon</h2>
         <p className="microcopy">
-          A conditional stress: what happens <em>if</em> this scenario occurs. The engine never assumes how likely it is; probabilities only
-          appear in step 7, from weights you enter.
+          A conditional stress: what happens <em>if</em> this scenario occurs. The engine never assumes how likely it is; the Decision page
+          then says what to do assuming it happens.
         </p>
         <div className="engine-params">
           {parameters.length ? parameters.map((p) => (
@@ -145,7 +144,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
       {data.riskSource === "surface" && data.analyticsIsPreset && analytics ? (
         <p className="engine-banner">
           Offline: the loss, the breakdown and the calculation trace follow your sliders. The uncertainty range, curves,
-          sensitivities and probabilities come from this scenario's preset run (loss {money(analytics.headline.scenario_loss_usd)});
+          and sensitivities come from this scenario's preset run (loss {money(analytics.headline.scenario_loss_usd)});
           switch to the live API to recompute them at your exact settings.
         </p>
       ) : null}
@@ -242,12 +241,9 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
 
       <Simulations data={data} analytics={analytics} />
 
-      <Probabilities grid={analytics?.sensitivity?.grid ?? null} navBefore={navBefore}
-        breakEven={analytics?.headline?.targeted_plan_break_even_probability ?? null} />
-
       <section className="visual-panel engine-handoff">
         <div>
-          <p className="eyebrow">Step 8 · From analysis to action</p>
+          <p className="eyebrow">Step 7 · From analysis to action</p>
           <h2>Execution gives the verdict: what to do, and how</h2>
           <p className="microcopy">The decision engine uses exactly these losses, the snapshot's exit liquidity and the horizon above.</p>
         </div>
@@ -443,91 +439,8 @@ function total(risk: AppData["risk"]): number | null {
   return risk.portfolio.total_conditional_loss_usd === null ? null : Number(risk.portfolio.total_conditional_loss_usd);
 }
 
-/**
- * Probability layer: the risk manager weights a few points of the engine's loss curve.
- * Expected loss, VaR and expected shortfall are plain arithmetic on those weights; with no
- * weight entered nothing is shown, so no probability is ever invented.
- */
-function Probabilities({ grid, navBefore, breakEven }: { grid: Grid | null; navBefore: number; breakEven: string | null }) {
-  const [row, setRow] = useState(0);
-  const [weights, setWeights] = useState<Record<string, number>>({});
-  const [confidence, setConfidence] = useState(0.95);
-  if (!grid) {
-    return (
-      <section className="visual-panel">
-        <p className="eyebrow">Step 7 · Probabilities</p>
-        <h2>No loss curve to weight for this run</h2>
-        <p className="muted">Probabilities need the engine's loss curve (analytics). The engine itself never assumes a probability.</p>
-      </section>
-    );
-  }
-  const points = grid.x_values.map((x, j) => ({ x: Number(x), loss: Number(grid.loss_usd[row][j]) })).filter((p) => p.x !== 0);
-  const entered = points.filter((p) => (weights[p.x] ?? 0) > 0);
-  const mass = entered.reduce((s, p) => s + weights[p.x] / 100, 0);
-  const base = grid.x_values.findIndex((x) => Number(x) === 0);
-  const noShockLoss = base >= 0 ? Number(grid.loss_usd[row][base]) : 0;
-  const outcomes = [...entered.map((p) => ({ loss: p.loss, p: weights[p.x] / 100 })), { loss: noShockLoss, p: Math.max(0, 1 - mass) }]
-    .sort((a, b) => b.loss - a.loss);
-  const expected = outcomes.reduce((s, o) => s + o.loss * o.p, 0);
-  // VaR / ES at `confidence`: walk the tail from the worst outcome until 1 - confidence of mass is covered.
-  const tail = 1 - confidence;
-  let covered = 0, tailLoss = 0, varLoss = outcomes[outcomes.length - 1]?.loss ?? 0;
-  for (const o of outcomes) {
-    const take = Math.min(o.p, tail - covered);
-    if (take <= 0) break;
-    tailLoss += take * o.loss;
-    covered += take;
-    varLoss = o.loss;
-  }
-  const es = covered > 0 ? tailLoss / covered : 0;
-
-  return (
-    <section className="visual-panel">
-      <p className="eyebrow">Step 7 · Probabilities (your assumptions)</p>
-      <h2>Weight the scenarios you believe in</h2>
-      <p className="microcopy">
-        Enter the probability you give to each shock size over the horizon. The engine supplies the loss at each point; expected loss,
-        VaR and expected shortfall below are only as good as these weights. Leave them empty to stay with conditional stress losses.
-      </p>
-      <div className="engine-params">
-        <label className="engine-chip">Curve: <select value={row} onChange={(e) => setRow(Number(e.target.value))}>
-          {grid.y_values.map((y, i) => <option key={y} value={i}>{labelize(grid.y_param)} {Number(y)}</option>)}
-        </select></label>
-        <label className="engine-chip">Confidence: <select value={confidence} onChange={(e) => setConfidence(Number(e.target.value))}>
-          {[0.9, 0.95, 0.99].map((c) => <option key={c} value={c}>{percent(c, 0)}</option>)}
-        </select></label>
-      </div>
-      <table className="engine-table">
-        <thead><tr><th>{labelize(grid.x_param)}</th><th><Term>Engine loss</Term></th><th><Term>Probability over the horizon (%)</Term></th></tr></thead>
-        <tbody>{points.map((p) => (
-          <tr key={p.x}>
-            <td>{percent(p.x, 0)}</td><td>{money(p.loss)}</td>
-            <td><input type="number" min="0" max="100" step="0.1" value={weights[p.x] ?? ""} placeholder="—"
-              onChange={(e) => setWeights({ ...weights, [p.x]: Number(e.target.value) })} /></td>
-          </tr>
-        ))}</tbody>
-      </table>
-      {mass > 1 ? <p className="engine-warning">Probabilities add up to more than 100%.</p> : null}
-      {entered.length && mass <= 1 ? (
-        <div className="impact-strip">
-          <div className="stat"><span><Term>Expected loss</Term></span><strong>{money(expected)}</strong><small>{navBefore ? percent(expected / navBefore, 2) : ""} of net equity · no shock {percent(1 - mass, 1)}</small></div>
-          <div className="stat"><span><Term>VaR</Term> {percent(confidence, 0)}</span><strong>{money(varLoss)}</strong><small>Loss not exceeded with {percent(confidence, 0)} probability</small></div>
-          <div className="stat"><span><Term>Expected shortfall</Term> {percent(confidence, 0)}</span><strong>{money(es)}</strong><small>Average loss in the worst {percent(tail, 0)}</small></div>
-        </div>
-      ) : <p className="muted">No probability entered: results stay conditional (what happens if, not how likely).</p>}
-      {breakEven !== null ? (
-        <p className="microcopy">
-          From the engine: the targeted de-risking plan pays for itself if you believe this run's scenario has more than {percent(breakEven, 2)} probability.
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-
 const exactUsd = (value: string) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(Number(value));
 
-/** One scenario, many plausible model assumptions: the range around the single number. */
 function UncertaintyPanel({ uncertainty }: { uncertainty: Uncertainty | null }) {
   if (!uncertainty) {
     return (

@@ -56,6 +56,7 @@ import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
 import { GeneratedScenarioCard } from "./RiskScenarioAgent";
 import { Term } from "./Term";
+import { CrisisVerdict } from "./CrisisVerdict";
 import {
   availableScenarios,
   compareRiskLevels,
@@ -590,21 +591,11 @@ function App() {
               <>
                 {view === "engine" ? <RiskEngine data={data} onExecute={() => setView("decision")} /> : null}
                 {view === "decision" ? (
-                  <DecisionEngine
-                    data={data}
-                    scenario={submitted.scenario}
-                    scenarioInputs={submitted.inputs}
-                    hasRun={hasRun}
-                    selectedRisk={selectedRisk}
-                    selectedPortfolio={selectedPortfolio}
-                    selectedPosition={selectedPosition}
-                    setSelectedPosition={setSelectedPosition}
-                    hoveredPosition={hoveredPosition}
-                    setHoveredPosition={setHoveredPosition}
-                    inspectedExitFraction={inspectedExitFraction}
-                    setInspectedExitFraction={setInspectedExitFraction}
-                    setView={setView}
-                  />
+                  hasRun ? (
+                    <CrisisVerdict data={data} mode={mode} set={fixtureSet} scenario={submitted.scenario} />
+                  ) : (
+                    <EmptyState title="No scenario result yet" detail="Run a scenario to see what to do if it happens." />
+                  )
                 ) : null}
               </>
             ) : null}
@@ -1428,15 +1419,17 @@ function ScenarioLab({
       </section>
       <section className="visual-panel scenario-results">
         <p className="eyebrow">Execution decision · {compactId(selectedPosition)}</p>
-        <h2>Cost of acting before this scenario</h2>
-        <p className="microcopy">Exit options use this run's risk loss, snapshot liquidity and horizon.</p>
-        <table><thead><tr><th><Term>Exit</Term></th><th><Term>Exit cost</Term></th><th><Term>Residual loss / gain</Term></th><th><Term>Break-even probability</Term></th></tr></thead>
-          <tbody>{data.decision.exit_options.map(option => <tr key={option.exit_fraction}>
-            <td>{percent(option.exit_fraction, 0)}</td><td>{money(option.estimated_exit_cost_usd)}</td>
-            <td>{money(option.residual_stress_loss_usd)}</td><td>{percent(option.break_even_probability)}</td>
-          </tr>)}</tbody>
+        <h2>What each exit costs if this scenario happens</h2>
+        <p className="microcopy">Exit before the move: exit cost + yield given up + loss still suffered on what is kept. The full verdict is on the Decision page.</p>
+        <table><thead><tr><th><Term>Exit</Term></th><th><Term>Exit cost</Term></th><th><Term>Residual loss / gain</Term></th><th><Term>Total loss</Term></th></tr></thead>
+          <tbody>{data.decision.exit_options.map(option => {
+            const total = Number(option.estimated_exit_cost_usd) + Number(option.foregone_yield_usd) + Number(option.residual_stress_loss_usd);
+            return <tr key={option.exit_fraction}>
+              <td>{percent(option.exit_fraction, 0)}</td><td>{money(option.estimated_exit_cost_usd)}</td>
+              <td>{money(option.residual_stress_loss_usd)}</td><td>{money(total)}</td>
+            </tr>;
+          })}</tbody>
         </table>
-        <p>{data.decision.reason}</p>
         <WarningList warnings={data.decision.warnings} />
       </section>
       {data.risk.cascade ? <CascadePanel cascade={data.risk.cascade} /> : null}
@@ -1531,203 +1524,6 @@ function StressComparison({ mode, data, inputs }: { mode: DataMode; data: AppDat
       <p className="microcopy">These are conditional stress tests, not probabilities. Connected paths show exposure; their losses are counted once per position.</p>
     </> : null}
   </section>;
-}
-
-function DecisionEngine({
-  data,
-  scenario,
-  scenarioInputs,
-  hasRun,
-  selectedRisk,
-  selectedPortfolio,
-  selectedPosition,
-  setSelectedPosition,
-  hoveredPosition,
-  setHoveredPosition,
-  inspectedExitFraction,
-  setInspectedExitFraction,
-  setView,
-}: {
-  data: AppData;
-  scenario: ScenarioKind;
-  scenarioInputs: ScenarioInputs;
-  hasRun: boolean;
-  selectedRisk?: RiskPosition;
-  selectedPortfolio?: PortfolioPosition;
-  selectedPosition: string;
-  setSelectedPosition: (id: string) => void;
-  hoveredPosition: string | null;
-  setHoveredPosition: (id: string | null) => void;
-  inspectedExitFraction: string | null;
-  setInspectedExitFraction: (fraction: string | null) => void;
-  setView: (view: View) => void;
-}) {
-  if (!hasRun || !selectedRisk || !selectedPortfolio) {
-    return <EmptyState title="No scenario result yet" detail="Run the scenario lab to populate the decision engine." />;
-  }
-
-  const costData = data.decision.exit_options.map((option) => ({
-    fraction: option.exit_fraction,
-    exit: percent(option.exit_fraction, 0),
-    cost: Number(option.estimated_exit_cost_usd),
-    residual: Number(option.residual_stress_loss_usd),
-    breakEven: option.break_even_probability ? Number(option.break_even_probability) * 100 : null,
-  }));
-
-  return (
-    <div className="decision-layout">
-      <section className="decision-main">
-        <div className="selector-row">
-          {data.portfolio.positions.map((position) => (
-            <button
-              key={position.position_id}
-              className="mini-tab"
-              data-selected={position.position_id === selectedPosition}
-              onClick={() => setSelectedPosition(position.position_id)}
-            >
-              {position.protocol}
-            </button>
-          ))}
-        </div>
-
-        <section className="impact-strip">
-          <Stat label="Before" value={money(selectedRisk.net_equity_before_usd)} detail={labelize(selectedPortfolio.position_type)} />
-          <Stat label="After" value={money(selectedRisk.net_equity_after_usd)} detail={scenarioCopy[scenario].title} />
-          <Stat label="Conditional loss" value={money(selectedRisk.conditional_loss_usd)} detail={selectedRisk.calculation_status} />
-        </section>
-
-        <section className="visual-panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Exit cost curve</p>
-              <h2>Cost vs residual stress loss</h2>
-            </div>
-            <Badge tone="warn">assumption-driven</Badge>
-          </div>
-          <div className="chart-frame">
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart
-                data={costData}
-                onClick={(state) => {
-                  const active = (state as { activePayload?: Array<{ payload?: { fraction?: string } }> })?.activePayload?.[0]?.payload;
-                  if (active?.fraction) setInspectedExitFraction(active.fraction);
-                }}
-              >
-                <CartesianGrid stroke="var(--np-line)" vertical={false} />
-                <XAxis dataKey="exit" tickLine={false} axisLine={false} />
-                <YAxis tickFormatter={(value) => money(value)} tickLine={false} axisLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Line
-                  type="monotone"
-                  dataKey="cost"
-                  stroke="var(--np-accent-coral)"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="residual"
-                  stroke="var(--np-strong)"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Brush dataKey="exit" height={18} stroke="var(--np-strong)" travellerWidth={8} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        <section className="table-panel">
-          <table>
-            <thead>
-              <tr>
-                <th><Term>Exit</Term></th>
-                <th><Term>Cost</Term></th>
-                <th><Term>Residual loss</Term></th>
-                <th><Term>Foregone yield</Term></th>
-                <th><Term>Break-even</Term></th>
-                <th><Term>Quote</Term></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.decision.exit_options.map((option) => (
-                <tr
-                  key={option.exit_fraction}
-                  data-selected={inspectedExitFraction === option.exit_fraction}
-                  onMouseEnter={() => setInspectedExitFraction(option.exit_fraction)}
-                  onMouseLeave={() => setInspectedExitFraction(null)}
-                  onClick={() => setInspectedExitFraction(option.exit_fraction)}
-                >
-                  <td>{percent(option.exit_fraction, 0)}</td>
-                  <td>{money(option.estimated_exit_cost_usd)}</td>
-                  <td>{money(option.residual_stress_loss_usd)}</td>
-                  <td>{money(option.foregone_yield_usd)}</td>
-                  <td>{option.break_even_probability ? percent(option.break_even_probability, 2) : "stay"}</td>
-                  <td>
-                    <Badge tone="warn">{option.quote_status}</Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      </section>
-
-      <aside className="decision-inspector">
-        <div className="verdict">
-          <BadgeCheck size={18} />
-          <div>
-            <span>Verdict</span>
-            <strong>{data.decision.recommendation}</strong>
-          </div>
-        </div>
-        <p>{data.decision.reason}</p>
-        <div className="scenario-receipt" aria-label="Scenario inputs used for the latest run">
-          <MetricPair label="Scenario" value={scenarioCopy[scenario].title} />
-          {/* Only the inputs this scenario actually uses. */}
-          {scenarioControls[scenario].includes("shock") ? <MetricPair label="USDe shock" value={signedPercent(-scenarioInputs.shockPct)} /> : null}
-          {scenarioControls[scenario].includes("liquidity") ? <MetricPair label="Liquidity loss" value={`${scenarioInputs.liquidityLossPct}%`} /> : null}
-          {scenarioControls[scenario].includes("ltShift") ? <MetricPair label="LT shift" value={`${scenarioInputs.ltShiftPct} pts`} /> : null}
-          {scenarioControls[scenario].includes("carry") ? (
-            <>
-              <MetricPair label="Borrow APY" value={`${scenarioInputs.borrowApyPct}%`} />
-              <MetricPair label="sUSDe APY" value={`${scenarioInputs.susdeApyPct}%`} />
-            </>
-          ) : null}
-          {scenarioControls[scenario].includes("node") ? (
-            <MetricPair label="Node shock" value={`${labelize(scenarioInputs.nodeId)} -${scenarioInputs.nodeLossPct}%`} />
-          ) : null}
-          <MetricPair label="Horizon" value={`${scenarioInputs.horizonDays} days`} />
-        </div>
-        <button className="icon-button text-button" onClick={() => setView("graph")}>
-          <GitBranch size={14} />
-          Inspect causal path
-        </button>
-        <div className="divider" />
-        {inspectedExitFraction ? (
-          <div className="inspect-callout">
-            <p className="eyebrow">Inspected exit</p>
-            <h2>{percent(inspectedExitFraction, 0)}</h2>
-            <p>
-              {(() => {
-                const option = data.decision.exit_options.find((item) => item.exit_fraction === inspectedExitFraction);
-                return option
-                  ? `${money(option.estimated_exit_cost_usd)} immediate cost, ${money(option.residual_stress_loss_usd)} residual stress loss.`
-                  : "No fixture row for this exit fraction.";
-              })()}
-            </p>
-          </div>
-        ) : null}
-        <p className="eyebrow">Loss breakdown</p>
-        {Object.entries(selectedRisk.loss_components).map(([key, value]) => (
-          <MetricPair key={key} label={labelize(key)} value={money(value)} />
-        ))}
-        <WarningList warnings={[...selectedRisk.warnings, ...data.decision.warnings]} />
-      </aside>
-    </div>
-  );
 }
 
 function CommandPalette({

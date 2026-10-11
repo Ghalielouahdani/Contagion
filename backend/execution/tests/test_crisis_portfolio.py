@@ -56,10 +56,18 @@ def test_min_loss_beats_every_other_computed_strategy(suffix, timing):
 
 
 def test_shared_venue_makes_min_loss_sell_less_than_alone():
-    # Seule, Ethena serait vendue à 100 % ; avec Morpho dans la même pool sUSDe, mieux vaut en garder une partie.
-    alone = next(r for r in crisis_plan(*inputs("_combined"))["positions"] if r["position_id"] == "ethena_susde_01")
-    assert alone["early"]["best"]["fraction"] == "1.00"
-    assert strategies("_combined")["min_loss"]["choices"]["ethena_susde_01"]["fraction"] != "1.00"
+    # Seules, Ethena et Morpho seraient vendues à 100 % ; vendre les deux dans la même pool sUSDe coûte trop cher,
+    # donc la stratégie coordonnée vend moins sur cette venue (laquelle garder dépend des chiffres) et perd moins.
+    portfolio, snapshot, request, risk = inputs("_combined")
+    shared = [p["position_id"] for p in portfolio["positions"] if p["exit_venue_id"] == "venue:susde_usdc"]
+    alone = {r["position_id"]: r["early"]["best"] for r in crisis_plan(portfolio, snapshot, request, risk)["positions"]}
+    assert all(alone[pid]["action"] == "sell" and alone[pid]["fraction"] == "1.00" for pid in shared)
+    plan = strategies("_combined")["min_loss"]
+    sold_fraction = lambda choice: D(choice["fraction"]) if choice["action"] == "sell" else D(0)  # noqa: E731
+    assert sum(sold_fraction(plan["choices"][pid]) for pid in shared) < len(shared)
+    model = CrisisModel(portfolio, snapshot, request, risk)
+    naive = {pid: (best["action"], best["fraction"]) for pid, best in alone.items()}
+    assert D(plan["total_loss_usd"]) < model.evaluate("early", naive)["_total"]
 
 
 def test_identical_strategies_are_flagged():

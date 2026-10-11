@@ -1286,3 +1286,20 @@ tbody tr[data-highlighted="true"] {
 .scenario-details-content pre { max-width: 100%; overflow: auto; white-space: pre-wrap; font-size: 11px; }
 .scenario-details-content a { text-decoration: underline; }
 .assistant-case-count { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+
+/* Crisis verdict: the engine's plan, one line per position. */
+.verdict-actions {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.verdict-actions li[data-hold="true"] {
+  color: var(--np-muted);
+}
+
+tr[data-selected="true"] td {
+  font-weight: 600;
+}
