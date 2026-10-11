@@ -2145,17 +2145,17 @@ function AssistantDock({
               {isRiskAssistant && mode === "api" ? <div className="microcopy">
                 {assistantStatus.data && !assistantStatus.data.configured ? <p role="alert">Set GEMINI_API_KEY on the backend to enable scenario generation.</p> : null}
                 <p>News: {news.isError ? "unavailable" : news.data?.status ?? "loading"}. {news.data?.status === "not_configured" ? "Typed events are hypothetical." : ""}</p>
-                {news.data?.articles.length ? <><details><summary>Supplied market news</summary>{news.data.articles.map(article => <p key={article.id}><a href={article.url} target="_blank" rel="noreferrer">{article.title}</a> · {article.source} · {new Date(article.published_at).toLocaleString()}</p>)}</details><button onClick={() => setInput("Analyse les news fournies et propose des scénarios qui challengent les positions de mon portefeuille. Cite les articles utilisés et sépare faits rapportés et hypothèses.")}>Use supplied news</button></> : null}
+                {news.data?.articles.length ? <><details><summary>Supplied market news</summary>{news.data.articles.map(article => <p key={article.id}><a href={article.url} target="_blank" rel="noreferrer">{article.title}</a> · {article.source} · {new Date(article.published_at).toLocaleString()}</p>)}</details><button onClick={() => setInput("Analyse the supplied news and propose scenarios that challenge my portfolio positions. Cite the articles used and separate reported facts from assumptions.")}>Use supplied news</button></> : null}
               </div> : null}
               <div className="assistant-examples" aria-label="Scenario prompt examples">
                 {(isRiskAssistant ? [
-                  ["US rate cut", "USD INTEREST RATE FALLS BY 3 PTN"],
-                  ["Weaker dollar", "Si le dollar se déprécie face à l’euro, comment mon portefeuille est-il exposé ?"],
-                  ["Challenge portfolio", "Propose trois scénarios adverses adaptés aux positions de mon portefeuille."],
+                  ["US rate cut", "US interest rates fall by 3 percentage points: how is my portfolio exposed?"],
+                  ["Weaker dollar", "If the dollar weakens against the euro, how is my portfolio exposed?"],
+                  ["Challenge portfolio", "Propose three adverse scenarios tailored to my portfolio positions."],
                 ] : [
-                  ["Depeg + liquidity", "USDe baisse de 10 %, liquidité baisse de 80 %, sur 7 jours"],
-                  ["Cascade", "Crée une cascade avec USDe -8 %, liquidité -60 %, sur 7 jours"],
-                  ["Carry squeeze", "Rendement sUSDe 0 %, emprunt 60 % sur 30 jours"],
+                  ["Depeg + liquidity", "USDe drops 10%, liquidity drops 80%, over 7 days"],
+                  ["Cascade", "Create a cascade with USDe -8%, liquidity -60%, over 7 days"],
+                  ["Carry squeeze", "sUSDe yield 0%, borrow rate 60% over 30 days"],
                 ]).map(([label, prompt]) => <button key={label} onClick={() => setInput(prompt)}>{label}</button>)}
               </div>
               {messages.map((message) => (
