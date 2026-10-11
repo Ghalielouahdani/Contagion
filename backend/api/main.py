@@ -252,12 +252,14 @@ def risk_assistant_status() -> dict:
 
 
 @app.get("/api/v1/risk/news")
-def risk_market_news() -> dict:
-    return risk_news.fetch()
+def risk_market_news(q: str | None = Query(None, max_length=200), set: str | None = Query(None)) -> dict:
+    return risk_news.fetch(q, _files(set)["portfolio"])
 
 
 @app.post("/api/v1/risk/assistant")
 def risk_generate_scenarios(body: dict = Body(...), set: str | None = Query(None)) -> dict:
     # The client chooses the event, never replaces authoritative portfolio inputs.
-    news = risk_news.normalize(body["news"], "user_provided") if "news" in body else risk_news.fetch()
-    return risk_assistant.generate(body, _files(set), _validator("scenario_request.schema.json"), news)
+    files = _files(set)
+    news = (risk_news.normalize(body["news"], "user_provided") if "news" in body
+            else risk_news.fetch(body.get("message") if isinstance(body.get("message"), str) else None, files["portfolio"]))
+    return risk_assistant.generate(body, files, _validator("scenario_request.schema.json"), news)

@@ -50,7 +50,8 @@ def setting(name: str, default: str = "") -> str:
 def status() -> dict:
     return {"provider": "gemini", "configured": bool(setting("GEMINI_API_KEY")),
             "model": setting("RISK_ASSISTANT_MODEL", "gemini-3.5-flash-lite"),
-            "news_configured": bool(setting("RISK_NEWS_URL"))}
+            "news_configured": bool(setting("RISK_NEWS_URL")) or setting("RISK_NEWS_PROVIDER") == "cryptocurrency_cv",
+            "news_provider": "configured_feed" if setting("RISK_NEWS_URL") else (setting("RISK_NEWS_PROVIDER") or None)}
 
 
 def _strings(max_items=10):

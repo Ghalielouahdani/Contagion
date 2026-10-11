@@ -18,6 +18,20 @@ Serves the routes the frontend calls (`frontend/src/data/api.ts`). Every route t
 | POST | `/api/v1/grid` | **live** loss / liquidation heatmap over two parameters |
 | POST | `/api/v1/decide` | P3 execution decision consuming the matching risk result, snapshot and request |
 | POST | `/api/v1/assistant` | 501: the assistant runs client-side |
+| GET | `/api/v1/risk/news?q=` | market news for the risk assistant (see below) |
+| POST | `/api/v1/risk/assistant` | stress scenarios proposed by the LLM from the question, the portfolio and the news; the engine computes their losses |
+
+### Market news for the risk assistant
+
+Configured in the backend `.env` (never by the client):
+
+| Variable | Effect |
+|---|---|
+| `RISK_NEWS_PROVIDER=cryptocurrency_cv` | Free Crypto News API (cryptocurrency.cv, no key). One single-word search per term: the portfolio's assets and protocols (Ethena, USDe, Aave, Morpho, Pendle, stablecoin) plus up to 3 channel keywords from the question (Fed, dollar, euro, Tether…). The question itself is never sent. Whole-word relevance, ≤14 days, price trackers dropped, each term in turn, ≤20 articles, Fear & Greed attached as `market_context`. |
+| `RISK_NEWS_URL` (+ `RISK_NEWS_TOKEN`) | Any HTTPS feed already in the normalized articles schema; takes precedence over the provider. |
+| neither | `status: not_configured`: the assistant treats every event as hypothetical. |
+
+The assistant may cite only the IDs of supplied articles; a provider outage returns 502 rather than invented headlines.
 
 Composes P1 → P2 → P3 and owns no financial formulas: these live in `backend/risk` and `backend/execution`.
 

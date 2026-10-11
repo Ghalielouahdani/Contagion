@@ -31,6 +31,7 @@ def model(monkeypatch):
     value = output()
     monkeypatch.setattr(agent, "generate_model", lambda context: copy.deepcopy(value))
     monkeypatch.setenv("RISK_NEWS_URL", "")
+    monkeypatch.setenv("RISK_NEWS_PROVIDER", "")  # never hit the network, whatever .env enables
     return value
 
 
@@ -111,6 +112,7 @@ def test_rejects_non_web_news_links(model, bad):
 def test_no_key_has_no_local_fallback(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("RISK_NEWS_URL", "")
+    monkeypatch.setenv("RISK_NEWS_PROVIDER", "")
     assert client.get("/api/v1/risk/assistant-status").json()["configured"] is False
     response = call()
     assert response.status_code == 503
