@@ -1,3 +1,4 @@
+import { Sparkles } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { compactId, labelize } from "./lib/format";
 import type { RiskAgentBatch, RiskScenarioProposal } from "./lib/types";
@@ -9,7 +10,7 @@ export function GeneratedScenarioCard({ batch, proposal, onRun, canRun, selected
   const detailsButton = useRef<HTMLButtonElement>(null);
   return <>
     <article className="preset-card generated-scenario-card" data-selected={selected}>
-      <span>Generated · {labelize(proposal.request.scenario.scenario_id)}</span>
+      <div className="generated-scenario-heading"><span className="generated-scenario-badge"><Sparkles size={13} aria-hidden="true" /> AI generated</span><small>{labelize(proposal.request.scenario.scenario_id)}</small></div>
       <strong>{proposal.title}</strong>
       <p>{proposal.causalChain[0] || "Portfolio-specific stress hypothesis"}</p>
       <small>{proposal.request.scenario.horizon_days} days · {proposal.affectedPositions.length} positions · not a computed loss</small>

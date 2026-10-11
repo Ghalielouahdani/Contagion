@@ -2,10 +2,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bar,
-  BarChart,
   Brush,
   CartesianGrid,
-  Cell,
   Line,
   LineChart,
   Legend,
@@ -20,7 +18,9 @@ import ReactFlow, {
   Edge,
   MiniMap,
   Node,
+  MarkerType,
   Panel,
+  Position,
   ReactFlowProvider,
   useReactFlow,
 } from "reactflow";
@@ -54,6 +54,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
+import { InteractiveLabel } from "./motion/primitives";
+import { NODE_H, NODE_W, STEP, columnLayout, columnOfX, edgeTypes, layeredLayout } from "./graphMotion";
+import { EquityBars } from "./ScenarioLabCharts";
+import { ComponentBars, MetricGauge } from "./ScenarioStory";
 import { GeneratedScenarioCard } from "./RiskScenarioAgent";
 import { Term } from "./Term";
 import { CrisisVerdict } from "./CrisisVerdict";
@@ -79,6 +83,7 @@ import type {
   RiskAgentBatch,
   RiskScenarioProposal,
   AssistantMessage,
+  ContagionPath,
   DashboardAction,
   DataMode,
   DependencyGraph,
@@ -117,12 +122,12 @@ declare global {
   }
 }
 
-const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string }> = {
-  portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore" },
-  graph: { label: "Dependency Graph", icon: GitBranch, section: "Explore" },
-  scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run" },
-  engine: { label: "Risk Engine", icon: Calculator, section: "Run" },
-  decision: { label: "Decision Engine", icon: BarChart3, section: "Run" },
+const viewMeta: Record<View, { label: string; icon: typeof WalletCards; section: string; key: string }> = {
+  portfolio: { label: "Portfolio Dashboard", icon: WalletCards, section: "Explore", key: "P" },
+  graph: { label: "Dependency Graph", icon: GitBranch, section: "Explore", key: "G" },
+  scenario: { label: "Scenario Lab", icon: SlidersHorizontal, section: "Run", key: "L" },
+  engine: { label: "Risk Engine", icon: Calculator, section: "Run", key: "R" },
+  decision: { label: "Decision Engine", icon: BarChart3, section: "Run", key: "D" },
 };
 
 const scenarioCopy: Record<ScenarioKind, { title: string; preset: string; summary: string }> = {
@@ -207,35 +212,23 @@ const scenarioControls: Record<ScenarioKind, Array<"shock" | "liquidity" | "ltSh
 const defaultExtraInputs = { ltShiftPct: -5, susdeApyPct: 0, borrowApyPct: 60, nodeId: "offchain:ethena_backing", nodeLossPct: 10 };
 type ExtraInputs = typeof defaultExtraInputs;
 
-// Left to right follows the direction of dependency: position -> market / exit venue -> oracle -> asset -> protocol.
-const graphColumn: Record<string, number> = {
-  position: 0,
-  market: 1,
-  venue: 1,
-  oracle: 2,
-  contract: 2,
-  asset: 3,
-  protocol: 4,
-  offchain_entity: 4,
-  chain: 4,
-};
-const typeOrder = ["position", "market", "venue", "oracle", "contract", "asset", "protocol", "offchain_entity", "chain"];
 
-function layoutGraph(nodes: GraphNode[]): Record<string, { x: number; y: number }> {
-  const columns = new Map<number, GraphNode[]>();
-  for (const node of nodes) {
-    const column = graphColumn[node.type] ?? 4;
-    columns.set(column, [...(columns.get(column) ?? []), node]);
+// Scenario view: a node's column is its distance from the scenario factor (the shock travels left to right).
+// A path lists nodes position -> ... -> factor; positions sit in the last column.
+function layoutPaths(paths: ContagionPath[], positionIds: string[], links: Array<{ source: string; target: string }>) {
+  const column = new Map<string, number>();
+  const order = new Map<string, number>();
+  for (const path of paths) {
+    path.nodes.forEach((id, index) => {
+      if (id.startsWith("position:")) return;
+      const distance = path.nodes.length - 1 - index;
+      column.set(id, Math.max(column.get(id) ?? 0, distance));
+      if (!order.has(id)) order.set(id, order.size);
+    });
   }
-  const positions: Record<string, { x: number; y: number }> = {};
-  columns.forEach((items, column) => {
-    items
-      .sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type) || a.id.localeCompare(b.id))
-      .forEach((node, row) => {
-        positions[node.id] = { x: 40 + column * 270, y: 30 + row * 96 };
-      });
-  });
-  return positions;
+  const last = Math.max(-1, ...column.values()) + 1;
+  positionIds.forEach((id) => column.set(id, last));
+  return columnLayout(column, order, links);
 }
 
 const confidenceTone: Record<string, string> = {
@@ -346,6 +339,11 @@ function App() {
         setCommandOpen((open) => !open);
       }
       if (event.key === "Escape") setCommandOpen(false);
+      // Single-letter view shortcuts, like the reference's [S] / [E]; never while typing or with a modifier.
+      const target = event.target instanceof Element ? event.target : null;
+      if (event.metaKey || event.ctrlKey || event.altKey || target?.closest("input, textarea, select, [contenteditable], dialog")) return;
+      const next = (Object.keys(viewMeta) as View[]).find((v) => viewMeta[v].key === event.key.toUpperCase());
+      if (next) setView(next);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -524,10 +522,9 @@ function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={`${view}-${mode}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.2, ease: "easeOut" } }}
+            exit={{ opacity: 0, filter: "blur(8px)", transition: { duration: 0.28, ease: "easeInOut" } }}
           >
             {visibleQuery.isLoading && view !== "scenario" ? <SkeletonView /> : null}
             {visibleQuery.isError ? <ErrorView mode={mode} /> : null}
@@ -568,6 +565,12 @@ function App() {
                     setExtraInput={setExtraInput}
                     runScenario={runScenario}
                   />
+                  {data ? <ReactFlowProvider>
+                    <DependencyGraphView graph={data.graph} risk={data.risk} scenario={data.risk.scenario_id as ScenarioKind} scope="scenario"
+                      selectedPosition={selectedPosition} setSelectedPosition={setSelectedPosition}
+                      selectedEdge={selectedEdge} setSelectedEdge={setSelectedEdge}
+                      hoveredPosition={hoveredPosition} setHoveredPosition={setHoveredPosition} />
+                  </ReactFlowProvider> : null}
                   {data ? <ReactFlowProvider>
                     <DependencyGraphView graph={data.graph} risk={data.risk} scenario={data.risk.scenario_id as ScenarioKind}
                       selectedPosition={selectedPosition} setSelectedPosition={setSelectedPosition}
@@ -687,9 +690,11 @@ function Sidebar({
                   {section.items.map((item) => {
                     const Icon = viewMeta[item].icon;
                     return (
-                      <button key={item} className="nav-item" data-selected={view === item} onClick={() => setView(item)}>
+                      <button key={item} className="nav-item" data-selected={view === item} onClick={() => setView(item)}
+                        aria-keyshortcuts={viewMeta[item].key}>
                         <Icon size={15} />
-                        {viewMeta[item].label}
+                        <InteractiveLabel>{viewMeta[item].label}</InteractiveLabel>
+                        <span className="nav-key">[{viewMeta[item].key}]</span>
                       </button>
                     );
                   })}
@@ -906,10 +911,12 @@ function DependencyGraphView({
   setSelectedEdge,
   hoveredPosition,
   setHoveredPosition,
+  scope = "full",
 }: {
   graph: DependencyGraph;
   risk?: AppData["risk"];
   scenario?: ScenarioKind;
+  scope?: "scenario" | "full";
   selectedPosition: string;
   setSelectedPosition: (id: string) => void;
   selectedEdge: GraphEdge | null;
@@ -918,6 +925,8 @@ function DependencyGraphView({
   setHoveredPosition: (id: string | null) => void;
 }) {
   const isStress = Boolean(risk);
+  // "scenario": only the dependencies the run's contagion paths use; "full": the whole graph, paths highlighted.
+  const scenarioOnly = isStress && scope === "scenario";
   const positions = risk?.positions ?? [];
   const [search, setSearch] = useState("");
   const [enabledTypes, setEnabledTypes] = useState<Record<string, boolean>>({
@@ -942,23 +951,48 @@ function DependencyGraphView({
   const criticalNodes = useMemo(() => new Set(displayedPaths.flatMap((path) => path.nodes)), [displayedPaths]);
   const roots = useMemo(() => new Set(displayedPaths.map((path) => path.root)), [displayedPaths]);
   const positionRisks = useMemo(() => new Map(positions.map((position) => [`position:${position.position_id}`, position])), [positions]);
-  const layout = useMemo(() => layoutGraph(graph.nodes), [graph.nodes]);
+  // Positions the scenario cannot reach stay visible, so "no path" reads as "not exposed here".
+  const shownPositionIds = useMemo(() => (pathScope === "all" ? positions.map((p) => `position:${p.position_id}`) :
+    [`position:${selectedPosition}`]), [pathScope, positions, selectedPosition]);
+  const layout = useMemo(() => (scenarioOnly
+    ? layoutPaths(displayedPaths, shownPositionIds, graph.edges.filter((e) => criticalEdges.has(e.id)))
+    : layeredLayout(graph.nodes, graph.edges)),
+    [scenarioOnly, displayedPaths, shownPositionIds, graph.nodes, graph.edges, criticalEdges]);
+  // Shock timeline (scenario graph): column c is reached at c x STEP; nodes of one column follow each other closely.
+  const nodeDelay = useMemo(() => {
+    const seen = new Map<number, number>();
+    const delays = new Map<string, number>();
+    Object.entries(layout).sort((a, b) => a[1].x - b[1].x || a[1].y - b[1].y).forEach(([id, p]) => {
+      const col = columnOfX(p.x), i = seen.get(col) ?? 0;
+      seen.set(col, i + 1);
+      delays.set(id, col * STEP + i * 0.06);
+    });
+    return delays;
+  }, [layout]);
+  const [replay, setReplay] = useState(0);
   const nodeLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
   const visibleNodeIds = useMemo(() => {
+    const scenarioNodes = new Set([...criticalNodes, ...shownPositionIds]);
     return new Set(
       graph.nodes
+        .filter((node) => !scenarioOnly || scenarioNodes.has(node.id))
         .filter((node) => enabledTypes[node.type] !== false)
         .filter((node) => `${node.id} ${node.label}`.toLowerCase().includes(search.toLowerCase()))
         .map((node) => node.id),
     );
-  }, [enabledTypes, graph.nodes, search]);
+  }, [enabledTypes, graph.nodes, search, scenarioOnly, criticalNodes, shownPositionIds]);
 
   const flowNodes = useMemo<Node[]>(() => {
     return graph.nodes
       .filter((node) => visibleNodeIds.has(node.id))
       .map((node) => ({
         id: node.id,
-        position: layout[node.id] ?? { x: 160, y: 160 },
+        position: layout[node.id] ?? { x: 0, y: 0 },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+        style: { width: NODE_W, height: NODE_H, ...(scenarioOnly ? { ["--node-delay" as string]: `${nodeDelay.get(node.id) ?? 0}s` } : {}) },
+        // Motion: the shock reaches each column in turn, from the scenario factor to the positions.
+        ...(scenarioOnly ? { className: "flow-reveal" } : {}),
         data: {
           label: (
             <div
@@ -975,6 +1009,7 @@ function DependencyGraphView({
               <span>{node.type}</span>
               <strong>{node.label}</strong>
               {roots.has(node.id) ? <small>Scenario factor</small> : null}
+              {scenarioOnly && node.type === "position" && !criticalNodes.has(node.id) ? <small>Not reached by this scenario</small> : null}
               {positionRisks.has(node.id) ? <small>
                 {Number(positionRisks.get(node.id)!.conditional_loss_usd) > 0 ? "Loss" :
                   Number(positionRisks.get(node.id)!.conditional_loss_usd) < 0 ? "Gain" : "No modeled loss"}
@@ -986,9 +1021,25 @@ function DependencyGraphView({
         },
         draggable: true,
       }));
-  }, [graph.nodes, layout, selectedPosition, hoveredPosition, setSelectedPosition, visibleNodeIds, criticalNodes, roots, positionRisks]);
+  }, [graph.nodes, layout, nodeDelay, selectedPosition, hoveredPosition, setSelectedPosition, visibleNodeIds, criticalNodes, roots, positionRisks, scenarioOnly]);
 
   const flowEdges = useMemo<Edge[]>(() => {
+    if (scenarioOnly) {
+      // Drawn in the direction the shock travels (dependency -> dependent); the evidence keeps the contract direction.
+      return graph.edges
+        .filter((edge) => criticalEdges.has(edge.id) && visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target))
+        .map((edge) => ({
+          id: edge.id,
+          source: edge.target,
+          target: edge.source,
+          label: edgeLabel(edge.relation),
+          type: "shock",
+          className: `edge-${edge.confidence} edge-critical edge-shock`,
+          markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+          // Drawn once the dependency (its drawn source) is on screen, so the shock arrives with the next column.
+          data: { ...edge, delay: (nodeDelay.get(edge.target) ?? 0) + 0.3 },
+        }));
+    }
     return graph.edges
       .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target))
       .map((edge) => ({
@@ -1001,19 +1052,21 @@ function DependencyGraphView({
         data: edge,
         style: { opacity: criticalEdges.size && !criticalEdges.has(edge.id) ? 0.2 : 1 },
       }));
-  }, [criticalEdges, graph.edges, visibleNodeIds]);
+  }, [criticalEdges, graph.edges, visibleNodeIds, scenarioOnly, nodeDelay]);
 
   const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
-  const flowKey = `${activeFactor}-${risk?.simulation_id ?? graph.graph_id}-${risk?.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
+  const flowKey = `${scope}-${replay}-${activeFactor}-${risk?.simulation_id ?? graph.graph_id}-${risk?.portfolio.total_conditional_loss_usd}-${pathScope}-${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;
 
   return (
     <div className="page-stack">
       {isStress ? <section className="visual-panel contagion-summary">
         <div className="panel-heading">
           <div>
-            <p className="eyebrow">Scenario → dependencies → portfolio impact</p>
-            <h2>{scenarioCopy[scenario].title}</h2>
-            <p className="microcopy">Highlighted paths show how scenario factors reach positions. Graph edges point toward dependencies; read the propagation from the factor back to the position.</p>
+            <p className="eyebrow">{scenarioOnly ? "Dependencies of this scenario" : "Scenario → dependencies → portfolio impact"}</p>
+            <h2>{scenarioOnly ? `${scenarioCopy[scenario].title}: what the shock goes through` : scenarioCopy[scenario].title}</h2>
+            <p className="microcopy">{scenarioOnly
+              ? "Only the dependencies this scenario uses. Arrows follow the shock: from the scenario factor on the left to the positions on the right."
+              : "Full dependency graph. Highlighted paths show how scenario factors reach positions; edges point toward dependencies."}</p>
           </div>
           <div className="toolbar-row">
             <select aria-label="Propagation factor" value={activeFactor} onChange={event => setFactorFilter(event.target.value)}>
@@ -1027,6 +1080,7 @@ function DependencyGraphView({
         <div className="filter-chips">
           {[...roots].map((root) => <Badge key={root} tone="risk">{nodeLabel(root)}</Badge>)}
         </div>
+        {scenarioOnly ? <p className="microcopy">{visibleNodeIds.size} of {graph.nodes.length} dependencies are involved in this scenario.</p> : <>
         <div className="contagion-positions">
           {positions.map((position) => (
             <button key={position.position_id} className="position-card" data-selected={position.position_id === selectedPosition}
@@ -1047,6 +1101,7 @@ function DependencyGraphView({
           <Definition label="Extra exit cost from liquidation selling" value={money(risk?.comparison.excess_loss_usd)} />
           <p className="microcopy">Depeg → liquidations → selling into shared venues → more expensive fund exits. One round is modeled.</p>
         </> : null}
+        </>}
       </section> : <section className="visual-panel">
         <p className="eyebrow">Original dependency graph</p>
         <h2>Portfolio dependencies before stress</h2>
@@ -1066,13 +1121,23 @@ function DependencyGraphView({
             if (node.id.startsWith("position:")) setHoveredPosition(node.id.replace("position:", ""));
           }}
           onNodeMouseLeave={() => setHoveredPosition(null)}
+          edgeTypes={edgeTypes}
           fitView
-          minZoom={0.35}
+          fitViewOptions={{ padding: scenarioOnly ? 0.25 : 0.08, maxZoom: 1 }}
+          minZoom={0.2}
           maxZoom={1.35}
         >
           <Background gap={28} size={1} color="var(--np-line-strong)" />
-          <MiniMap pannable zoomable nodeColor={(node) => nodeTypeColor[(graph.nodes.find((item) => item.id === node.id) as GraphNode)?.type] ?? "var(--np-soft)"} />
+          {scenarioOnly ? null : <MiniMap pannable zoomable nodeColor={(node) => nodeTypeColor[(graph.nodes.find((item) => item.id === node.id) as GraphNode)?.type] ?? "var(--np-soft)"} />}
           <Controls />
+          {scenarioOnly && displayedPaths.length ? <Panel position="top-right" className="flow-panel">
+            <button className="np-button" onClick={() => setReplay((n) => n + 1)}>
+              <RefreshCw size={12} /> <InteractiveLabel>Replay the shock</InteractiveLabel>
+            </button>
+          </Panel> : null}
+          {scenarioOnly && !displayedPaths.length ? <Panel position="top-center" className="flow-panel">
+            <span className="microcopy">No dependency path for this selection: the scenario does not reach it.</span>
+          </Panel> : null}
           <Panel position="top-left" className="flow-panel">
             <label className="search-field">
               <Search size={14} />
@@ -1345,7 +1410,7 @@ function ScenarioLab({
       <section className="visual-panel">
         <div className="panel-heading">
           <div>
-            <p className="eyebrow">Animated before / after</p>
+            <p className="eyebrow">Before / after, animated</p>
             <h2>Net equity under stress</h2>
             <p className="microcopy">All portfolio positions · USD. Select a position to inspect its liquidation metric and loss breakdown.</p>
             <p className="microcopy">Last run: {customTitle ?? scenarioCopy[data.risk.scenario_id as ScenarioKind]?.title ?? data.risk.scenario_id}</p>
@@ -1362,39 +1427,8 @@ function ScenarioLab({
             ))}
           </select>
         </div>
-        <div className="chart-frame">
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart
-              data={valuationData}
-              margin={{ top: 8, right: 12, bottom: 8, left: 12 }}
-              onMouseMove={(state) => {
-                const active = (state as { activePayload?: Array<{ payload?: { id?: string } }> }).activePayload?.[0]?.payload;
-                if (active?.id) setHoveredPosition(active.id);
-              }}
-              onMouseLeave={() => setHoveredPosition(null)}
-              onClick={(state) => {
-                const active = (state as { activePayload?: Array<{ payload?: { id?: string } }> })?.activePayload?.[0]?.payload;
-                if (active?.id) setSelectedPosition(active.id);
-              }}
-            >
-              <CartesianGrid stroke="var(--np-line)" vertical={false} />
-              <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" height={70} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-              <YAxis width={90} tickFormatter={(value) => money(value).replace(".00", "")} tickLine={false} axisLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Legend />
-              <Bar name="Before stress" dataKey="before" fill="var(--np-soft)" radius={[4, 4, 0, 0]}>
-                {valuationData.map((entry) => (
-                  <Cell key={`before-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
-                ))}
-              </Bar>
-              <Bar name="After stress" dataKey="after" fill="var(--np-strong)" radius={[4, 4, 0, 0]}>
-                {valuationData.map((entry) => (
-                  <Cell key={`after-${entry.id}`} opacity={!hoveredPosition || hoveredPosition === entry.id ? 1 : 0.28} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <EquityBars key={data.risk.simulation_id} rows={valuationData} selected={selectedPosition} hovered={hoveredPosition}
+          onSelect={setSelectedPosition} onHover={setHoveredPosition} />
         <p className="microcopy">Each pair of bars represents one position. Negative equity means the modeled loss exceeds that position's initial equity.</p>
       </section>
 
@@ -1408,13 +1442,14 @@ function ScenarioLab({
             : "LTV = debt value ÷ oracle collateral value. Above the market's LLTV, this position is liquidatable."}</p> : null}
           <p>Liquidatable does not mean fully liquidated; it means the protocol threshold has been breached.</p>
         </div>
-        {selectedRisk.risk_metric ? <RiskGauge metric={selectedRisk.risk_metric} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
+        {selectedRisk.risk_metric ? <MetricGauge key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} label={compactId(selectedRisk.position_id)}
+          metric={selectedRisk.risk_metric} delay={0.25} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
       </section>
 
       <section className="visual-panel scenario-results">
         <p className="eyebrow">What caused the impact · {compactId(selectedPosition)}</p>
         <h2>Loss breakdown</h2>
-        {Object.entries(selectedRisk.loss_components).map(([key, value]) => <Definition key={key} label={labelize(key)} value={money(value)} />)}
+        <ComponentBars key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} components={selectedRisk.loss_components} />
         <WarningList warnings={selectedRisk.warnings} />
       </section>
       <section className="visual-panel scenario-results">
@@ -1615,7 +1650,7 @@ function AssistantDock({
   executeAction: (action: DashboardAction) => void;
 }) {
   const isRiskAssistant = view !== "decision";
-  const [scenarioCount, setScenarioCount] = useState(3);
+  const [scenarioCount, setScenarioCount] = useState<number | undefined>(undefined);
   const assistantStatus = useQuery({ queryKey: ["risk-assistant-status"], queryFn: loadRiskAssistantStatus, enabled: open && isRiskAssistant && mode === "api", staleTime: 30000 });
   const news = useQuery({ queryKey: ["risk-market-news"], queryFn: loadRiskNews, enabled: open && isRiskAssistant && mode === "api", staleTime: 60000 });
   const [messages, setMessages] = useState<AssistantMessage[]>([
@@ -1902,7 +1937,7 @@ function AssistantDock({
             </header>
             <div className="assistant-messages" aria-live="polite">
               {isRiskAssistant && mode !== "api" ? <div className="assistant-message" data-role="assistant"><p>Scenario generation requires Engine API mode.</p><button className="primary-button" onClick={onApiMode}>Switch to Engine API</button></div> : null}
-              {isRiskAssistant ? <label className="assistant-case-count">Scenarios to generate <select value={scenarioCount} onChange={event => setScenarioCount(Number(event.target.value))}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option></select></label> : null}
+              {isRiskAssistant ? <label className="assistant-case-count">Scenarios to generate <select value={scenarioCount ?? "auto"} onChange={event => setScenarioCount(event.target.value === "auto" ? undefined : Number(event.target.value))}><option value="auto">Auto · 1–3 relevant cases</option><option value={1}>Up to 1</option><option value={2}>Up to 2</option><option value={3}>Up to 3</option></select></label> : null}
               {isRiskAssistant && mode === "api" ? <div className="microcopy">
                 {assistantStatus.data && !assistantStatus.data.configured ? <p role="alert">Set GEMINI_API_KEY on the backend to enable scenario generation.</p> : null}
                 <p>News: {news.isError ? "unavailable" : news.data?.status ?? "loading"}. {news.data?.status === "not_configured" ? "Typed events are hypothetical." : ""}</p>
@@ -2081,31 +2116,6 @@ function Control({ label, value, children }: { label: string; value: string; chi
       <strong>{value}</strong>
       {children}
     </label>
-  );
-}
-
-function RiskGauge({ metric }: { metric: NonNullable<RiskPosition["risk_metric"]> }) {
-  const distance = Number(metric.distance_to_liquidation_after_pct);
-  const before = Number(metric.before);
-  const after = Number(metric.after);
-  const threshold = Number(metric.threshold);
-  const maximum = Math.max(before, after, threshold, 1) * 1.2;
-  const formatMetric = (value: number) => metric.type === "ltv" ? percent(value, 2) : value.toFixed(4);
-  return (
-    <div className="risk-gauge">
-      <div className="gauge-track">
-        <span className="threshold" style={{ left: `${threshold / maximum * 100}%` }} />
-        <span className="gauge-fill" style={{ width: `${Math.max(0, Math.min(100, after / maximum * 100))}%`, background: metric.liquidatable ? "var(--np-accent-coral)" : "var(--np-accent-blue)" }} />
-      </div>
-      <div className="metric-row">
-        <span>
-          Before {formatMetric(before)} → After {formatMetric(after)}
-        </span>
-        <Badge tone={metric.liquidatable ? "risk" : "good"}>{metric.liquidatable ? "liquidatable" : "not liquidatable"}</Badge>
-      </div>
-      <p className="muted">Liquidation threshold: {formatMetric(threshold)} · vertical marker. Scale: 0–{formatMetric(maximum)}.</p>
-      <p className="muted">{distance < 0 ? `Oracle collateral price must recover ${percent(-distance, 1)} to return to the threshold, with debt fixed.` : `Oracle collateral price can fall another ${percent(distance, 1)} before reaching the threshold, with debt fixed.`}</p>
-    </div>
   );
 }
 

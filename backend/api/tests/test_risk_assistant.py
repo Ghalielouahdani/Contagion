@@ -143,3 +143,22 @@ def test_news_feed_is_explicitly_unconfigured(monkeypatch):
 def test_generation_count_and_event_bounds(model):
     for body in ({"message": "test", "count": 4}, {"message": "test", "count": True}, {"message": ""}, {"message": "a" * 6001}):
         assert call(body).status_code == 422
+
+
+def test_auto_count_allows_one_useful_case_without_padding(monkeypatch):
+    contexts = []
+    def generate(context):
+        contexts.append(context)
+        return output()
+    monkeypatch.setattr(agent, "generate_model", generate)
+    monkeypatch.setenv("RISK_NEWS_URL", "")
+    response = call({"message": "Un seul cas ciblé sur le rendement sUSDe"})
+    assert response.status_code == 200, response.text
+    assert len(response.json()["proposals"]) == 1
+    assert contexts[0]["requested_count"] is None
+    assert "Never pad to three" in contexts[0]["count_policy"]
+
+
+def test_explicit_count_still_limits_generated_cases(model):
+    model["scenarios"].append(copy.deepcopy(model["scenarios"][0]))
+    assert call({"message": "Test", "count": 1}).status_code == 502

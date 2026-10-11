@@ -189,8 +189,8 @@ def generate(body: dict, files: dict, validator, news: dict) -> dict:
     message = body.get("message")
     if not isinstance(message, str) or not message.strip() or len(message) > 6000:
         raise HTTPException(422, "message must contain 1–6000 characters")
-    count = body.get("count", 3)
-    if type(count) is not int or not 1 <= count <= 3:
+    count = body.get("count")
+    if count is not None and (type(count) is not int or not 1 <= count <= 3):
         raise HTTPException(422, "count must be an integer between 1 and 3")
     templates = {kind: files[f"scenario_request{suffix}"] for kind, suffix in SUFFIXES.items()
                  if f"scenario_request{suffix}" in files}
@@ -198,12 +198,14 @@ def generate(body: dict, files: dict, validator, news: dict) -> dict:
                for kind in templates}
     portfolio, snapshot, graph = files["portfolio"], files["market_snapshot"], files["dependency_graph"]
     context = {"user_event_or_question": message, "requested_count": count,
+               "count_policy": ("Choose 1 to 3 relevant cases. Prefer one for a focused event; add cases only for distinct, useful channels. Respect a number explicitly requested in the user text within this limit. Never pad to three."
+                                if count is None else f"Generate up to {count} relevant cases; do not add redundant cases to fill the limit."),
                "event_status": "hypothetical unless supported by provided news", **model_context(portfolio, snapshot, graph),
                "provided_news": news,
                "available_scenarios": {kind: {"preset": request["scenario"], "schema": schemas[kind]} for kind, request in templates.items()},
                "parameter_limits": LIMITS}
     raw = generate_model(context)
-    if not Draft202012Validator(OUTPUT_SCHEMA).is_valid(raw) or len(raw["scenarios"]) > count:
+    if not Draft202012Validator(OUTPUT_SCHEMA).is_valid(raw) or len(raw["scenarios"]) > (count or 3):
         raise HTTPException(502, "Model output failed the proposal schema. Nothing was applied.")
     positions = {p["position_id"] for p in portfolio["positions"]}
     nodes = {n["id"] for n in graph["nodes"]}

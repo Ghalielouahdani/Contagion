@@ -5,6 +5,7 @@ import "reactflow/dist/style.css";
 import "./theme/tokens.css";
 import "./styles.css";
 import { App } from "./App";
+import "./theme/motion.css"; // last: the motion layer overrides the base styles
 
 const queryClient = new QueryClient({
   defaultOptions: {

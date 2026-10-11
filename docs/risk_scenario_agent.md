@@ -5,7 +5,7 @@ L'agent Gemini est accessible dans le chatbot depuis **Portfolio, Dependency Gra
 ## Parcours
 
 1. Ouvrir le **chatbot global** depuis Portfolio, Dependency Graph, Scenario Lab ou Risk Engine.
-2. Décrire un événement et choisir 1 à 3 cas dans le chat. La génération s'effectue uniquement dans le chatbot.
+2. Décrire un événement et laisser **Auto** laisser Auto choisir 1 à 3 cas pertinents ou fixer un maximum pertinents, ou limiter leur nombre dans le chat. La génération s'effectue uniquement dans le chatbot.
 3. Le chat confirme l'ajout et propose **View scenarios in Scenario Lab**. Les cartes nommées apparaissent à côté des scénarios existants dans la grille de Scenario Lab et restent disponibles pendant la session du navigateur.
 4. Cliquer **Details** sur une carte : une modale présente le mécanisme, l'horizon, les positions, la chaîne causale, les hypothèses, les limites et les sources. Ses sections de paramètres et de requête exacte sont dépliables. Échap ferme la modale et rend le focus au bouton Details.
 5. Cliquer **Run this stress case** sur la carte ou dans la modale. Le front soumet la requête exacte à `/simulate` et `/analyze` et affiche le résultat nommé dans Scenario Lab. Le bouton **Open Risk Engine** permet ensuite d'examiner la propagation et les calculs détaillés. Les décisions existantes continuent de recevoir le résultat correspondant ; leur page n'est pas modifiée.
@@ -90,3 +90,5 @@ npm run check:assistant
 ## Préréglages visibles
 
 Scenario Lab conserve quatre cas de départ : dépeg USDe, crise de liquidité, compression du carry et cascade de liquidations. Le cas combiné, la gouvernance et la défaillance d'un nœud restent des mécanismes disponibles au chatbot, sans carte préréglée dans la grille. Chaque bouton Run d'une carte générée transmet sa requête complète, y compris les paramètres absents des sliders. Cliquer un préréglage quitte la sélection générée, même lorsque ses valeurs visibles coïncident.
+
+Les cartes générées sont identifiées par un badge « AI generated » et un contour dégradé discret. Auto est le choix par défaut : un événement ciblé peut ne produire qu’un cas ; le modèle ajoute des cas seulement pour des canaux distincts et utiles, sans remplir artificiellement trois cartes.

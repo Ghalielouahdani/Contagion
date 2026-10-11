@@ -56,8 +56,10 @@ def test_min_loss_beats_every_other_computed_strategy(suffix, timing):
 
 
 def test_shared_venue_makes_min_loss_sell_less_than_alone():
-    # Seules, Ethena et Morpho seraient vendues à 100 % ; vendre les deux dans la même pool sUSDe coûte trop cher,
-    # donc la stratégie coordonnée vend moins sur cette venue (laquelle garder dépend des chiffres) et perd moins.
+    # Seules, Ethena et Morpho seraient vendues à 100 % ; vendre les deux dans la même pool sUSDe (à 20 % de la
+    # profondeur normale) coûte trop cher, donc la stratégie coordonnée vend moins sur cette venue et perd moins.
+    # Aujourd'hui elle garde Morpho : sa perte de garder est plafonnée à sa net equity (responsabilité limitée).
+    # Le test vérifie l'intention, pas laquelle des deux est gardée, qui dépend des chiffres.
     portfolio, snapshot, request, risk = inputs("_combined")
     shared = [p["position_id"] for p in portfolio["positions"] if p["exit_venue_id"] == "venue:susde_usdc"]
     alone = {r["position_id"]: r["early"]["best"] for r in crisis_plan(portfolio, snapshot, request, risk)["positions"]}

@@ -282,7 +282,7 @@ function fixtureAnalytics(scenario: ScenarioKind, inputs: ScenarioInputs, set: s
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
   if (request.view !== "decision") {
     if (mode !== "api") throw new Error("The Gemini risk assistant requires Engine API mode.");
-    return requestJson<AssistantResponse>(withSet("/api/v1/risk/assistant", request.fixtureSet), post({ message: request.message, count: request.count ?? 3 }));
+    return requestJson<AssistantResponse>(withSet("/api/v1/risk/assistant", request.fixtureSet), post({ message: request.message, ...(request.count === undefined ? {} : { count: request.count }) }));
   }
   const draft = proposeScenario(request.message,
     kind => ({ ...request.scenarioInputs, ...presetInputs(kind, request.fixtureSet) }),

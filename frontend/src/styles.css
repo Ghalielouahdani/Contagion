@@ -1303,3 +1303,14 @@ tbody tr[data-highlighted="true"] {
 tr[data-selected="true"] td {
   font-weight: 600;
 }
+
+.generated-scenario-card {
+  border: 1px solid transparent;
+  background: linear-gradient(var(--np-page), var(--np-page)) padding-box,
+    linear-gradient(135deg, var(--np-accent-periwinkle), var(--np-accent-lilac) 55%, var(--np-accent-gold)) border-box;
+}
+.generated-scenario-card:hover { border-color: transparent; box-shadow: 0 4px 20px color-mix(in srgb, var(--np-accent-lilac) 16%, transparent); }
+.generated-scenario-card[data-selected="true"] { border-color: transparent; box-shadow: inset 0 0 0 1px var(--np-strong), var(--np-shadow-hover); }
+.generated-scenario-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.generated-scenario-heading small { color: var(--np-muted); }
+.generated-scenario-card .generated-scenario-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px; border-radius: 4px; background: color-mix(in srgb, var(--np-accent-lilac) 14%, var(--np-page)); color: var(--np-strong); font-size: var(--np-size-0); }
