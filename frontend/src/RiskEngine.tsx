@@ -11,7 +11,7 @@
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
-import { compactId, labelize, money, percent } from "./lib/format";
+import { compactId, labelize, money, percent, lossOrGain } from "./lib/format";
 import { Term } from "./Term";
 import type { AppData, RiskPosition } from "./lib/types";
 import "./risk-engine.css";
@@ -143,7 +143,7 @@ export function RiskEngine({ data, onExecute }: { data: AppData; onExecute: () =
 
       <section className="impact-strip">
         <div className="stat"><span><Term>Net equity before</Term></span><strong>{money(navBefore)}</strong><small>Sum of positions, gross and debt netted</small></div>
-        <div className="stat"><span><Term>Conditional loss</Term></span><strong>{total === null ? "incomplete" : money(total)}</strong>
+        <div className="stat"><span><Term>Conditional loss</Term></span><strong>{total === null ? "incomplete" : lossOrGain(total)}</strong>
           <small>{total !== null && navBefore ? `${percent(total / navBefore, 2)} of net equity` : risk.portfolio.aggregation_status}</small></div>
         <div className="stat"><span><Term>Net equity after</Term></span><strong>{money(risk.portfolio.net_equity_after_usd as string | null)}</strong><small>If the scenario occurs</small></div>
         <div className="stat"><span><Term>Inputs resting on observed data</Term></span><strong>{provenance.all ? percent(provenance.trusted / provenance.all, 0) : "n/a"}</strong>
@@ -396,7 +396,7 @@ function Simulations({ data, analytics }: {
           <h3>Reference runs on the same portfolio</h3>
           <table className="engine-table">
             <tbody>
-              <tr><td>This scenario</td><td>{money(risk.portfolio.total_conditional_loss_usd)}</td></tr>
+              <tr><td>This scenario</td><td>{lossOrGain(risk.portfolio.total_conditional_loss_usd)}</td></tr>
               {risk.comparison.runs.map((r) => <tr key={r.run_id}><td>{r.description}</td><td>{money(r.total_conditional_loss_usd)}</td></tr>)}
               <tr><td><strong>{risk.comparison.excess_meaning}</strong></td><td><strong>{money(risk.comparison.excess_loss_usd)}</strong></td></tr>
             </tbody>

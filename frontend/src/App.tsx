@@ -76,7 +76,7 @@ import {
   postAssistantMessage,
   presetInputs,
 } from "./data/api";
-import { compactId, labelize, money, percent, signedPercent } from "./lib/format";
+import { compactId, labelize, money, percent, signedPercent, lossOrGain } from "./lib/format";
 import type {
   AppData,
   EngineScenarioRequest,
@@ -1086,7 +1086,7 @@ function DependencyGraphView({
             <button key={position.position_id} className="position-card" data-selected={position.position_id === selectedPosition}
               onClick={() => { setSelectedPosition(position.position_id); setSelectedEdge(null); }}>
               <strong>{compactId(position.position_id)}</strong>
-              <MetricPair label="Scenario loss / gain" value={money(position.conditional_loss_usd)} />
+              <MetricPair label="Scenario loss / gain" value={lossOrGain(position.conditional_loss_usd)} />
               <MetricPair label="Equity after" value={money(position.net_equity_after_usd)} />
               <Badge tone={position.risk_metric?.liquidatable ? "risk" : "info"}>
                 {position.risk_metric ? (position.risk_metric.liquidatable ? "Liquidatable" : "Below liquidation threshold") :
@@ -1461,7 +1461,7 @@ function ScenarioLab({
             const total = Number(option.estimated_exit_cost_usd) + Number(option.foregone_yield_usd) + Number(option.residual_stress_loss_usd);
             return <tr key={option.exit_fraction}>
               <td>{percent(option.exit_fraction, 0)}</td><td>{money(option.estimated_exit_cost_usd)}</td>
-              <td>{money(option.residual_stress_loss_usd)}</td><td>{money(total)}</td>
+              <td>{lossOrGain(option.residual_stress_loss_usd)}</td><td>{lossOrGain(total)}</td>
             </tr>;
           })}</tbody>
         </table>

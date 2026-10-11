@@ -7,7 +7,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, Bot, TriangleAlert } from "lucide-react";
 import { loadCrisisAdvice, loadCrisisPlan, type CrisisAdvice, type CrisisPlan, type CrisisStrategy } from "./data/api";
-import { compactId, labelize, money } from "./lib/format";
+import { compactId, labelize, lossOrGain, loseOrGain, money } from "./lib/format";
 import type { AppData, DataMode, ScenarioKind } from "./lib/types";
 import { Term } from "./Term";
 
@@ -66,7 +66,9 @@ function VerdictBody({ plan, advice, mode }: { plan: CrisisPlan; advice: ReturnT
           <div>
             <span>Verdict if this scenario happens</span>
             <strong>
-              {changes.length ? `Act now: lose ${money(best.total_loss_usd)} instead of ${money(hold?.total_loss_usd)}` : "Keep the portfolio as it is"}
+              {changes.length
+                ? `Act now: ${loseOrGain(best.total_loss_usd)} instead of ${loseOrGain(hold?.total_loss_usd ?? 0, true)}`
+                : "Keep the portfolio as it is"}
             </strong>
           </div>
         </div>
@@ -76,11 +78,17 @@ function VerdictBody({ plan, advice, mode }: { plan: CrisisPlan; advice: ReturnT
           <strong>{money(best.saving_vs_hold_all_usd)}</strong> versus keeping everything.
           {lateTotal !== null ? (
             <>
-              {" "}Reacting only after the move costs <strong>{money(lateTotal)}</strong> in total: the price loss is already incurred and only
-              liquidation penalties can still be avoided.
+              {" "}Reacting only after the move: <strong>{loseOrGain(lateTotal)}</strong> in total, because the price loss is already
+              incurred and only liquidation penalties can still be avoided.
             </>
           ) : null}
         </p>
+        {Number(best.total_loss_usd) < 0 ? (
+          <p className="microcopy">
+            A negative loss is a gain: in this scenario some positions earn more than today (for example lenders paid the higher
+            borrow rates), and the plan keeps them while closing the positions that pay.
+          </p>
+        ) : null}
         {changes.length ? (
           <ul className="verdict-actions">
             {Object.entries(best.choices).map(([pid, c]) => (
@@ -100,7 +108,7 @@ function VerdictBody({ plan, advice, mode }: { plan: CrisisPlan; advice: ReturnT
             {early.map((s) => (
               <tr key={s.strategy_id} data-selected={s.strategy_id === best.strategy_id}>
                 <td>{strategyLabel(s)}{s.same_as ? <small className="muted"> · same as {STRATEGY_LABEL[s.same_as] ?? s.same_as}</small> : null}</td>
-                <td>{money(s.total_loss_usd)}</td>
+                <td>{lossOrGain(s.total_loss_usd)}</td>
                 <td>{money(s.saving_vs_hold_all_usd)}</td>
                 <td>{money(s.shared_venue_penalty_usd)}</td>
               </tr>
@@ -117,9 +125,9 @@ function VerdictBody({ plan, advice, mode }: { plan: CrisisPlan; advice: ReturnT
             {plan.positions.map((p) => (
               <tr key={p.position_id}>
                 <td>{compactId(p.position_id)}</td>
-                <td>{money(p.holding_loss_usd)}</td>
+                <td>{lossOrGain(p.holding_loss_usd)}</td>
                 <td>{actionLabel(p.early.best.action, p.early.best.fraction)}</td>
-                <td>{money(p.early.best.total_loss_usd)}</td>
+                <td>{lossOrGain(p.early.best.total_loss_usd)}</td>
                 <td>{actionLabel(p.late.best.action, p.late.best.fraction)}</td>
                 <td>{money(p.late.already_incurred_usd)}</td>
               </tr>
@@ -174,7 +182,7 @@ function AiAnalyst({ advice, mode, engineBest }: { advice: { data?: { advice: Cr
               <td>{s.name}{s.matches_candidate ? <small className="muted"> · same as {STRATEGY_LABEL[s.matches_candidate] ?? s.matches_candidate}</small> : null}</td>
               <td>{s.timing === "late" ? "after the move" : "before the move"}</td>
               <td>
-                {money(comparable(s))}
+                {lossOrGain(comparable(s))}
                 {s.timing === "late" ? <small className="muted"> · incl. {money(s.computed_result.already_incurred_usd)} already lost</small> : null}
               </td>
               <td>{s.actions.map((a) => `${compactId(a.position_id)}: ${actionLabel(a.action, a.fraction)}`).join(" · ") || "keep everything"}</td>
