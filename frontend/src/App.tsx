@@ -526,7 +526,8 @@ function App() {
             exit={{ opacity: 0, filter: "blur(8px)", transition: { duration: 0.28, ease: "easeInOut" } }}
           >
             {visibleQuery.isLoading && view !== "scenario" ? <SkeletonView /> : null}
-            {visibleQuery.isError ? <ErrorView mode={mode} /> : null}
+            {visibleQuery.isError ? <ErrorView mode={mode} error={visibleQuery.error} retrying={visibleQuery.isFetching}
+              onRetry={() => { baselineQuery.refetch(); if (hasRun) appQuery.refetch(); }} onOffline={() => changeMode("fixture")} /> : null}
             {baseline && view === "portfolio" ? <PortfolioDashboard data={baseline}
               selectedPosition={baselinePosition} setSelectedPosition={setBaselinePosition} setView={setView}
               hoveredPosition={baselineHover} setHoveredPosition={setBaselineHover} /> : null}
@@ -2398,8 +2399,27 @@ function SkeletonView() {
   );
 }
 
-function ErrorView({ mode }: { mode: DataMode }) {
-  return <EmptyState title="Data unavailable" detail={`The ${mode} data source did not respond. Switch back to fixture mode for the offline demo.`} />;
+/** Shown when the API (or the recorded data) cannot be reached: says why and offers a retry or the offline mode. */
+function ErrorView({ mode, error, onRetry, onOffline, retrying }: {
+  mode: DataMode; error: unknown; onRetry: () => void; onOffline: () => void; retrying: boolean;
+}) {
+  const detail = error instanceof Error ? error.message : String(error ?? "");
+  return (
+    <section className="visual-panel" role="alert">
+      <p className="eyebrow">Data unavailable</p>
+      <h2>{mode === "api" ? "The risk engine API is not responding" : "The recorded results could not be loaded"}</h2>
+      <p className="microcopy">
+        {mode === "api"
+          ? "No result can be computed until the backend answers on /api. Start it from the repository root with: .venv/bin/uvicorn backend.api.main:app --port 8000, then retry. Or switch to the recorded results to keep demoing offline."
+          : "The fixture files did not load. Retry, or switch back to the live engine API."}
+      </p>
+      {detail ? <p className="microcopy">Details: {detail}</p> : null}
+      <div className="toolbar-row">
+        <button className="run-button" onClick={onRetry} disabled={retrying}><RefreshCw size={14} /> {retrying ? "Retrying…" : "Retry"}</button>
+        {mode === "api" ? <button className="np-button" onClick={onOffline}>Use recorded results</button> : null}
+      </div>
+    </section>
+  );
 }
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number }>; label?: string }) {
