@@ -76,3 +76,7 @@ Add a scenario: new file in `scenarios/` decorated with `@scenario("<id>")`, plu
 ## Roadmap
 
 Full plan, differentiators and progress checklist: [docs/risk_engine_plan.md](../../docs/risk_engine_plan.md).
+
+## Historical audit and output guide
+
+[Full output/formula guide](../../docs/risk_engine_explained.md) and [historical validation](../../docs/historical_backtest.md). Replay the archived public inputs with `python -m backend.risk.backtest.run`; export the reproducible report with `python -m backend.risk.backtest.document`. The replay is ex post and retains current lending parameters; historical liquidation transactions and exit costs remain unvalidated.

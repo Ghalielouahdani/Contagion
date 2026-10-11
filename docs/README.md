@@ -12,3 +12,9 @@
 ## Rule
 
 If someone asks "where does this number come from?", the answer must be findable in this folder or in an edge's evidence.
+
+## Comprendre et valider le Risk Engine
+
+- [Guide des calculs et des sorties affichées](risk_engine_explained.md) : unités, formules, chaque scénario, liquidation, prêteurs, cascade, incertitude et graphiques.
+- [Backtest historique et APIs](historical_backtest.md) : données réellement collectées, protocole sans look-ahead et limites de validation.
+- [Résultats historiques reproductibles](backtests/results.md) : tableaux calculés par le moteur, avec les entrées et sorties JSON archivées.

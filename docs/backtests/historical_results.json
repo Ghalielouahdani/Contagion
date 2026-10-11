@@ -1,0 +1,582 @@
+{
+  "model_version": "risk-v0.1",
+  "status": "partial_ex_post_validation_not_predictive_backtest",
+  "provenance": {
+    "dataset_fetched_at": "2026-10-10T19:04:55+00:00",
+    "sources": {
+      "onchain": "coins.llama.fi (hourly)",
+      "pendle": "api-v2.pendle.finance historical-data (hourly)",
+      "binance": "data-api.binance.vision klines USDEUSDT 1h",
+      "chainlink": "Chainlink USDe/USD 0xa569d910839ae8865da8f8e70fffb0cba869f961 getRoundData (current phase)"
+    },
+    "sha256": {
+      "backend/risk/backtest/data/history.json.gz": "da40c4687667fbb796a3a24be566818a5a95cf6b33a1a13536e253b3f800cec1",
+      "backend/risk/__init__.py": "ed4d6974c04ade36ef8175e6603135f052dc95aeea9e227b04138b2710d135b8",
+      "backend/risk/cascade.py": "428dac83d59a16fb7b4d932193f2c11f622fc741ed87b2d546987d148207f259",
+      "backend/risk/contagion.py": "9d487c134e6a912d9bb71c77f7427ebf3028fa7e8d3633ef4de1d516c545ffe5",
+      "backend/risk/engine.py": "0a01245a5bca8c5f6089d37fc1e5d6eca0620acd247137ad03de3726fc52bc80",
+      "backend/risk/graph.py": "c7fedbc7c33a096d91e679559da643de057941c55fefbfa5012e1d7e1f6710ba",
+      "backend/risk/lending.py": "6fc6964f204d6596d24632a3ac4dc95b6e043c6c923b08b57153387101f60fd0",
+      "backend/risk/liquidity.py": "fb3a039608a836fd226634c17b6a7020221cac779f5ee6a8b25897f5347a3391",
+      "backend/risk/metrics.py": "6bab176547e5c0bd4203ed625e546d4e0c000078ffad387edd515bc680edc0d5",
+      "backend/risk/model.py": "50fc338ba6573b234d5088e911c75ec265e5b96870b20f1a18de9bb9751d0830",
+      "backend/risk/pricing.py": "5b9228bef4ae83fb709077aac688722823385361c58d03661f4e5b58f9b49e47",
+      "backend/risk/regenerate.py": "88d3f9bc7c36596138f5619786e78260b5e2e9951ce31122f40c31837358b62e",
+      "backend/risk/report.py": "23f9f2d3f068476b9cc3ed0959ed36a0a23c984994416499b4b86953b31ca94d",
+      "backend/risk/surface.py": "b6a28f3e640dd77c9781c6471279058845b543b1ad015551e288f6c57612e0e0",
+      "backend/risk/trace.py": "d43899392dd5461e9cc298b9e38a3b26f36ac685034e51add4d45791057a9598",
+      "backend/risk/scenarios/__init__.py": "54f56d451312d693a59e329ed2c4bdba01d3800b3ddb567824af078b5adf274a",
+      "backend/risk/scenarios/carry_squeeze.py": "dab13d8e9bf65f2df80def2a947e28804dc2dcf28bad2062dca5c48bd9892b58",
+      "backend/risk/scenarios/combined_crisis.py": "663d3036c79173916cbcc217c9c56ff91a74cd794f37dc803cffc1ba2b7efe56",
+      "backend/risk/scenarios/governance_change.py": "49fa2b69b2a86d702a3c5319ea953dc95f0739afb9cdaa9d9b1f11b32d402691",
+      "backend/risk/scenarios/liquidation_cascade.py": "960e9878db6bc5266004b2a737a474d81cb1193655505ceb1695f35ef4aadc20",
+      "backend/risk/scenarios/liquidity_crisis.py": "391bb667fad3acb7c6506dce9f2c8f8c0948e328c1b605311e02e8a71131c024",
+      "backend/risk/scenarios/node_shock.py": "582323d0013cb97382bf7bef3fa062555a7318f9d7e066c0b9ccfbd858c3e12c",
+      "backend/risk/scenarios/usde_depeg.py": "092cce024a8b5d5eb0b5875b4f45c9df728d547b7105d27cdfd51d8e90670157",
+      "backend/risk/backtest/run.py": "00ddaa8aa05b2f596e0872f48cb55d881decfd04834c315a0bb22dbb7350b550",
+      "backend/risk/backtest/document.py": "fa504a2cd6819745671debdea82affc3d35100776983b801ab265533243b59f4",
+      "contracts/fixtures/verified_2026_10_10/portfolio.json": "7d9ed14f060969117e0466550a7cdb5fe042a4980b085846da43e2756a2cc323",
+      "contracts/fixtures/verified_2026_10_10/market_snapshot.json": "54de46d136723ea406d71ca9f652dbf79c1ba8ef355c6512b8217c91a34af601",
+      "contracts/fixtures/verified_2026_10_10/scenario_request.json": "8956aa6459424558b81409b47bbc28eda40bba54dff62921b0c9f7d4eb045ba0"
+    }
+  },
+  "coverage": {
+    "usde": {
+      "observations": 23096,
+      "first_utc": "2024-02-20T00:00:00+00:00",
+      "last_utc": "2026-10-10T18:00:00+00:00"
+    },
+    "susde": {
+      "observations": 6302,
+      "first_utc": "2024-03-06T08:00:00+00:00",
+      "last_utc": "2026-10-10T19:00:00+00:00"
+    },
+    "binance_usde_ohlc": {
+      "observations": 9512,
+      "first_utc": "2025-09-09T12:00:00+00:00",
+      "last_utc": "2026-10-10T19:00:00+00:00"
+    },
+    "chainlink_usde_usd": {
+      "observations": 849,
+      "first_utc": "2024-07-12T08:01:35+00:00",
+      "last_utc": "2026-10-10T03:59:11+00:00"
+    },
+    "pt": {
+      "2024-07-25": {
+        "price": {
+          "observations": 792,
+          "first_utc": "2024-04-23T17:00:00+00:00",
+          "last_utc": "2024-08-05T10:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 2221,
+          "first_utc": "2024-04-23T11:00:00+00:00",
+          "last_utc": "2024-07-24T23:00:00+00:00"
+        }
+      },
+      "2024-09-26": {
+        "price": {
+          "observations": 1183,
+          "first_utc": "2024-05-20T06:00:00+00:00",
+          "last_utc": "2024-10-12T22:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 3089,
+          "first_utc": "2024-05-20T05:00:00+00:00",
+          "last_utc": "2024-09-25T23:00:00+00:00"
+        }
+      },
+      "2024-10-24": {
+        "price": {
+          "observations": 826,
+          "first_utc": "2024-07-19T14:00:00+00:00",
+          "last_utc": "2024-10-29T12:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 2362,
+          "first_utc": "2024-07-17T14:00:00+00:00",
+          "last_utc": "2024-10-23T23:00:00+00:00"
+        }
+      },
+      "2024-12-26": {
+        "price": {
+          "observations": 1203,
+          "first_utc": "2024-07-19T14:00:00+00:00",
+          "last_utc": "2024-12-30T17:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 3882,
+          "first_utc": "2024-07-17T06:00:00+00:00",
+          "last_utc": "2024-12-25T23:00:00+00:00"
+        }
+      },
+      "2025-02-27": {
+        "price": {
+          "observations": 386,
+          "first_utc": "2024-12-10T14:00:00+00:00",
+          "last_utc": "2025-03-03T12:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 1883,
+          "first_utc": "2024-12-10T13:00:00+00:00",
+          "last_utc": "2025-02-26T23:00:00+00:00"
+        }
+      },
+      "2025-03-27": {
+        "price": {
+          "observations": 928,
+          "first_utc": "2024-11-16T15:00:00+00:00",
+          "last_utc": "2025-04-13T10:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 4579,
+          "first_utc": "2024-09-17T05:00:00+00:00",
+          "last_utc": "2025-03-26T23:00:00+00:00"
+        }
+      },
+      "2025-05-29": {
+        "price": {
+          "observations": 1193,
+          "first_utc": "2024-11-13T17:00:00+00:00",
+          "last_utc": "2025-06-09T11:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 4713,
+          "first_utc": "2024-11-13T15:00:00+00:00",
+          "last_utc": "2025-05-28T23:00:00+00:00"
+        }
+      },
+      "2025-07-31": {
+        "price": {
+          "observations": 758,
+          "first_utc": "2025-03-25T08:00:00+00:00",
+          "last_utc": "2025-08-17T23:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 3065,
+          "first_utc": "2025-03-25T07:00:00+00:00",
+          "last_utc": "2025-07-30T23:00:00+00:00"
+        }
+      },
+      "2025-09-25": {
+        "price": {
+          "observations": 964,
+          "first_utc": "2025-05-14T05:00:00+00:00",
+          "last_utc": "2025-10-06T10:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 3225,
+          "first_utc": "2025-05-13T15:00:00+00:00",
+          "last_utc": "2025-09-24T23:00:00+00:00"
+        }
+      },
+      "2025-11-27": {
+        "price": {
+          "observations": 1785,
+          "first_utc": "2025-07-29T01:00:00+00:00",
+          "last_utc": "2025-12-16T01:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 3041,
+          "first_utc": "2025-07-23T07:00:00+00:00",
+          "last_utc": "2025-11-26T23:00:00+00:00"
+        }
+      },
+      "2026-02-05": {
+        "price": {
+          "observations": 1093,
+          "first_utc": "2025-10-27T19:00:00+00:00",
+          "last_utc": "2026-02-04T08:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 2482,
+          "first_utc": "2025-10-24T14:00:00+00:00",
+          "last_utc": "2026-02-04T23:00:00+00:00"
+        }
+      },
+      "2026-05-07": {
+        "price": {
+          "observations": 126,
+          "first_utc": "2026-01-09T14:00:00+00:00",
+          "last_utc": "2026-05-12T21:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 2845,
+          "first_utc": "2026-01-08T11:00:00+00:00",
+          "last_utc": "2026-05-06T23:00:00+00:00"
+        }
+      },
+      "2026-08-13": {
+        "price": {
+          "observations": 550,
+          "first_utc": "2026-05-12T21:00:00+00:00",
+          "last_utc": "2026-08-21T14:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 2793,
+          "first_utc": "2026-04-18T15:00:00+00:00",
+          "last_utc": "2026-08-12T23:00:00+00:00"
+        }
+      },
+      "2026-11-26": {
+        "price": {
+          "observations": 1328,
+          "first_utc": "2026-08-11T07:00:00+00:00",
+          "last_utc": "2026-10-10T18:00:00+00:00"
+        },
+        "implied_apy": {
+          "observations": 1460,
+          "first_utc": "2026-08-10T05:00:00+00:00",
+          "last_utc": "2026-10-10T00:00:00+00:00"
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Ex-post replay: each day's final USDe move is an input, not a forecast.",
+    "Fixed 2026 synthetic allocations and lending configuration; not reconstructed historical wallet/market state.",
+    "PT front market is selected per date with >=30 days remaining; not one investable portfolio with recorded rolls.",
+    "sUSDe prices may be matched within +/-2 hours; collection rounds timestamps to nearest hour.",
+    "PT price and implied yield can share pricing inputs: their agreement is not independent predictive validation.",
+    "USDEUSDT Binance prices assume USDT=USD; no historical USDT conversion in this audit.",
+    "Chainlink covers rounds of the current aggregator phase, not all previous phases.",
+    "No historical borrower distribution, actual liquidation transactions, DEX exit costs or cascade calibration.",
+    "No actual wallet cash flows, debt-stablecoin returns, accrued borrowing costs or execution fees in realised proxy P&L.",
+    "Observed oracle pass-through is fitted from event lows, potentially at different times: explanatory, not forward-known."
+  ],
+  "results": {
+    "pt_pricing": {
+      "observations": 11477,
+      "median_abs_bps": 0.7385800310233392,
+      "p95_abs_bps": 25.04121246534601,
+      "p99_abs_bps": 47.015144923360154,
+      "mean_bps": -0.6952045029164938,
+      "worst": {
+        "t": 1731578400,
+        "expiry": 1748476800,
+        "error": -0.0897700500822951,
+        "observed": 1.004,
+        "model": 0.9138708697173757
+      }
+    },
+    "susde_beta_1d": {
+      "pairs": 4164,
+      "horizon_hours": 24,
+      "beta": 0.44637965996474926,
+      "stress_events": [
+        {
+          "t": 1709798400,
+          "usde_move": -0.006000000000000005,
+          "susde_move": 0.0009053802249761045
+        },
+        {
+          "t": 1709856000,
+          "usde_move": 0.007025030759031159,
+          "susde_move": 0.006019011747283809
+        },
+        {
+          "t": 1710280800,
+          "usde_move": -0.006384084032082571,
+          "susde_move": -0.008322661591582459
+        },
+        {
+          "t": 1711393200,
+          "usde_move": -0.006220558882235605,
+          "susde_move": -0.005611021676126482
+        },
+        {
+          "t": 1713362400,
+          "usde_move": 0.005641599340379111,
+          "susde_move": 0.006192766252120396
+        },
+        {
+          "t": 1713488400,
+          "usde_move": 0.005988745375413496,
+          "susde_move": 0.006326301686465641
+        },
+        {
+          "t": 1715274000,
+          "usde_move": 0.005617032187757998,
+          "susde_move": 0.004455363185394523
+        },
+        {
+          "t": 1715353200,
+          "usde_move": 0.00654505671745631,
+          "susde_move": 0.0019863160118251955
+        },
+        {
+          "t": 1715500800,
+          "usde_move": 0.010989010989011172,
+          "susde_move": 0.011344089791060608
+        },
+        {
+          "t": 1715587200,
+          "usde_move": -0.0095000549575458,
+          "susde_move": -0.00953928882691324
+        },
+        {
+          "t": 1715785200,
+          "usde_move": -0.009425376158282317,
+          "susde_move": -0.009003664928958321
+        },
+        {
+          "t": 1715871600,
+          "usde_move": 0.01344347360518161,
+          "susde_move": 0.01411681422213773
+        },
+        {
+          "t": 1716156000,
+          "usde_move": 0.005078548150254658,
+          "susde_move": 0.005515483683774969
+        },
+        {
+          "t": 1716217200,
+          "usde_move": -0.006171814767015005,
+          "susde_move": -0.005691133397262793
+        },
+        {
+          "t": 1716382800,
+          "usde_move": -0.006152294891960786,
+          "susde_move": -0.005631905225206069
+        },
+        {
+          "t": 1720062000,
+          "usde_move": -0.007787295583490894,
+          "susde_move": -0.0075259772703594185
+        },
+        {
+          "t": 1727697600,
+          "usde_move": -0.006851888667992134,
+          "susde_move": -0.006573385941872956
+        },
+        {
+          "t": 1736445600,
+          "usde_move": 0.005082531004240609,
+          "susde_move": 0.001203724603217493
+        },
+        {
+          "t": 1737270000,
+          "usde_move": -0.006447481640085684,
+          "susde_move": -0.004725896909150928
+        },
+        {
+          "t": 1760047200,
+          "usde_move": -0.02829408354299623,
+          "susde_move": 0.013747223456023638
+        },
+        {
+          "t": 1760133600,
+          "usde_move": 0.02904588239621031,
+          "susde_move": -0.01298767760333075
+        },
+        {
+          "t": 1764723600,
+          "usde_move": 0.00592376335994782,
+          "susde_move": 0.0048079293748626295
+        },
+        {
+          "t": 1764810000,
+          "usde_move": -0.005879779805074037,
+          "susde_move": -0.0049039322966770715
+        }
+      ],
+      "stress_down_median_ratio": 0.9187660229590973,
+      "stress_down_events": 12
+    },
+    "susde_beta_1h": {
+      "pairs": 3940,
+      "horizon_hours": 1,
+      "beta": 0.2866456841429486,
+      "stress_events": [
+        {
+          "t": 1713452400,
+          "usde_move": -0.006139165009940273,
+          "susde_move": -0.006116988754314101
+        },
+        {
+          "t": 1714503600,
+          "usde_move": -0.010118354326517087,
+          "susde_move": -0.010106450667695333
+        },
+        {
+          "t": 1714507200,
+          "usde_move": 0.00794836544487798,
+          "susde_move": 0.00796124550402122
+        },
+        {
+          "t": 1715587200,
+          "usde_move": -0.010869565217391464,
+          "susde_move": -0.011843560540250486
+        },
+        {
+          "t": 1715868000,
+          "usde_move": -0.00834131736526944,
+          "susde_move": -0.008327910275116257
+        },
+        {
+          "t": 1715871600,
+          "usde_move": 0.00864942872136254,
+          "susde_move": 0.008424503089925262
+        },
+        {
+          "t": 1720911600,
+          "usde_move": -0.006985089463220628,
+          "susde_move": -0.0069770879117241336
+        },
+        {
+          "t": 1727694000,
+          "usde_move": 0.006469014560785302,
+          "susde_move": 0.0064804305450740785
+        },
+        {
+          "t": 1731416400,
+          "usde_move": 0.006216336512350207,
+          "susde_move": 0.004858771759809866
+        },
+        {
+          "t": 1760130000,
+          "usde_move": -0.02727329601643791,
+          "susde_move": 0.014919295068648308
+        },
+        {
+          "t": 1760133600,
+          "usde_move": 0.028040992156447953,
+          "susde_move": -0.015710013135858625
+        },
+        {
+          "t": 1764810000,
+          "usde_move": -0.005913448525607712,
+          "susde_move": -0.005285789754560177
+        }
+      ],
+      "stress_down_median_ratio": 0.9983926891201854,
+      "stress_down_events": 7
+    },
+    "pt_apy_shocks": {
+      "pairs": 37261,
+      "p99_jump": 0.02686213169215571,
+      "max_jump": 0.14495226674122508,
+      "max_at": 1715781600
+    },
+    "worst_moves": {
+      "usde_onchain_1h": {
+        "move": -0.03003189649594351,
+        "t": 1765299600
+      },
+      "usde_onchain_24h": {
+        "move": -0.030885284844643923,
+        "t": 1765299600
+      },
+      "usde_onchain_7d": {
+        "move": -0.030064696918287503,
+        "t": 1765299600
+      },
+      "usde_onchain_min": 0.9720625617406887,
+      "susde_onchain_24h": {
+        "move": -0.01298767760333075,
+        "t": 1760133600
+      },
+      "pt_onchain_1h": {
+        "move": -0.04904667942473229,
+        "t": 1760133600
+      },
+      "usde_binance_low": {
+        "price": 0.65,
+        "t": 1760130000,
+        "close": 0.9365
+      },
+      "usde_chainlink_min": {
+        "price": 0.97721024,
+        "t": 1740152711
+      }
+    },
+    "portfolio_replay": {
+      "days": 145,
+      "nav": 6202968.85,
+      "correlation": 0.5625787337734554,
+      "mean_error_usd": -1784.1227299435418,
+      "mae_usd": 3671.5788283386382,
+      "p95_abs_error_usd": 13742.55737994025,
+      "underpredicted_days": 9,
+      "tolerance_usd": 3101.484425,
+      "worst_days": [
+        {
+          "t": 1764806400,
+          "usde_move": -0.004804693955055672,
+          "realised": 45351.00645649022,
+          "predicted": 47427.369783920934
+        },
+        {
+          "t": 1762387200,
+          "usde_move": -0.0025028679668709364,
+          "realised": 22197.97702578841,
+          "predicted": 24559.606561863795
+        },
+        {
+          "t": 1729728000,
+          "usde_move": 0.001374514068261501,
+          "realised": 17704.49788099078,
+          "predicted": -12928.97337240586
+        },
+        {
+          "t": 1759795200,
+          "usde_move": -0.00249861790151229,
+          "realised": 17077.804501711184,
+          "predicted": 24512.212403098587
+        },
+        {
+          "t": 1738368000,
+          "usde_move": -0.001996007984031989,
+          "realised": 16949.532377277283,
+          "predicted": 19142.758604513947
+        }
+      ]
+    },
+    "oracle_vs_market": [
+      {
+        "episode": "bybit_hack_2025_02_21",
+        "onchain_hourly_low": 0.99261,
+        "binance_low": null,
+        "chainlink_low": 0.97721024
+      },
+      {
+        "episode": "cex_crash_2025_10_10",
+        "onchain_hourly_low": 0.9720625617406887,
+        "binance_low": 0.65,
+        "chainlink_low": 0.99293808
+      }
+    ],
+    "crash_replay": {
+      "binance_low": 0.65,
+      "onchain_low": 0.9720625617406887,
+      "chainlink_low": 0.99293808,
+      "chainlink_before": 1.00021067,
+      "pt": {
+        "expiry": 1764201600,
+        "before": 0.9908306173683628,
+        "low": 0.9554609163098241,
+        "move": -0.0356970207001478,
+        "implied_apy_before": 0.0696433488335606,
+        "implied_apy_peak": 0.0724822638020104
+      },
+      "engine_binance_shock": {
+        "shock": -0.35,
+        "loss_usd": 3453737.586349817,
+        "liquidatable": [
+          "morpho_01"
+        ]
+      },
+      "observed_pass_through": 0.020774452017621976,
+      "engine_binance_shock_observed_oracle": {
+        "shock": -0.35,
+        "loss_usd": 3453737.586349817,
+        "liquidatable": []
+      },
+      "engine_onchain_shock": {
+        "shock": -0.027937438259311276,
+        "loss_usd": 279454.3850375884,
+        "liquidatable": []
+      }
+    }
+  }
+}
