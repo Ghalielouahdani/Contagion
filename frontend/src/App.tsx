@@ -54,7 +54,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
-import { InteractiveLabel } from "./motion/primitives";
+import { CountMoney, InteractiveLabel, RevealOnView } from "./motion/primitives";
 import { NODE_H, NODE_W, STEP, columnLayout, columnOfX, edgeTypes, layeredLayout } from "./graphMotion";
 import { EquityBars } from "./ScenarioLabCharts";
 import { ComponentBars, MetricGauge } from "./ScenarioStory";
@@ -330,6 +330,11 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  // Every navigation and every run starts at the top of the page, so the new numbers animate in view.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [view, submitted.run]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1408,9 +1413,9 @@ function ScenarioLab({
       {isRunning ? <section className="visual-panel" role="status"><h2>Computing this stress test…</h2><p className="microcopy">Results will appear when this run finishes.</p></section> : null}
       {data && selectedRisk ? <>
       <section className="impact-strip scenario-results" aria-label="Latest run results">
-        <Stat label="Portfolio equity before" value={money(data.risk.positions.reduce((sum, position) => sum + Number(position.net_equity_before_usd), 0))} detail="Same selected portfolio" />
-        <Stat label="Portfolio equity after" value={money(data.risk.portfolio.net_equity_after_usd as string | null)} detail="Last submitted run" />
-        <Stat label="Conditional loss / gain" value={money(data.risk.portfolio.total_conditional_loss_usd)} detail={data.risk.portfolio.aggregation_status} />
+        <Stat label="Portfolio equity before" value={<CountMoney value={data.risk.positions.reduce((sum, position) => sum + Number(position.net_equity_before_usd), 0)} />} detail="Same selected portfolio" />
+        <Stat label="Portfolio equity after" value={<CountMoney value={numberOrNull(data.risk.portfolio.net_equity_after_usd as string | null)} />} detail="Last submitted run" />
+        <Stat label="Conditional loss / gain" value={<CountMoney value={numberOrNull(data.risk.portfolio.total_conditional_loss_usd)} />} detail={data.risk.portfolio.aggregation_status} />
       </section>
       <section className="visual-panel">
         <p className="eyebrow">Next · Understand the result</p>
@@ -1437,8 +1442,10 @@ function ScenarioLab({
             ))}
           </select>
         </div>
-        <EquityBars key={data.risk.simulation_id} rows={valuationData} selected={selectedPosition} hovered={hoveredPosition}
-          onSelect={setSelectedPosition} onHover={setHoveredPosition} />
+        <RevealOnView key={data.risk.simulation_id} minHeight={380}>
+          <EquityBars rows={valuationData} selected={selectedPosition} hovered={hoveredPosition}
+            onSelect={setSelectedPosition} onHover={setHoveredPosition} />
+        </RevealOnView>
         <p className="microcopy">Each pair of bars represents one position. Negative equity means the modeled loss exceeds that position's initial equity.</p>
       </section>
 
@@ -1452,14 +1459,17 @@ function ScenarioLab({
             : "LTV = debt value ÷ oracle collateral value. Above the market's LLTV, this position is liquidatable."}</p> : null}
           <p>Liquidatable does not mean fully liquidated; it means the protocol threshold has been breached.</p>
         </div>
-        {selectedRisk.risk_metric ? <MetricGauge key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} label={compactId(selectedRisk.position_id)}
-          metric={selectedRisk.risk_metric} delay={0.25} /> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
+        {selectedRisk.risk_metric ? <RevealOnView key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} minHeight={90}>
+          <MetricGauge label={compactId(selectedRisk.position_id)} metric={selectedRisk.risk_metric} delay={0.25} />
+        </RevealOnView> : <p className="muted">Token holdings and PT holdings do not have HF/LTV thresholds.</p>}
       </section>
 
       <section className="visual-panel scenario-results">
         <p className="eyebrow">What caused the impact · {compactId(selectedPosition)}</p>
         <h2>Loss breakdown</h2>
-        <ComponentBars key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} components={selectedRisk.loss_components} />
+        <RevealOnView key={`${data.risk.simulation_id}-${selectedRisk.position_id}`} minHeight={60}>
+          <ComponentBars components={selectedRisk.loss_components} />
+        </RevealOnView>
         <WarningList warnings={selectedRisk.warnings} />
       </section>
       <section className="visual-panel scenario-results">
@@ -2324,7 +2334,11 @@ function Control({ label, value, children }: { label: string; value: string; chi
   );
 }
 
-function Stat({ label, value, detail }: { label: string; value: string; detail?: string }) {
+function numberOrNull(value: string | number | null | undefined) {
+  return value === null || value === undefined ? null : Number(value);
+}
+
+function Stat({ label, value, detail }: { label: string; value: React.ReactNode; detail?: string }) {
   return (
     <div className="stat">
       <span>
