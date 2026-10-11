@@ -71,6 +71,21 @@ def build_assistant_context(body: dict[str, Any], files: dict[str, Any], fixture
         "selected_position": body.get("selected_position") or body.get("selectedPosition"),
         "inspected_exit_fraction": body.get("inspected_exit_fraction") or body.get("inspectedExitFraction"),
         "scenario_inputs": body.get("scenario_inputs") or body.get("scenarioInputs") or {},
+        "available_actions": [
+            {"action": "navigateTo", "parameters": {"view": ["portfolio", "graph", "scenario", "decision"]}},
+            {"action": "setScenario", "parameters": {"scenario": ["usde_depeg", "liquidity_crisis", "combined_crisis", "carry_squeeze", "governance_change", "node_shock"]}},
+            {"action": "setShock", "parameters": {"shockPct": {"min": 1, "max": 40, "unit": "% magnitude; UI shows it as a negative USDe shock"}}},
+            {"action": "setHorizon", "parameters": {"days": {"min": 1, "max": 30}}},
+            {"action": "setLiquidityLoss", "parameters": {"percent": {"min": 0, "max": 95}}},
+            {"action": "runSimulation", "parameters": {}},
+            {"action": "setExitFraction", "parameters": {"fraction": ["0.00", "0.25", "0.50", "0.75", "1.00"]}},
+        ],
+        "natural_language_aliases": {
+            "risk": "usually means the Scenario Lab USDe shock magnitude/severity slider unless the user explicitly asks about portfolio risk analysis",
+            "severity": "USDe shock magnitude",
+            "scenario A": "usde_depeg",
+            "compare 50% exit": "setExitFraction 0.50 and navigate to decision",
+        },
         "portfolio": {
             "portfolio_id": portfolio.get("portfolio_id"),
             "as_of": portfolio.get("as_of"),
@@ -97,7 +112,9 @@ def build_ollama_request(message: str, context: dict[str, Any]) -> dict[str, Any
     system = (
         "You are the DeFi Contagion dashboard assistant. Answer only from the provided on-screen JSON. "
         "Never invent numbers, IDs, health factors, exit costs, or recommendations. If a field is missing, say it is missing. "
-        "Be concise, specific, and mention the relevant position IDs or scenario inputs when useful."
+        "Be concise, specific, and mention the relevant position IDs or scenario inputs when useful. "
+        "When the user is commanding the app, reason in terms of the available_actions list in context. "
+        "If they say 'risk' as a setting, treat it as the Scenario Lab USDe shock magnitude unless they clearly mean analysis."
     )
     user = (
         "Current on-screen data follows as JSON. Ground the answer strictly in it.\n"

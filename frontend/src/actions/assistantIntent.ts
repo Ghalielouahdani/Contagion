@@ -23,7 +23,9 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
   const notes: string[] = [];
 
   const requestedScenario = parseScenario(text);
-  const shock = parseSignedPercent(text, ["shock", "depeg", "usde", "risk"]);
+  const shock =
+    parseSignedPercent(text, ["shock", "depeg", "usde", "risk", "severity"]) ??
+    (requestedScenario === "usde_depeg" ? parseSignedPercent(text, ["scenario a"]) : null);
   const horizon = parseDays(text);
   const liquidity = parseLiquidity(text);
   const exitFraction = parseExitFraction(text);
@@ -43,7 +45,7 @@ export function parseAssistantIntent(context: AssistantIntentContext): ParsedAss
     }
     actions.push({ type: "set_shock", shockPct: shock });
     actions.push({ type: "navigate_view", view: "scenario" });
-    notes.push(text.includes("risk") ? `USDe risk shock -${shock}%` : `shock -${shock}%`);
+    notes.push(text.includes("risk") || text.includes("severity") ? `USDe shock magnitude ${shock}%` : `shock -${shock}%`);
   }
 
   if (horizon !== null) {
@@ -137,25 +139,74 @@ function parseSignedPercent(text: string, anchors: string[]) {
   const match =
     text.match(/-?\s*(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)/) ??
     text.match(/\b(?:to|at|=)\s*-?\s*(\d{1,3}(?:\.\d+)?)(?!\s*(?:day|days|d)\b)/);
-  return match ? Math.abs(Number(match[1])) : null;
+  if (match) return Math.abs(Number(match[1]));
+  const word = text.match(/\b(?:to|at|=)\s+([a-z]+(?:[-\s][a-z]+)?)\b/);
+  return word ? wordNumber(word[1]) : null;
 }
 
 function parseDays(text: string) {
   const match = text.match(/(\d{1,3})\s*(?:day|days|d)\b/);
-  return match ? Number(match[1]) : null;
+  if (match) return Number(match[1]);
+  const word = text.match(/\b(?:over|for|horizon)\s+([a-z]+(?:[-\s][a-z]+)?)\s*(?:day|days|d)\b/);
+  return word ? wordNumber(word[1]) : null;
 }
 
 function parseLiquidity(text: string) {
   if (!text.includes("liquidity")) return null;
   const match = text.match(/(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)/);
-  return match ? Number(match[1]) : null;
+  if (match) return Number(match[1]);
+  const word =
+    text.match(/\b(?:losing|loss|lose|set|to|at|=)?\s*([a-z]+(?:[-\s][a-z]+)?)\s*(?:percent\s+)?(?:of\s+)?(?:exit\s+)?liquidity\b/) ??
+    text.match(/\bliquidity\s+(?:loss\s+)?(?:to|at|=)\s+([a-z]+(?:[-\s][a-z]+)?)\b/);
+  return word ? wordNumber(word[1]) : null;
 }
 
 function parseExitFraction(text: string) {
   const match = text.match(/\b(0|25|50|75|100)\s*(?:%|percent)?\s*(?:exit|reduce|reduction)?\b/);
-  if (!match || !/\b(exit|reduce|compare)\b/.test(text)) return null;
-  const fraction = (Number(match[1]) / 100).toFixed(2);
+  const word = text.match(/\b(zero|twenty five|twenty-five|fifty|seventy five|seventy-five|one hundred)\s*(?:%|percent)?\s*(?:exit|reduce|reduction)?\b/);
+  if ((!match && !word) || !/\b(exit|reduce|compare)\b/.test(text)) return null;
+  const value = match ? Number(match[1]) : wordNumber(word?.[1] ?? "");
+  if (value === null) return null;
+  const fraction = (value / 100).toFixed(2);
   return ACTION_LIMITS.exitFractions.has(fraction) ? fraction : null;
+}
+
+function wordNumber(raw: string) {
+  const text = raw.replace(/-/g, " ").trim();
+  const values: Record<string, number> = {
+    zero: 0,
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    eleven: 11,
+    twelve: 12,
+    thirteen: 13,
+    fourteen: 14,
+    fifteen: 15,
+    sixteen: 16,
+    seventeen: 17,
+    eighteen: 18,
+    nineteen: 19,
+    twenty: 20,
+    thirty: 30,
+    forty: 40,
+    fifty: 50,
+    sixty: 60,
+    seventy: 70,
+    eighty: 80,
+    ninety: 90,
+    "twenty five": 25,
+    "seventy five": 75,
+    "one hundred": 100,
+  };
+  return values[text] ?? null;
 }
 
 function refuse(message: string): ParsedAssistantIntent {

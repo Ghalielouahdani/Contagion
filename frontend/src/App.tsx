@@ -2318,33 +2318,41 @@ function AssistantDock({
     const englishVoice = await resolveEnglishSpeechVoice(synth);
     if (speechRunRef.current !== runId) return;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    speechUtteranceRef.current = utterance;
-    utterance.lang = "en-US";
-    if (englishVoice) utterance.voice = englishVoice;
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.onstart = () => {
+    const sentences = splitSpeechSentences(cleanText);
+    const speakSentence = (index: number) => {
       if (speechRunRef.current !== runId) return;
-      console.info("[Assistant speech] playback started");
-      setAssistantState("speaking");
-    };
-    utterance.onend = () => {
-      if (speechRunRef.current !== runId) return;
-      console.info("[Assistant speech] playback ended");
-      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
-      activeSpeechMessageRef.current = null;
-      speechUtteranceRef.current = null;
-      setAssistantState("idle");
-    };
-    utterance.onerror = (event) => {
-      if (speechRunRef.current !== runId) return;
-      console.warn("[Assistant speech] playback error", event);
-      setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
-      activeSpeechMessageRef.current = null;
-      speechUtteranceRef.current = null;
-      setVoiceIssue(`The browser stopped spoken playback (${event.error}). Try pressing the speaker again.`);
-      setAssistantState("idle");
+      const sentence = sentences[index];
+      if (!sentence) {
+        console.info("[Assistant speech] playback ended");
+        setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+        activeSpeechMessageRef.current = null;
+        speechUtteranceRef.current = null;
+        setAssistantState("idle");
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      speechUtteranceRef.current = utterance;
+      utterance.lang = "en-US";
+      if (englishVoice) utterance.voice = englishVoice;
+      utterance.rate = 0.96;
+      utterance.pitch = 1;
+      utterance.onstart = () => {
+        if (speechRunRef.current !== runId) return;
+        console.info("[Assistant speech] playback sentence started", { index, sentence });
+        setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: sentence } : message)));
+        setAssistantState("speaking");
+      };
+      utterance.onend = () => speakSentence(index + 1);
+      utterance.onerror = (event) => {
+        if (speechRunRef.current !== runId) return;
+        console.warn("[Assistant speech] playback error", event);
+        setMessages((current) => current.map((message) => (message.id === messageId ? { ...message, caption: undefined } : message)));
+        activeSpeechMessageRef.current = null;
+        speechUtteranceRef.current = null;
+        setVoiceIssue(`The browser stopped spoken playback (${event.error}). Try pressing the speaker again.`);
+        setAssistantState("idle");
+      };
+      synth.speak(utterance);
     };
     if (synth.paused) synth.resume();
     console.info("[Assistant speech] invoking speechSynthesis.speak", {
@@ -2352,8 +2360,9 @@ function AssistantDock({
       speaking: synth.speaking,
       paused: synth.paused,
       voice: englishVoice ? `${englishVoice.name} (${englishVoice.lang})` : "no English voice available; using lang=en-US",
+      sentences: sentences.length,
     });
-    synth.speak(utterance);
+    speakSentence(0);
   }
 
   function speakLatestReply() {
@@ -2756,12 +2765,42 @@ async function resolveEnglishSpeechVoice(synth: SpeechSynthesis) {
 
 function pickEnglishSpeechVoice(voices: SpeechSynthesisVoice[]) {
   const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith("en"));
-  return (
-    englishVoices.find((voice) => voice.lang.toLowerCase().startsWith("en-us")) ??
-    englishVoices.find((voice) => voice.lang.toLowerCase().startsWith("en-gb")) ??
-    englishVoices[0] ??
-    null
-  );
+  return [...englishVoices].sort((a, b) => naturalVoiceScore(b) - naturalVoiceScore(a))[0] ?? null;
+}
+
+function naturalVoiceScore(voice: SpeechSynthesisVoice) {
+  const name = voice.name.toLowerCase();
+  const lang = voice.lang.toLowerCase();
+  let score = 0;
+  if (lang.startsWith("en-us")) score += 80;
+  else if (lang.startsWith("en-gb")) score += 70;
+  else if (lang.startsWith("en")) score += 45;
+  if (name.includes("google")) score += 130;
+  if (name.includes("microsoft")) score += 125;
+  if (name.includes("samantha")) score += 120;
+  if (name.includes("natural")) score += 70;
+  if (name.includes("neural")) score += 70;
+  if (name.includes("premium")) score += 45;
+  if (!voice.localService) score += 20;
+  if (name.includes("compact") || name.includes("robot")) score -= 60;
+  return score;
+}
+
+function splitSpeechSentences(text: string) {
+  return text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?])\s+|;\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean)
+    .flatMap((sentence) => {
+      if (sentence.length <= 210) return [sentence];
+      return sentence.split(/,\s+/).reduce<string[]>((chunks, clause) => {
+        const last = chunks[chunks.length - 1];
+        if (!last || `${last}, ${clause}`.length > 190) chunks.push(clause);
+        else chunks[chunks.length - 1] = `${last}, ${clause}`;
+        return chunks;
+      }, []);
+    });
 }
 
 function AssistantOrb({ state, amplitude }: { state: AssistantState; amplitude: number }) {

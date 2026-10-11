@@ -237,6 +237,12 @@ export const scenarioFixtures = Object.fromEntries(
 ) as Record<ScenarioKind, ReturnType<typeof createMockScenarioRequest>>;
 
 export async function postAssistantMessage(request: AssistantRequest, mode: DataMode): Promise<AssistantResponse> {
+  const localIntent = parseAssistantIntent(request);
+  if (localIntent.actions.length) {
+    console.info("[DeFi Contagion] assistant structured actions", localIntent);
+    return localIntent;
+  }
+
   try {
     const response = await requestJson<AssistantResponse>(withSet("/api/v1/assistant"), {
       method: "POST",
@@ -251,10 +257,8 @@ export async function postAssistantMessage(request: AssistantRequest, mode: Data
         data_mode: mode,
       }),
     });
-    const localIntent = parseAssistantIntent(request);
     console.info("[DeFi Contagion] assistant backend response", response);
-    if (localIntent.actions.length) return localIntent;
-    return { ...response, actions: response.actions?.length ? response.actions : localIntent.actions };
+    return response;
   } catch (error) {
     console.warn("[DeFi Contagion] assistant backend unavailable; using deterministic browser fallback", error);
   }
