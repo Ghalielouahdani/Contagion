@@ -32,6 +32,9 @@
   --np-data-after: #15130f;
   --np-plot-grid: rgba(35, 31, 25, 0.08);
   --np-glow-accent: rgba(31, 111, 88, 0.16);
+  --np-graph-surface: #f3eee4;
+  --np-graph-ink: rgba(21, 19, 15, 0.72);
+  --np-graph-muted: rgba(35, 31, 25, 0.28);
   --np-font:
     "IBM Plex Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
@@ -99,6 +102,9 @@
   --np-data-after: #f9f2e5;
   --np-plot-grid: rgba(246, 238, 221, 0.09);
   --np-glow-accent: rgba(138, 191, 164, 0.22);
+  --np-graph-surface: #16130f;
+  --np-graph-ink: rgba(249, 242, 229, 0.72);
+  --np-graph-muted: rgba(246, 238, 221, 0.25);
   --np-shadow: inset 0 0 0 1px var(--np-line);
   --np-shadow-hover: 0 24px 70px rgba(0, 0, 0, 0.42);
   --np-shadow-soft: 0 1px 0 rgba(246, 238, 221, 0.08), 0 24px 70px rgba(0, 0, 0, 0.46);

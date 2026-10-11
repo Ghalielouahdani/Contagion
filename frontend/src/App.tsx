@@ -17,6 +17,7 @@ import ReactFlow, {
   Background,
   Controls,
   Edge,
+  MarkerType,
   MiniMap,
   Node,
   Panel,
@@ -1400,7 +1401,15 @@ function DependencyGraphView({
   const flow = useReactFlow();
   // Highlight the selected position's contagion paths, as computed by the risk engine for this scenario.
   const selectedContagion = risk.positions.find((position) => position.position_id === selectedPosition)?.contagion;
-  const criticalEdges = useMemo(() => new Set(selectedContagion?.paths.flatMap((path) => path.edges) ?? []), [selectedContagion]);
+  const activePosition = hoveredPosition ?? selectedPosition;
+  const activeContagion = risk.positions.find((position) => position.position_id === activePosition)?.contagion;
+  const selectedEdges = useMemo(() => new Set(selectedContagion?.paths.flatMap((path) => path.edges) ?? []), [selectedContagion]);
+  const activeEdges = useMemo(() => new Set(activeContagion?.paths.flatMap((path) => path.edges) ?? []), [activeContagion]);
+  const activeNodeIds = useMemo(() => {
+    const nodes = new Set(activeContagion?.paths.flatMap((path) => path.nodes) ?? []);
+    nodes.add(`position:${activePosition}`);
+    return nodes;
+  }, [activeContagion, activePosition]);
   const layout = useMemo(() => layoutGraph(graph.nodes), [graph.nodes]);
   const nodeLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
   const visibleNodeIds = useMemo(() => {
@@ -1412,6 +1421,7 @@ function DependencyGraphView({
     );
   }, [enabledTypes, graph.nodes, search]);
 
+  const focusIsActive = activeNodeIds.size > 0;
   const flowNodes = useMemo<Node[]>(() => {
     return graph.nodes
       .filter((node) => visibleNodeIds.has(node.id))
@@ -1420,23 +1430,27 @@ function DependencyGraphView({
         position: layout[node.id] ?? { x: 160, y: 160 },
         data: {
           label: (
-            <div
+            <motion.div
+              layout
               className="flow-node"
               data-type={node.type}
               data-selected={node.id === `position:${selectedPosition}`}
               data-highlighted={node.id === `position:${hoveredPosition}`}
+              data-active={activeNodeIds.has(node.id)}
+              data-dimmed={focusIsActive && !activeNodeIds.has(node.id)}
               onClick={() => {
                 if (node.id.startsWith("position:")) setSelectedPosition(node.id.replace("position:", ""));
               }}
+              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
             >
               <span>{node.type}</span>
               <strong>{node.label}</strong>
-            </div>
+            </motion.div>
           ),
         },
         draggable: true,
       }));
-  }, [graph.nodes, layout, selectedPosition, setSelectedPosition, visibleNodeIds]);
+  }, [activeNodeIds, focusIsActive, graph.nodes, hoveredPosition, layout, selectedPosition, setSelectedPosition, visibleNodeIds]);
 
   const flowEdges = useMemo<Edge[]>(() => {
     return graph.edges
@@ -1446,11 +1460,15 @@ function DependencyGraphView({
         source: edge.source,
         target: edge.target,
         label: edge.relation,
-        animated: criticalEdges.has(edge.id),
-        className: `edge-${edge.confidence} ${criticalEdges.has(edge.id) ? "edge-critical" : ""}`,
+        type: "smoothstep",
+        animated: activeEdges.has(edge.id),
+        className: `edge-${edge.confidence} ${activeEdges.has(edge.id) ? "edge-critical" : ""} ${selectedEdges.has(edge.id) ? "edge-selected" : ""}`,
+        markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14 },
+        labelBgPadding: [6, 3],
+        labelBgBorderRadius: 2,
         data: edge,
       }));
-  }, [criticalEdges, graph.edges, visibleNodeIds]);
+  }, [activeEdges, graph.edges, selectedEdges, visibleNodeIds]);
 
   const types = Array.from(new Set(graph.nodes.map((node) => node.type)));
   const flowKey = `${scenario}-${selectedPosition}-${hoveredPosition ?? "none"}-${search}-${types.map((type) => `${type}:${enabledTypes[type] !== false}`).join("|")}`;

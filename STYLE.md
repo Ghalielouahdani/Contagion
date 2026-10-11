@@ -88,3 +88,15 @@ Dark mode:
   - Risk movement: semantic low/mid/high colors, never neon.
 - Assistant surface follows the same craft: translucent editorial panel, sentence captions, soft alive orb, no generic chat-bubble color palette.
 - Motion is staggered and quiet: cards rise 1-3px, panels fade/rise, orb breathes while idle, all disabled under reduced motion.
+
+## Dependency Graph Vertical Slice
+
+- The Dependency Graph is the bespoke network diagram slice.
+- React Flow chrome is visually absorbed into the product system: controls, minimap and search panel use the same translucent editorial surfaces and hairline dividers.
+- Nodes are not default graph boxes. They behave like labeled data plaques with one thin accent rule, small-caps type labels, soft depth and type-specific accent strokes.
+- Hover and selected position create a focus mode:
+  - The active contagion path keeps full opacity.
+  - Unrelated nodes fade back.
+  - Critical edges thicken, glow subtly and animate.
+- Edges use smooth routing, quiet relation labels and arrowheads. Confidence colors stay calm and analytical.
+- The graph background is a designed data plane: warm/dark surface, faint grid, paper grain and restrained depth.
