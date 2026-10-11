@@ -118,3 +118,10 @@ Dark mode:
 - The login screen keeps the same minimal centered composition but gains a crafted product surface with one accent rail, hairline border and subtle depth.
 - Forms remain quiet and accessible. Validation/focus states use the accent line and focus wash, not loud default outlines.
 - Touch ID / passkey controls share the same physical hover language as the rest of the app.
+
+## Assistant Vertical Slice
+
+- The assistant dock should feel like a live instrument, not a generic chat widget.
+- Orb states are explicit: idle breathes slowly, listening/speaking lift and glow, thinking subtly shimmers.
+- The panel keeps one accent rail and translucent editorial surface. Messages use restrained plaque styling, not bright chat bubbles.
+- Captions and speech diagnostics are quiet secondary evidence with their own small bordered surfaces.

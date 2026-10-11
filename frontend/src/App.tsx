@@ -2687,13 +2687,20 @@ function AssistantDock({
 
   return (
     <>
-      <button className="assistant-orb-button" onClick={() => (open ? closeAssistant() : setOpen(true))} aria-label={open ? "Close assistant" : "Open assistant"}>
+      <button
+        className="assistant-orb-button"
+        data-state={assistantState}
+        data-open={open}
+        onClick={() => (open ? closeAssistant() : setOpen(true))}
+        aria-label={open ? "Close assistant" : "Open assistant"}
+      >
         <AssistantOrb state={assistantState} amplitude={amplitude} />
       </button>
       <AnimatePresence>
         {open ? (
           <motion.aside
             className="assistant-panel"
+            data-state={assistantState}
             role="dialog"
             aria-modal="true"
             aria-label="DeFi Contagion assistant"
