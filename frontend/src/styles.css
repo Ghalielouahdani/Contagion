@@ -535,6 +535,7 @@ select:focus-visible {
 .mode-toggle:hover,
 .icon-button:hover,
 .mini-tab:hover,
+.mini-tab[data-highlighted="true"],
 .filter-chip:hover,
 .filter-chip[data-active="true"],
 .mini-tab[data-selected="true"] {
@@ -722,6 +723,9 @@ p,
 .impact-strip {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-auto-rows: 154px;
+  background:
+    linear-gradient(90deg, var(--np-scenario-wash), transparent 58%),
+    transparent;
 }
 
 .stat {
@@ -1288,7 +1292,11 @@ tbody tr[data-highlighted="true"] td:first-child {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: clamp(18px, 2.4vw, 34px);
-  align-items: stretch;
+  align-items: start;
+}
+
+.decision-main {
+  gap: clamp(18px, 2vw, 28px);
 }
 
 .graph-stage {
@@ -1744,6 +1752,45 @@ tbody tr[data-highlighted="true"] td:first-child {
     linear-gradient(180deg, color-mix(in srgb, var(--np-scenario-wash) 78%, transparent), transparent 62%);
 }
 
+.decision-chart-frame {
+  position: relative;
+  border: 1px solid var(--np-line);
+  border-top-color: var(--np-line-strong);
+  background:
+    linear-gradient(90deg, transparent 0, transparent calc(20% - 1px), var(--np-plot-grid) 20%, transparent calc(20% + 1px)),
+    linear-gradient(180deg, color-mix(in srgb, var(--np-accent-coral) 8%, transparent), transparent 44%),
+    var(--np-page);
+}
+
+.decision-chart-frame::before {
+  content: "click or brush to inspect exit fractions";
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 1;
+  color: var(--np-soft);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.decision-chart-frame .recharts-cartesian-axis-tick-value {
+  fill: var(--np-muted);
+  font-family: var(--np-font-mono);
+  font-size: 11px;
+}
+
+.decision-chart-frame .recharts-brush-slide {
+  fill: color-mix(in srgb, var(--np-accent) 18%, transparent);
+  stroke: var(--np-accent);
+}
+
+.decision-chart-frame .recharts-brush-traveller {
+  fill: var(--np-page);
+  stroke: var(--np-strong);
+}
+
 .chart-tooltip {
   display: grid;
   gap: 4px;
@@ -1794,11 +1841,29 @@ tbody tr[data-highlighted="true"] td:first-child {
   align-self: start;
   position: sticky;
   top: 48px;
+  padding: 24px;
+  background:
+    linear-gradient(135deg, var(--np-panel-wash), transparent 72%),
+    var(--np-page);
+  box-shadow:
+    inset 0 0 0 1px var(--np-line),
+    0 26px 70px color-mix(in srgb, var(--np-strong) 8%, transparent);
 }
 
 .verdict {
+  position: relative;
   gap: 12px;
-  margin-bottom: 14px;
+  margin: -4px 0 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--np-line-strong);
+}
+
+.verdict::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 18px -24px;
+  width: 3px;
+  background: var(--np-accent);
 }
 
 .verdict span {
@@ -1810,8 +1875,10 @@ tbody tr[data-highlighted="true"] td:first-child {
 .verdict strong {
   display: block;
   color: var(--np-strong);
-  font-size: var(--np-size-4);
-  font-weight: var(--np-weight-strong);
+  font-family: var(--np-font-display);
+  font-size: clamp(30px, 3.2vw, 46px);
+  font-weight: 500;
+  line-height: 0.94;
 }
 
 .empty-state {
@@ -1926,15 +1993,37 @@ tbody tr[data-highlighted="true"] td:first-child {
 }
 
 .inspect-callout {
+  position: relative;
   margin-bottom: 18px;
-  padding: 14px;
-  border: 1px solid var(--np-line);
-  border-radius: var(--np-radius);
-  background: var(--np-surface);
+  padding: 16px 16px 16px 18px;
+  border: 1px solid var(--np-line-strong);
+  border-radius: var(--np-radius-tight);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--np-accent-soft) 36%, transparent), transparent 70%),
+    var(--np-surface);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--np-strong) 7%, transparent);
+  overflow: hidden;
+}
+
+.inspect-callout::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--np-accent);
 }
 
 .inspect-callout h2 {
-  font-size: var(--np-size-4);
+  margin-bottom: 8px;
+  font-family: var(--np-font-display);
+  font-size: clamp(34px, 4vw, 58px);
+  font-weight: 500;
+  line-height: 0.9;
+}
+
+.inspect-callout p:last-child {
+  margin-bottom: 0;
+  font-size: var(--np-size-0);
 }
 
 .assistant-orb-button {

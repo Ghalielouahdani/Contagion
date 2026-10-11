@@ -1857,16 +1857,20 @@ function DecisionEngine({
     residual: Number(option.residual_stress_loss_usd),
     breakEven: option.break_even_probability ? Number(option.break_even_probability) * 100 : null,
   }));
+  const inspectedOption = inspectedExitFraction ? data.decision.exit_options.find((item) => item.exit_fraction === inspectedExitFraction) : null;
 
   return (
-    <div className="decision-layout">
-      <section className="decision-main">
+    <motion.div className="decision-layout" initial="hidden" animate="show" variants={staggerGroup}>
+      <motion.section className="decision-main" variants={riseItem}>
         <div className="selector-row">
           {data.portfolio.positions.map((position) => (
             <button
               key={position.position_id}
               className="mini-tab"
               data-selected={position.position_id === selectedPosition}
+              data-highlighted={hoveredPosition === position.position_id}
+              onMouseEnter={() => setHoveredPosition(position.position_id)}
+              onMouseLeave={() => setHoveredPosition(null)}
               onClick={() => setSelectedPosition(position.position_id)}
             >
               {position.protocol}
@@ -1875,9 +1879,9 @@ function DecisionEngine({
         </div>
 
         <section className="impact-strip">
-          <Stat label="Before" value={money(selectedRisk.net_equity_before_usd)} detail={labelize(selectedPortfolio.position_type)} />
-          <Stat label="After" value={money(selectedRisk.net_equity_after_usd)} detail={scenarioCopy[scenario].title} />
-          <Stat label="Conditional loss" value={money(selectedRisk.conditional_loss_usd)} detail={selectedRisk.calculation_status} />
+          <Stat label="Before" value={money(selectedRisk.net_equity_before_usd)} detail={labelize(selectedPortfolio.position_type)} highlighted={hoveredPosition === selectedPosition} />
+          <Stat label="After" value={money(selectedRisk.net_equity_after_usd)} detail={scenarioCopy[scenario].title} highlighted={hoveredPosition === selectedPosition} />
+          <Stat label="Conditional loss" value={money(selectedRisk.conditional_loss_usd)} detail={selectedRisk.calculation_status} highlighted={hoveredPosition === selectedPosition} />
         </section>
 
         <section className="visual-panel">
@@ -1888,10 +1892,14 @@ function DecisionEngine({
             </div>
             <Badge tone="warn">assumption-driven</Badge>
           </div>
-          <div className="chart-frame">
+          <div className="chart-frame decision-chart-frame">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart
                 data={costData}
+                onMouseMove={(state) => {
+                  const active = (state as { activePayload?: Array<{ payload?: { fraction?: string } }> })?.activePayload?.[0]?.payload;
+                  if (active?.fraction) setInspectedExitFraction(active.fraction);
+                }}
                 onClick={(state) => {
                   const active = (state as { activePayload?: Array<{ payload?: { fraction?: string } }> })?.activePayload?.[0]?.payload;
                   if (active?.fraction) setInspectedExitFraction(active.fraction);
@@ -1906,16 +1914,17 @@ function DecisionEngine({
                   dataKey="cost"
                   stroke="var(--np-accent-coral)"
                   strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
+                  dot={{ r: 3, strokeWidth: 1.5 }}
+                  activeDot={{ r: 6, strokeWidth: 2 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="residual"
                   stroke="var(--np-strong)"
                   strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
+                  strokeDasharray="4 5"
+                  dot={{ r: 3, strokeWidth: 1.5 }}
+                  activeDot={{ r: 6, strokeWidth: 2 }}
                 />
                 <Brush dataKey="exit" height={18} stroke="var(--np-strong)" travellerWidth={8} />
               </LineChart>
@@ -1957,9 +1966,9 @@ function DecisionEngine({
             </tbody>
           </table>
         </section>
-      </section>
+      </motion.section>
 
-      <aside className="decision-inspector">
+      <motion.aside className="decision-inspector" variants={riseItem}>
         <div className="verdict">
           <BadgeCheck size={18} />
           <div>
@@ -1995,12 +2004,9 @@ function DecisionEngine({
             <p className="eyebrow">Inspected exit</p>
             <h2>{percent(inspectedExitFraction, 0)}</h2>
             <p>
-              {(() => {
-                const option = data.decision.exit_options.find((item) => item.exit_fraction === inspectedExitFraction);
-                return option
-                  ? `${money(option.estimated_exit_cost_usd)} immediate cost, ${money(option.residual_stress_loss_usd)} residual stress loss.`
-                  : "No fixture row for this exit fraction.";
-              })()}
+              {inspectedOption
+                ? `${money(inspectedOption.estimated_exit_cost_usd)} immediate cost, ${money(inspectedOption.residual_stress_loss_usd)} residual stress loss.`
+                : "No fixture row for this exit fraction."}
             </p>
           </div>
         ) : null}
@@ -2009,8 +2015,8 @@ function DecisionEngine({
           <MetricPair key={key} label={labelize(key)} value={money(value)} />
         ))}
         <WarningList warnings={[...selectedRisk.warnings, ...data.decision.warnings]} />
-      </aside>
-    </div>
+      </motion.aside>
+    </motion.div>
   );
 }
 

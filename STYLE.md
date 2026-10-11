@@ -103,3 +103,11 @@ Dark mode:
   - Critical edges thicken, glow subtly and animate.
 - Edges use smooth routing, quiet relation labels and arrowheads. Confidence colors stay calm and analytical.
 - The graph background is a designed data plane: warm/dark surface, faint grid, paper grain and restrained depth.
+
+## Decision Engine Vertical Slice
+
+- The Decision Engine reads like an investment memo: the recommendation/verdict is the focal object, with the exit curve and table as supporting evidence.
+- Exit fractions are inspectable by hovering/clicking the chart or rows; the same selected fraction drives the inspector callout.
+- The chart keeps brush/zoom but styles it as part of the product, not a default Recharts widget.
+- Position tabs use the same hover/selected language as the portfolio cards, so cross-highlighting feels consistent across views.
+- The inspector uses one accent rule and editorial type for the verdict; warning and loss breakdown data stay quieter underneath.
