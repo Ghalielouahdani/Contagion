@@ -21,7 +21,7 @@ from backend.risk import trace as T
 from backend.risk.metrics import read_metric
 from backend.risk.model import Portfolio, Position, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, position_values
-from backend.risk.scenarios import scenario
+from backend.risk.scenarios import scenario, usde_depeg
 
 MAX_DAYS = 3650  # search window for days to liquidation
 
@@ -126,10 +126,9 @@ def _liquidation(impact: PositionImpact, position: Position, snapshot: Snapshot,
     metric = read_metric(market, gross0, impact.gross_after, debt0, impact.debt_after)
     impact.risk_metric = metric.as_contract()
     impact.internals = {"market": market, "oracle_collateral_after": impact.gross_after, "metric": metric}
+    usde_depeg.settle_borrow(impact, market, impact.gross_after, metric, T.market_source(snapshot, position.position_id))
     if metric.liquidatable:
-        impact.loss_components["liquidation_penalty"] = metric.close_factor * impact.debt_after * metric.liquidation_incentive
-        impact.warnings.append(
-            f"Liquidatable from accrued debt alone: liquidators may repay {metric.close_factor:.0%} of the debt.")
+        impact.warnings.append("Liquidatable from accrued debt alone, without any price move.")
 
 
 def _borrower_drift(impact: PositionImpact, position: Position, snapshot: Snapshot, rates: Rates, t: float) -> None:

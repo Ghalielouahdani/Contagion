@@ -133,6 +133,60 @@ def read_metric(market: dict, oracle_collateral_before: float, oracle_collateral
     )
 
 
+MAX_LIQUIDATIONS = 50  # safety net: each step repays at least half the debt or takes all the collateral
+
+
+@dataclass(frozen=True)
+class Liquidation:
+    """What liquidators do to one borrow position once its metric is breached (protocol rules)."""
+
+    loss: float  # liquidation penalty: market value of the collateral seized - debt repaid (the liquidators' bonus)
+    seized_market: float  # market value of the collateral liquidators take (and sell)
+    repaid: float  # debt liquidators repay
+    written_off: float  # debt left once the collateral is gone: bad debt for the lenders, not the borrower's
+    steps: int  # liquidation calls (Aave: one at 50% close factor may leave HF < 1, then another)
+    unprofitable: bool  # liquidatable, but seized collateral is worth less than the debt repaid: nobody liquidates
+    net_after: float  # collateral at market - debt once liquidations stop (may be < 0: borrower walks away)
+
+
+def liquidate(market: dict, collateral_market: float, collateral_oracle: float, debt: float) -> Liquidation:
+    """Liquidate until the metric is safe, the collateral is gone, or liquidating stops paying.
+
+    Each call repays close_factor x debt and seizes repaid x (1 + incentive) of collateral at the
+    oracle price, capped at the collateral left (then repaid = collateral / (1 + incentive) and
+    the remaining debt is written off: Morpho realizes it as bad debt, Aave v3.3 burns it as a
+    deficit). The penalty is the market value of what is seized minus the debt repaid, so it is
+    measured at market prices even when the oracle reads another price. The written-off debt is
+    not a penalty: the borrower has lost all its collateral (limited liability, see cap_loss).
+    A liquidator seizes at the oracle price and sells at the market: when that is worth less than
+    the debt repaid (oracle above market by more than the incentive), nobody liquidates.
+    """
+    rule = RULES[market["market_kind"]]
+    incentive = float(market.get(rule.incentive_field, 0))
+    threshold = rule.threshold(market)
+    c_m, c_o, d = collateral_market, collateral_oracle, debt
+    seized = repaid = 0.0
+    steps, unprofitable = 0, False
+    while d > 1e-9 and c_o > 1e-9 and steps < MAX_LIQUIDATIONS:
+        value, _ = rule.compute(market, c_o, d)
+        if not rule.breached(value, threshold):
+            break
+        repay = rule.close_factor(value) * d
+        take = repay * (1 + incentive)
+        if take >= c_o:
+            take, repay = c_o, c_o / (1 + incentive)
+        share = take / c_o
+        if share * c_m <= repay:
+            unprofitable = True
+            break
+        seized += share * c_m
+        repaid += repay
+        c_m, c_o, d = c_m - share * c_m, c_o - take, d - repay
+        steps += 1
+    written_off = d if c_o <= 1e-9 and steps else 0.0
+    return Liquidation(seized - repaid, seized, repaid, written_off, steps, unprofitable, c_m - (d - written_off))
+
+
 def deleverage_needed(market: dict, collateral: float, debt: float, oracle_factor: float = 1.0) -> float:
     """USD of collateral to sell and repay today so the position stays above the safety target
     after its collateral oracle moves by oracle_factor (e.g. 0.70 for a 30% oracle drop)."""

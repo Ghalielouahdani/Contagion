@@ -6,7 +6,7 @@
 2. **Verified-market log (P1):** [verified_markets.md](verified_markets.md) (done for 10 Oct 2026). for each real market used, write down the protocol, market ID or address, oracle address and type, key parameters, block number, date checked and source link. This is the proof behind every `verified: true`.
 3. **Assumptions register (P2/P3):** every `assumed` value (yields, venue depth, PT yield shock, fees, gas…), why it was chosen, and how sensitive results are to it.
 4. **Demo script (P4):** the exact click path for the 3-minute demo, the talking points for each screen, and what to do if the network fails.
-5. **Risk engine plan (P2):** [risk_engine_plan.md](risk_engine_plan.md) — roadmap, differentiators and progress checklist.
+5. **Risk engine plan (P2):** [risk_engine_plan.md](risk_engine_plan.md) — roadmap, differentiators and progress checklist; [risk_backtest.md](risk_backtest.md) — the engine against real history.
 6. **Pitch material (P4 + everyone):** slides, screenshots, backup recording.
 
 ## Rule

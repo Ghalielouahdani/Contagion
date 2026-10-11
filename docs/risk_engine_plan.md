@@ -72,6 +72,10 @@ Des scénarios inspirés d'épisodes réels plutôt que de chiffres inventés :
 
 ---
 
+## Backtest sur l'historique (fait)
+
+Voir [risk_backtest.md](risk_backtest.md) : formule PT, bêta sUSDe, chocs historiques, replay quotidien du portefeuille vérifié et replay du 10 octobre 2025 (oracle Chainlink vs Binance).
+
 ## Moteur relié au graphe de dépendances (fait)
 
 Chaque perte est reliée à son **chemin de contagion** dans le graphe de P1, par exemple `pendle_01 → PT-sUSDe → sUSDe → USDe`, avec la preuve et la confiance de chaque lien.
@@ -113,6 +117,8 @@ Le module `backend/risk/analytics` traduit chaque scénario en **dollars** pour 
 ### Choix de modélisation tranchés (critère : chaque dollar affiché doit être juste)
 
 - **Pénalité de liquidation = règles réelles des protocoles**, pas une borne prudente : Aave rembourse 50 % de la dette tant que HF ≥ 0,95 (100 % en dessous) ; Morpho n'a pas de close factor. Surestimer la perte pousserait le fonds à trop vendre, ce qui coûte de l'argent.
+- **Liquidation répétée jusqu'à HF ≥ 1, plafonnée à la collatérale, mesurée au prix de marché** : un appel à 50 % peut laisser HF < 1 (si HF < LT × (1 + bonus)), les liquidateurs recommencent ; ils ne saisissent jamais plus que la collatérale (le reste de la dette est radié : mauvaise dette des prêteurs) ; la pénalité = collatérale saisie au prix de marché − dette remboursée, et personne ne liquide si cette collatérale vaut moins que la dette remboursée.
+- **Responsabilité limitée** : la dette est sans recours, une position d'emprunt ne perd jamais plus que sa net equity (composante `limited_liability`, négative). Avant ce correctif, un depeg profond affichait des net equity négatives (ex. Morpho −1,45 M$ sur 1,0 M$ de net equity à −80 %).
 - **Trois chocs distincts** : depeg de marché, perte de backing de l'USDe, baisse du taux sUSDe (`susde_rate_cut_pct`). Un oracle « taux de change, USDe fixé à 1 $ » ne voit que le dernier. C'est ce qui rend le récit Aave vs Morpho exact.
 - **Retard d'oracle = fenêtre d'action chiffrée** : coût du désendettement pendant la fenêtre vs pénalité évitée.
 - **Gain de liquidation publié de façon prudente** : pénalité évitée − coût. La perte de valeur évitée sur le collatéral vendu est affichée à part (c'est du dé-risquage, pas de la liquidation).
@@ -128,7 +134,7 @@ A et B tournent séparément ; une vraie crise ne le fait pas. Quatre scénarios
 
 | Scénario              | Mécanisme                                                                                                   | Chiffre clé (fixtures)                                                                 |
 |-----------------------|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| C `combined_crisis`   | Depeg A, puis sortie en profondeur de crise **derrière les ventes des liquidateurs** sur le même venue      | −30 % / −80 % : perte 3,51 M$, dont **34,5 k$ de contagion** par la liquidation Aave (sortie 56,4 k$ au lieu de 21,8 k$) ; A + B additionnés surestiment de 473 k$ |
+| C `combined_crisis`   | Depeg A, puis sortie en profondeur de crise **derrière les ventes des liquidateurs** sur le même venue      | −30 % / −80 % : perte 3,51 M$, dont **34,5 k$ de contagion** par la liquidation Aave (sortie 56,4 k$ au lieu de 21,8 k$) ; A + B additionnés surestiment de 477 k$ |
 | D `carry_squeeze`     | Funding négatif (APY sUSDe 0) + emprunt USDC à 60 % sur `horizon_days`, sans aucun mouvement de prix        | 30 jours : perte 161 k$ (2,6 % de NAV), **199 k$** de carry perdu vs les taux actuels ; Morpho liquidable en **227 jours**, Aave en **288** |
 | E `governance_change` | Baisse du seuil de liquidation et/ou bascule d'oracle, puis le depeg                                         | −27 % survivable aujourd'hui ; après LT −5 pts + oracle Morpho au prix de marché : Aave et Morpho liquidés, **97 k$** de pénalités dues au vote seul |
 | F `node_shock`        | Choc sur un nœud du graphe : backing/custodian → perte de backing ; sUSDe → baisse du taux ; stablecoin → depeg côté dette ; protocole/marché/PT → défaillance (plafonnée à la net equity) | Backing −10 % : 1,0 M$ de perte, LTV Morpho inchangée (oracle immunisé) ; USDC −10 % : **gain** de 380 k$ (dette) |

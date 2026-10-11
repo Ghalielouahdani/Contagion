@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from backend.risk import lending
 from backend.risk import trace as T
-from backend.risk.metrics import read_metric
+from backend.risk.metrics import liquidate, read_metric
 from backend.risk.model import Portfolio, Position, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, asset_price, oracle_price, position_values
 from backend.risk.scenarios import scenario
@@ -164,21 +164,7 @@ def _apply_liquidation_metric(impact: PositionImpact, position: Position, snapsh
     impact.risk_metric = metric.as_contract()
     _trace_metric(impact, position, snapshot, market, price0, move, pass_through, cut, oracle_collateral, debt0, metric)
     impact.internals = {"market": market, "oracle_collateral_after": oracle_collateral, "metric": metric}
-
-    if metric.liquidatable:
-        # Liquidators repay close_factor x debt and seize that amount plus the incentive.
-        repaid = metric.close_factor * impact.debt_after
-        impact.loss_components["liquidation_penalty"] = repaid * metric.liquidation_incentive
-        T.step(impact.trace, "liquidation_penalty", "Liquidation penalty",
-               "close factor x debt after x liquidation incentive",
-               [T.inp("close factor", metric.close_factor, T.RATIO, T.RULE),
-                T.inp("debt after", impact.debt_after, T.USD, T.DERIVED),
-                T.inp("liquidation incentive", metric.liquidation_incentive, T.RATIO, T.market_source(snapshot, position.position_id))],
-               impact.loss_components["liquidation_penalty"], T.USD,
-               note="Liquidators repay this share of the debt and keep the incentive as a bonus taken from the collateral.")
-        impact.warnings.append(
-            f"Liquidatable: liquidators may repay {metric.close_factor:.0%} of the debt; penalty = repaid debt x incentive."
-        )
+    settle_borrow(impact, market, oracle_collateral, metric, T.market_source(snapshot, position.position_id))
     if not market.get("verified"):
         impact.warnings.append("Liquidation parameters and oracle response are fixture assumptions.")
     if pass_through < 1:
@@ -187,6 +173,68 @@ def _apply_liquidation_metric(impact: PositionImpact, position: Position, snapsh
             f"Oracle assumed to pass through {pass_through:g} of the market move; if it fully follows the market, "
             f"{alt.type} becomes {alt.after:.4f} (liquidatable: {alt.liquidatable})."
         )
+
+
+def settle_borrow(impact: PositionImpact, market: dict, oracle_collateral: float, metric, source: str) -> None:
+    """Liquidation penalty (protocol rules, repeated until safe) and limited liability of a borrow position.
+
+    The debt is non-recourse: once the collateral is worth less than the debt, the borrower walks
+    away and loses its net equity, never more. That relief is its own (negative) component,
+    `limited_liability`, so the published loss never exceeds the equity at stake.
+    """
+    if metric.liquidatable:
+        liq = liquidate(market, impact.gross_after, oracle_collateral, impact.debt_after)
+        impact.internals["liquidation"] = liq
+        impact.loss_components["liquidation_penalty"] = liq.loss
+        T.step(impact.trace, "liquidation_penalty", "Liquidation penalty",
+               "repeat while liquidatable: repay close factor x debt, seize repaid x (1 + incentive) at the oracle "
+               "price (capped at the collateral left); penalty = collateral seized at market value - debt repaid",
+               [T.inp("close factor at the breach", metric.close_factor, T.RATIO, T.RULE),
+                T.inp("debt after", impact.debt_after, T.USD, T.DERIVED),
+                T.inp("liquidation incentive", metric.liquidation_incentive, T.RATIO, source),
+                T.inp("liquidation calls", liq.steps, "count", T.DERIVED),
+                T.inp("debt repaid", liq.repaid, T.USD, T.DERIVED),
+                T.inp("collateral seized (market value)", liq.seized_market, T.USD, T.DERIVED),
+                T.inp("debt written off (collateral exhausted)", liq.written_off, T.USD, T.DERIVED)],
+               liq.loss, T.USD,
+               note="Liquidators keep the incentive as a bonus taken from the collateral; a position whose collateral "
+                    "runs out loses all of it and its remaining debt becomes the lenders' bad debt.")
+        if liq.unprofitable:
+            impact.warnings.append(
+                "Liquidatable, but the collateral liquidators would seize at the oracle price is worth less at market "
+                "than the debt they would repay: no rational liquidator acts, the position stays open.")
+        else:
+            impact.warnings.append(
+                f"Liquidatable: {liq.steps} liquidation call(s) repay {liq.repaid:,.0f} USD of debt"
+                + (f"; collateral exhausted, {liq.written_off:,.0f} USD of debt written off" if liq.written_off else "")
+                + "; penalty = collateral seized at market value - debt repaid.")
+    cap_loss(impact)
+
+
+def cap_loss(impact: PositionImpact) -> None:
+    """Limited liability of a borrow position: its loss never exceeds its net equity.
+
+    Recomputed from the other components, so a scenario that adds a cost later (an exit haircut)
+    calls it again. limited_liability = min(net equity after every other component, 0).
+    """
+    others = sum(v for k, v in impact.loss_components.items() if k != "limited_liability")
+    net_after = impact.net_before - others
+    had = "limited_liability" in impact.loss_components
+    if net_after >= 0:
+        if had:
+            impact.loss_components["limited_liability"] = 0.0
+        return
+    impact.loss_components["limited_liability"] = net_after
+    if had:
+        return
+    T.step(impact.trace, "limited_liability", "Limited liability: the debt is non-recourse",
+           "min(net equity before - every other loss component, 0)",
+           [T.inp("net equity before", impact.net_before, T.USD, T.DERIVED),
+            T.inp("losses before the cap", others, T.USD, T.DERIVED)],
+           net_after, T.USD, note="The borrower walks away: it loses its net equity, the shortfall is the lenders'.")
+    impact.warnings.append(
+        f"Losses exceed the position's net equity by {-net_after:,.0f} USD: the position is lost (loss capped at its "
+        "net equity); the shortfall falls on the lenders.")
 
 
 # Calculation trace ---------------------------------------------------------------------------

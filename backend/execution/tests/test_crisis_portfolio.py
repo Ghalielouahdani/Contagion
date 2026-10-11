@@ -56,10 +56,14 @@ def test_min_loss_beats_every_other_computed_strategy(suffix, timing):
 
 
 def test_shared_venue_makes_min_loss_sell_less_than_alone():
-    # Seule, Ethena serait vendue à 100 % ; avec Morpho dans la même pool sUSDe, mieux vaut en garder une partie.
-    alone = next(r for r in crisis_plan(*inputs("_combined"))["positions"] if r["position_id"] == "ethena_susde_01")
-    assert alone["early"]["best"]["fraction"] == "1.00"
-    assert strategies("_combined")["min_loss"]["choices"]["ethena_susde_01"]["fraction"] != "1.00"
+    # Seule, Morpho serait vendue à 100 % ; mais elle partage la pool sUSDe avec Ethena, à 20 % de la profondeur
+    # normale. Sa perte de garder est plafonnée à sa net equity (responsabilité limitée) : mieux vaut la garder que
+    # vendre ses 500 k$ de sUSDe dans la même pool qu'Ethena, qui, elle, sort en entier.
+    plan = {r["position_id"]: r for r in crisis_plan(*inputs("_combined"))["positions"]}
+    assert plan["morpho_01"]["early"]["best"]["fraction"] == "1.00"
+    choices = strategies("_combined")["min_loss"]["choices"]
+    assert choices["morpho_01"]["action"] == "hold"
+    assert choices["ethena_susde_01"]["fraction"] == "1.00"
 
 
 def test_identical_strategies_are_flagged():

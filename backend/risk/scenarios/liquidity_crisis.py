@@ -12,7 +12,7 @@ from backend.risk import trace as T
 from backend.risk.liquidity import coverage_note, exit_cost, group_by_venue, joint_haircuts, trace_exit
 from backend.risk.model import Portfolio, PositionImpact, ScenarioOutcome, ScenarioRequest, Snapshot
 from backend.risk.pricing import MarketState, position_values
-from backend.risk.scenarios import scenario
+from backend.risk.scenarios import scenario, usde_depeg
 
 
 @scenario("liquidity_crisis")
@@ -60,6 +60,8 @@ def run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest) -> S
             trace_exit(impact.trace, venue, gross1, k, T.venue_source(snapshot, venue.venue_id))
             impact.loss_components["execution_haircut"] = cost
             impact.executable_after = gross1 - cost
+            if position.is_borrow:
+                usde_depeg.cap_loss(impact)
             standalone[position.position_id] = cost
             exits.append((venue.venue_id, gross1))
             note = "Proxy depth; standalone exit." if not venue.curve else "Priced on executable quotes; standalone exit."

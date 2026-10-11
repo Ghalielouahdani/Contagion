@@ -86,8 +86,50 @@ def test_aave_close_factor_limits_penalty(portfolio, snapshot, depeg_request):
     aave = by_id(depeg(portfolio, snapshot, depeg_request, usde_spot_shock_pct="-0.30"))["aave_01"]
     assert aave["risk_metric"]["liquidatable"] is True
     assert D(aave["loss_components"]["liquidation_penalty"]) == D("45000.00")  # 0.5 x 1.8m x 5%
-    deep = by_id(depeg(portfolio, snapshot, depeg_request, usde_spot_shock_pct="-0.40"))["aave_01"]
-    assert D(deep["loss_components"]["liquidation_penalty"]) == D("90000.00")  # HF < 0.95: 100%
+    deep = by_id(depeg(portfolio, snapshot, depeg_request, usde_spot_shock_pct="-0.35"))["aave_01"]
+    # HF = 1.95m x 0.85 / 1.8m = 0.9208 < 0.95: 100% of the debt, seizing 1.89m of the 1.95m collateral.
+    assert D(deep["loss_components"]["liquidation_penalty"]) == D("90000.00")
+
+
+def test_liquidation_never_takes_more_than_the_collateral(portfolio, snapshot, depeg_request):
+    # USDe at 0.60: collateral 1.8m = debt 1.8m. Liquidators can seize at most the 1.8m of collateral, repaying
+    # 1.8m / 1.05 = 1,714,285.71 (penalty 85,714.29); the remaining 85,714.29 of debt is written off. The position
+    # had zero equity left: it cannot lose more.
+    aave = by_id(depeg(portfolio, snapshot, depeg_request, usde_spot_shock_pct="-0.40"))["aave_01"]
+    assert D(aave["loss_components"]["liquidation_penalty"]) == D("85714.29")
+    assert D(aave["loss_components"]["limited_liability"]) == D("-85714.29")
+    assert D(aave["net_equity_after_usd"]) == 0
+
+
+def test_borrow_loss_is_capped_at_net_equity(portfolio, snapshot, depeg_request):
+    # Limited liability: at -80% every borrow position is wiped out, never below zero.
+    rows = by_id(depeg(portfolio, snapshot, depeg_request, usde_spot_shock_pct="-0.80", oracle_pass_through_override="1.0"))
+    for pid in ("aave_01", "morpho_01"):
+        assert D(rows[pid]["net_equity_after_usd"]) == 0
+        assert D(rows[pid]["conditional_loss_usd"]) == D(rows[pid]["net_equity_before_usd"])
+
+
+def test_aave_repeats_liquidation_while_hf_stays_below_one():
+    # LT 0.93, bonus 2%: a 50% liquidation at HF 0.96 leaves HF = 2 x 0.96 - 0.93 x 1.02 = 0.9714 < 1, so it is
+    # liquidated again (50% once more) until HF >= 1. A single liquidation would understate the penalty.
+    from backend.risk.metrics import liquidate
+    market = {"market_kind": "aave_v3_reserve", "liquidation_threshold": "0.93", "liquidation_bonus": "0.02"}
+    debt = 1_000_000.0
+    collateral = 0.96 * debt / 0.93
+    liq = liquidate(market, collateral, collateral, debt)
+    assert liq.steps >= 2
+    left_c, left_d = collateral - liq.seized_market, debt - liq.repaid
+    assert left_c * 0.93 / left_d >= 1
+    assert abs(liq.loss - 0.02 * liq.repaid) < 1e-6
+
+
+def test_no_liquidation_when_seized_collateral_is_worth_less_than_the_debt_repaid():
+    # The oracle reads 1.00 while the market is at 0.90: seizing 1.026 of oracle value per dollar repaid is
+    # only 0.92 at market. A liquidator would lose money, so nobody liquidates.
+    from backend.risk.metrics import liquidate
+    market = {"market_kind": "morpho_blue_market", "lltv": "0.915", "liquidation_incentive": "0.026"}
+    liq = liquidate(market, 0.90 * 1_000_000, 1_000_000, 950_000)
+    assert liq.unprofitable and liq.steps == 0 and liq.loss == 0
 
 
 def test_no_liquidation_without_threshold_breach(portfolio, snapshot, depeg_request):

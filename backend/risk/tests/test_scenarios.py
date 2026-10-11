@@ -63,7 +63,8 @@ def test_combined_liquidation_selling_is_the_contagion():
     # haircut(2.1M) - haircut(0.945M) = 56,361.53 instead of haircut(1.155M) = 21,813.83.
     result = run("combined")
     assert Decimal(by_id(result)["aave_01"]["loss_components"]["execution_haircut"]) == Decimal("56361.53")
-    assert excess(result) == Decimal("34547.70")
+    # 34,547.69 unrounded; published parts are rounded one by one (incl. Morpho's limited liability).
+    assert abs(excess(result) - Decimal("34547.69")) <= Decimal("0.02")
 
 
 def test_combined_no_liquidation_no_contagion():

@@ -28,10 +28,10 @@ Ces montants sont les sorties de référence régénérées le 10 octobre 2026 p
 |---|---:|---:|
 | `usde_depeg` | 127 514,63 | 2 411 121,44 |
 | `liquidity_crisis` | 216 434,64 | 2 322 201,43 |
-| `combined_crisis` | 1 087 608,43 | 1 451 027,64 |
+| `combined_crisis` | 865 560,31 | 1 673 075,76 |
 | `carry_squeeze` | 6 481,81 | 2 532 154,26 |
-| `governance_change` | 899 084,98 | 1 639 551,09 |
-| `node_shock` | 246 688,85 | 2 291 947,22 |
+| `governance_change` | 705 845,08 | 1 832 790,99 |
+| `node_shock` | 245 158,68 | 2 293 477,39 |
 | `liquidation_cascade` | 1 353 679,87 | 1 184 956,20 |
 
 La cascade preneuse de prix est ici un stress extrême : elle atteint un point bas de −99,05 % sur les deux collatéraux avant un rebond proche de −5,1 %. La perte persistante des prêteurs vient de la mauvaise dette réalisée pendant la chute. Comparer le mode attentif à l'impact avant de présenter ce résultat comme une estimation réaliste. Source exacte : `contracts/fixtures/stress_portfolio_01/risk_result*.json`, champs `portfolio.total_conditional_loss_usd` et `portfolio.net_equity_after_usd`.

@@ -142,18 +142,18 @@
     "nav_drawdown": [
       {
         "nav_drawdown_pct": "0.1000",
-        "usde_depeg_pct": "-0.1021",
-        "usde_price": "0.8976"
+        "usde_depeg_pct": "-0.1029",
+        "usde_price": "0.8967"
       },
       {
         "nav_drawdown_pct": "0.2000",
-        "usde_depeg_pct": "-0.1715",
-        "usde_price": "0.8282"
+        "usde_depeg_pct": "-0.1842",
+        "usde_price": "0.8155"
       },
       {
         "nav_drawdown_pct": "0.5000",
-        "usde_depeg_pct": "-0.3719",
-        "usde_price": "0.6278"
+        "usde_depeg_pct": "-0.5152",
+        "usde_price": "0.4846"
       }
     ]
   },
