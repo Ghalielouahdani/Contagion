@@ -11,3 +11,10 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Wallets imported from the dashboard (POST /api/v1/wallet): local data, not committed. The example stays.
+contracts/fixtures/wallet_*/
+!contracts/fixtures/wallet_cf0a12/
+backend/discovery/cassettes/wallet_*.json
+!backend/discovery/cassettes/wallet_cf0a12.json
+!backend/discovery/cassettes/wallet_cf0a12_wallet.json

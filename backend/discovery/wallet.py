@@ -252,6 +252,8 @@ def build_set(address: str, folder: Path, mode: str = "live", surface: bool = Tr
     live = mode == "live"
     wallet = import_wallet(address, mode, CASSETTES / f"{set_id}_wallet.json", record=live)
     if not wallet.positions:
+        if live:  # nothing to build: keep no recording of it
+            (CASSETTES / f"{set_id}_wallet.json").unlink(missing_ok=True)
         raise ValueError(f"{address}: no Ethena-exposed position found at block {wallet.block}; skipped: {wallet.skipped}")
     ids = {"portfolio_id": f"{set_id}_portfolio", "graph_id": f"graph_{set_id}", "snapshot_id": f"snapshot_{set_id}"}
     graph, snapshot = discover(wallet.portfolio(ids["portfolio_id"]), mode, cassette=CASSETTES / f"{set_id}.json",

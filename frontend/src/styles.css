@@ -1194,6 +1194,34 @@ tbody tr[data-highlighted="true"] {
   cursor: pointer;
 }
 
+.wallet-import {
+  display: grid;
+  gap: 6px;
+}
+
+.wallet-import input {
+  min-height: 34px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--np-line-strong);
+  border-radius: var(--np-radius-pill);
+  background: var(--np-page);
+  color: var(--np-text);
+  font: inherit;
+  font-size: var(--np-size-0);
+}
+
+.wallet-import button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.wallet-import-error {
+  color: var(--np-accent-coral);
+  font-size: var(--np-size-0);
+  overflow-wrap: anywhere;
+}
+
 .contagion-positions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

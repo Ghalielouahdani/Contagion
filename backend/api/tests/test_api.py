@@ -144,3 +144,31 @@ def test_decide_uses_saved_run_and_rejects_cross_portfolio_simulation():
     assert D(body['exit_options'][0]['residual_stress_loss_usd']) == D(impact['conditional_loss_usd'])
     assert not any('Provisional' in warning for warning in body['warnings'])
     assert client.post('/api/v1/decide?set=verified_lending_2026_10_10', json={'simulation_id': risk['simulation_id']}).status_code == 404
+
+
+def test_wallet_import_rejects_a_malformed_address_without_any_network_call(monkeypatch):
+    import backend.api.main as api
+
+    monkeypatch.setattr(api, "build_wallet_set", lambda *a, **k: pytest.fail("must not read the chain"))
+    response = client.post("/api/v1/wallet", json={"address": "0x12"})
+    assert response.status_code == 422 and "40 hexadecimal" in response.json()["detail"]
+
+
+def test_wallet_import_serves_the_built_set(monkeypatch):
+    import backend.api.main as api
+
+    calls = []
+    monkeypatch.setattr(api, "build_wallet_set", lambda address, folder, mode, surface: calls.append(
+        (address, folder.name, mode, surface)) or {"block": 1, "positions": ["p"], "net_equity_usd": "1", "skipped": [], "notes": []})
+    body = client.post("/api/v1/wallet", json={"address": "0xCf0a12CBd8088fc5f84ad431E71787157041cD69"}).json()
+    assert body["set"] == "wallet_cf0a12" and calls == [("0xCf0a12CBd8088fc5f84ad431E71787157041cD69", "wallet_cf0a12", "live", False)]
+
+
+def test_wallet_without_ethena_exposure_is_a_clear_404(monkeypatch):
+    import backend.api.main as api
+
+    def none(*a, **k):
+        raise ValueError("0xabc: no Ethena-exposed position found at block 1; skipped: []")
+    monkeypatch.setattr(api, "build_wallet_set", none)
+    response = client.post("/api/v1/wallet", json={"address": "0x" + "1" * 40})
+    assert response.status_code == 404 and "no Ethena-exposed" in response.json()["detail"]

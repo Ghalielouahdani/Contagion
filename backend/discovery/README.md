@@ -41,6 +41,11 @@ DISCOVERY_LIVE=1 .venv/bin/python -m pytest backend/discovery/tests/test_live.py
 
 ## Import a real wallet
 
+From the dashboard (Engine API mode): type the address in the sidebar under "Our portfolio" and click
+**Analyse wallet**. The API (`POST /api/v1/wallet {address}`) reads it, builds the set `wallet_<first 6 hex>` in about
+30 s and the dashboard switches to it; every view (portfolio, graph, scenarios, decision) then runs on the real
+positions. Imported sets are local (git-ignored), except the committed example below. From the command line:
+
 ```bash
 .venv/bin/python -m backend.discovery wallet --address 0x... --set wallet_<name>     # ~30 s, then pick the set in the dashboard
 .venv/bin/python -m backend.discovery wallet --address 0x... --set wallet_<name> --mode replay   # offline, from its recording

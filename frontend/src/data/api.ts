@@ -60,12 +60,31 @@ export const fixtureSets: Array<{ id: string; description: string }> = Object.en
   })
   .sort((a, b) => a.id.localeCompare(b.id));
 
+/** A set shipped with the app; a wallet imported at runtime exists only on the API. */
+export function isBundledSet(set: string): boolean {
+  return `${FIXTURES}/${set}/manifest.json` in smallFixtures;
+}
+
+// A wallet imported at runtime uses the stress portfolio's scenario presets (backend/discovery/wallet.py copies them).
+const WALLET_PRESETS = "stress_portfolio_01";
+const presetSource = (set: string) => (isBundledSet(set) ? set : WALLET_PRESETS);
+
 /** Only expose presets with both a request and a computed result in the selected set. */
 export function availableScenarios(set: string): ScenarioKind[] {
+  const source = presetSource(set);
   return (Object.keys(fileSuffix) as ScenarioKind[]).filter((kind) =>
-    `${FIXTURES}/${set}/${fileByKind.scenario(kind)}` in smallFixtures &&
-    `${FIXTURES}/${set}/${fileByKind.risk(kind)}` in smallFixtures,
+    `${FIXTURES}/${source}/${fileByKind.scenario(kind)}` in smallFixtures &&
+    `${FIXTURES}/${source}/${fileByKind.risk(kind)}` in smallFixtures,
   );
+}
+
+export type WalletImport = {
+  set: string; address: string; block: number; positions: string[]; net_equity_usd: string; skipped: string[]; notes: string[];
+};
+
+/** Read a real wallet on-chain and run it through every scenario (~30 s); returns the set to select. */
+export function importWallet(address: string): Promise<WalletImport> {
+  return requestJson<WalletImport>("/api/v1/wallet", post({ address }));
 }
 
 // File suffix per scenario in a fixture set (scenario_request<suffix>.json, risk_result<suffix>.json).
@@ -166,8 +185,11 @@ export function presetInputs(scenario: ScenarioKind, set: string): Partial<Scena
 }
 
 function baseScenarioRequest(scenario: ScenarioKind, set: string) {
-  const request = smallFixtures[`${FIXTURES}/${set}/${fileByKind.scenario(scenario)}`];
-  if (!request) throw new Error(`Scenario ${scenario} is unavailable in ${set}`);
+  const source = presetSource(set);
+  const preset = smallFixtures[`${FIXTURES}/${source}/${fileByKind.scenario(scenario)}`];
+  if (!preset) throw new Error(`Scenario ${scenario} is unavailable in ${set}`);
+  const request = source === set ? preset
+    : { ...(preset as object), portfolio_id: `${set}_portfolio`, graph_id: `graph_${set}`, snapshot_id: `snapshot_${set}` };
   return request as {
     schema_version: string; request_id: string; portfolio_id: string; graph_id: string; snapshot_id: string;
     scenario: { scenario_id: ScenarioKind; horizon_days: number; parameters: Record<string, unknown> };

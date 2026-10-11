@@ -67,5 +67,10 @@ def readdress(request: dict, active: ActiveInputs) -> dict:
     return request
 
 
+def forget(set_name: str) -> None:
+    """Drop the active graph and snapshot of one set (its stored files were just rebuilt)."""
+    _active.pop(set_name, None)
+
+
 def reset() -> None:
     _active.clear()

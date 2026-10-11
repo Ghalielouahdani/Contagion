@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import threading
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -29,6 +31,9 @@ from backend.execution.crisis import crisis_plan
 from backend.execution.hedging import kyberswap_quote_source
 from backend.execution.integration import decide as execution_decide
 from backend.api import discovery_state, risk_assistant, risk_news
+from backend.adapters.sources import SourceError
+from backend.discovery.service import DiscoveryError
+from backend.discovery.wallet import build_set as build_wallet_set
 from backend.risk import simulate
 from backend.risk.analytics import analyze
 from backend.risk.analytics.sensitivity import grid
@@ -212,6 +217,28 @@ def post_crisis_advice(body: dict = Body(default={}), set: str | None = Query(No
         return _run(crisis_advise, portfolio, snapshot, request, risk, None, quote_source)
     plan = _run(crisis_plan, portfolio, snapshot, request, risk, True, quote_source)
     return {"plan": plan, "advice": None, "advice_error": None}
+
+
+_wallet_lock = threading.Lock()
+
+
+@app.post("/api/v1/wallet")
+def import_wallet(body: dict = Body(...)) -> dict:
+    """Analyse a real wallet: its positions are read on-chain now, discovered live and run through every
+    scenario, then served as the fixture set wallet_<first 6 hex>. Takes ~30 s. Body: {address}."""
+    address = str(body.get("address", "")).strip()
+    if not re.fullmatch(r"0x[0-9a-fA-F]{40}", address):
+        raise HTTPException(422, "Enter an Ethereum address: 0x followed by 40 hexadecimal characters.")
+    set_name = f"wallet_{address[2:8].lower()}"
+    with _wallet_lock:  # one import at a time: each writes its set folder and recordings
+        try:
+            summary = build_wallet_set(address, CONTRACTS / "fixtures" / set_name, "live", surface=False)
+        except ValueError as exc:  # no Ethena-exposed position, or one the engine cannot value
+            raise HTTPException(404 if "no Ethena-exposed" in str(exc) else 422, str(exc)) from exc
+        except (DiscoveryError, SourceError) as exc:
+            raise HTTPException(502, f"On-chain read failed, try again: {exc}") from exc
+    discovery_state.forget(set_name)
+    return {"set": set_name, "address": address.lower(), **summary}
 
 
 @app.post("/api/v1/assistant")

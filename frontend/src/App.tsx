@@ -50,7 +50,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { createActionRegistry } from "./actions/registry";
 import { RiskEngine } from "./RiskEngine";
@@ -67,6 +67,8 @@ import {
   defaultDataMode,
   defaultFixtureSet,
   fixtureSets,
+  importWallet,
+  isBundledSet,
   loadAppData,
   loadPortfolioData,
   loadRiskAssistantStatus,
@@ -184,6 +186,7 @@ function presetLabel(kind: ScenarioKind, set: string) {
 // "verified_lending_2026_10_10" -> "Verified · lending · 2026-10-10"
 function fixtureSetLabel(id: string) {
   if (id === "stress_portfolio_01") return "Stress portfolio · Ethereum";
+  if (id.startsWith("wallet_")) return `Real wallet · 0x${id.slice(7)}…`;
   const date = id.match(/(\d{4})_(\d{2})_(\d{2})$/);
   const words = id.replace(/_?\d{4}_\d{2}_\d{2}$/, "").replace(/_\d+$/, "").split("_");
   const label = words.map((word, i) => (i === 0 ? word[0].toUpperCase() + word.slice(1) : word)).join(" · ");
@@ -258,6 +261,10 @@ function App() {
   const [scenario, setScenario] = useState<ScenarioKind>("usde_depeg");
   const [mode, setMode] = useState<DataMode>(defaultDataMode);
   const [fixtureSet, setFixtureSet] = useState(defaultFixtureSet);
+  // Wallets imported at runtime live on the API only; remembered in this browser for convenience.
+  const [importedSets, setImportedSets] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("imported-wallets") ?? "[]"); } catch { return []; }
+  });
   const [theme, setTheme] = useState<Theme>("light");
   const [selectedPosition, setSelectedPosition] = useState("aave_01");
   const [baselinePosition, setBaselinePosition] = useState("aave_01");
@@ -445,6 +452,15 @@ function App() {
   function changeMode(next: DataMode) {
     setHasRun(false);
     setMode(next);
+    if (next === "fixture" && !isBundledSet(fixtureSet)) changeFixtureSet(defaultFixtureSet); // no offline copy
+  }
+
+  function addImportedWallet(set: string) {
+    const next = [...new Set([...importedSets, set])];
+    setImportedSets(next);
+    try { localStorage.setItem("imported-wallets", JSON.stringify(next)); } catch { /* storage unavailable */ }
+    if (mode === "fixture") setMode("api"); // the imported wallet exists only on the API
+    changeFixtureSet(set);
   }
 
   function changeFixtureSet(set: string) {
@@ -489,6 +505,8 @@ function App() {
         setMode={changeMode}
         fixtureSet={fixtureSet}
         setFixtureSet={changeFixtureSet}
+        importedSets={importedSets}
+        onWalletImported={addImportedWallet}
         theme={theme}
         setTheme={setTheme}
         health={data?.health}
@@ -500,7 +518,7 @@ function App() {
             <p className="eyebrow">DeFi Contagion Explorer</p>
             <h1>{viewMeta[view].label}</h1>
             <p className="lead">{isBaselineView ? (view === "portfolio" ? "Original holdings, debt and equity at the recorded market snapshot." : "Original dependencies between positions, assets, protocols, oracles and exit venues.") : scenarioCopy[scenario].summary}</p>
-            <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.{fixtureSet === "stress_portfolio_01" ? " Synthetic allocations on real markets · recorded market observations." : ""}</p>
+            <p className="microcopy">Portfolio: {fixtureSetLabel(fixtureSet)} · All scenarios use these same positions.{fixtureSet === "stress_portfolio_01" ? " Synthetic allocations on real markets · recorded market observations." : ""}{fixtureSet.startsWith("wallet_") ? " Real wallet: positions and markets read on-chain at import." : ""}</p>
             {!isBaselineView && data && hasPendingChanges ? <p className="microcopy">Parameters changed. Click Run scenario to calculate the impact. Results still show the last run: {submitted.customTitle ?? scenarioCopy[submitted.scenario].title}.</p> : null}
           </div>
           <div className="topbar-actions">
@@ -644,6 +662,8 @@ function Sidebar({
   setMode,
   fixtureSet,
   setFixtureSet,
+  importedSets,
+  onWalletImported,
   theme,
   setTheme,
   health,
@@ -654,6 +674,8 @@ function Sidebar({
   setMode: (mode: DataMode) => void;
   fixtureSet: string;
   setFixtureSet: (set: string) => void;
+  importedSets: string[];
+  onWalletImported: (set: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   health?: AppData["health"];
@@ -717,12 +739,14 @@ function Sidebar({
           aria-label="Data set"
           title={fixtureSets.find((set) => set.id === fixtureSet)?.description}
         >
-          {fixtureSets.filter((set) => set.id === fixtureSet).map((set) => (
-            <option key={set.id} value={set.id}>
-              {fixtureSetLabel(set.id)}
+          {[...new Set([defaultFixtureSet, ...fixtureSets.map((set) => set.id).filter((id) => id.startsWith("wallet_")),
+            ...importedSets, fixtureSet])].map((id) => (
+            <option key={id} value={id}>
+              {id === defaultFixtureSet ? "Our portfolio" : fixtureSetLabel(id)}
             </option>
           ))}
         </select>
+        <WalletImporter onImported={onWalletImported} />
         <button className="mode-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
           {theme === "light" ? <Sun size={14} /> : <Moon size={14} />}
           {theme}
@@ -730,6 +754,39 @@ function Sidebar({
         {health?.mockedFixtures.length ? <span className="status-line">{health.mockedFixtures.length} mock</span> : null}
       </div>
     </aside>
+  );
+}
+
+/** Analyse a real wallet: its positions are read on-chain by the API, then every scenario runs on them. */
+function WalletImporter({ onImported }: { onImported: (set: string) => void }) {
+  const [address, setAddress] = useState("");
+  const [state, setState] = useState<{ busy: boolean; error?: string; note?: string }>({ busy: false });
+  const valid = /^0x[0-9a-fA-F]{40}$/.test(address.trim());
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!valid || state.busy) return;
+    setState({ busy: true });
+    try {
+      const result = await importWallet(address.trim());
+      setState({ busy: false, note: `${result.positions.length} positions read at block ${result.block}` +
+        (result.skipped.length ? ` · ${result.skipped.length} outside the Ethena scope` : "") });
+      onImported(result.set);
+    } catch (error) {
+      setState({ busy: false, error: (error as Error).message });
+    }
+  }
+
+  return (
+    <form className="wallet-import" onSubmit={submit}>
+      <input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Real wallet 0x…"
+        aria-label="Ethereum address to analyse" spellCheck={false} disabled={state.busy} />
+      <button className="mode-toggle" type="submit" disabled={!valid || state.busy}>
+        {state.busy ? "Reading on-chain… (~30 s)" : "Analyse wallet"}
+      </button>
+      {state.error ? <span className="wallet-import-error">{state.error}</span> : null}
+      {state.note ? <span className="status-line">{state.note}</span> : null}
+    </form>
   );
 }
 
