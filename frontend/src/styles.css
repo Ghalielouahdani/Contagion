@@ -781,11 +781,13 @@ p,
     transform var(--np-medium) var(--np-spring);
 }
 
-.stat:hover {
+.stat:hover,
+.stat[data-highlighted="true"] {
   background: color-mix(in srgb, var(--np-accent-soft) 28%, transparent);
 }
 
-.stat:hover::before {
+.stat:hover::before,
+.stat[data-highlighted="true"]::before {
   opacity: 1;
   transform: scaleY(1);
 }
@@ -868,6 +870,7 @@ p,
 .position-card,
 .preset-card,
 .run-card {
+  position: relative;
   min-width: 0;
   min-height: 268px;
   display: flex;
@@ -881,6 +884,7 @@ p,
     background var(--np-fast) ease,
     transform var(--np-fast) ease,
     box-shadow var(--np-fast) ease;
+  overflow: hidden;
 }
 
 .position-detail-card {
@@ -913,8 +917,33 @@ p,
   background: var(--np-accent);
 }
 
+.position-detail-card::after,
+.position-card::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background:
+    linear-gradient(90deg, var(--np-risk-low), var(--np-risk-mid), var(--np-risk-high)) left / var(--stress-pct, 0%) 100% no-repeat,
+    color-mix(in srgb, var(--np-line) 82%, transparent);
+  transform-origin: left;
+  transition:
+    height var(--np-fast) ease,
+    filter var(--np-fast) ease,
+    background-size var(--np-medium) var(--np-spring);
+}
+
 .position-detail-card[data-highlighted="true"] {
   transform: translateY(-2px);
+}
+
+.position-detail-card[data-highlighted="true"]::after,
+.position-card:hover::after,
+.position-card[data-highlighted="true"]::after {
+  height: 5px;
+  filter: saturate(1.12);
 }
 
 .position-detail-copy {
@@ -1230,15 +1259,28 @@ td:first-child {
 }
 
 tbody tr {
+  cursor: pointer;
   transition:
     background var(--np-fast) ease,
-    color var(--np-fast) ease;
+    color var(--np-fast) ease,
+    box-shadow var(--np-fast) ease,
+    transform var(--np-fast) ease;
 }
 
 tbody tr:hover,
 tbody tr[data-selected="true"],
 tbody tr[data-highlighted="true"] {
   background: color-mix(in srgb, var(--np-accent-soft) 58%, transparent);
+  box-shadow: inset 2px 0 0 var(--np-accent);
+}
+
+tbody tr:hover {
+  transform: translateX(2px);
+}
+
+tbody tr[data-selected="true"] td:first-child,
+tbody tr[data-highlighted="true"] td:first-child {
+  color: var(--np-accent);
 }
 
 .graph-layout,

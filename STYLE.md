@@ -72,6 +72,9 @@ Dark mode:
 - The positions area is master-detail: one large selected position panel, three smaller peer cards, and temporary hover emphasis only on the card under interaction.
 - Selected state uses the single mineral-green accent through surface tint, a hairline accent rule and a restrained active shadow.
 - Figures use tabular numerals and animated count-up for legibility and polish.
+- Each position card carries a low-profile stress rail derived from conditional loss over gross exposure. It adds risk texture without changing compact card dimensions.
+- Cross-highlighting links KPI hover, selected detail card, peer cards and table rows. Nothing should feel stuck; hover is temporary, selection is explicit.
+- Table rows are clickable financial records: quiet by default, accent rail and ink shift on hover/selection.
 - The chosen font pairing is:
   - Display: `Newsreader`, then system serif fallbacks for high-end editorial tension.
   - UI/text: `IBM Plex Sans`, then `Inter`/system for precise controls and dense financial labels.

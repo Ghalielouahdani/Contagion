@@ -1166,6 +1166,7 @@ function PortfolioDashboard({
         analytics={data.analytics}
         analyticsIsPreset={data.analyticsIsPreset}
         selectedPosition={selectedPortfolio.position_id}
+        hoveredPosition={hoveredPosition}
         setHoveredPosition={setHoveredPosition}
       />
       <motion.section className="position-master-detail" aria-label="Position selector" variants={riseItem}>
@@ -1174,6 +1175,7 @@ function PortfolioDashboard({
           className="position-detail-card"
           data-selected="true"
           data-highlighted={hoveredPosition === selectedPortfolio.position_id}
+          style={{ ["--stress-pct" as string]: stressShare(selectedPortfolio, selectedRisk) }}
           layout
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1215,6 +1217,7 @@ function PortfolioDashboard({
               className="position-card position-card--compact"
               data-selected="false"
               data-highlighted={hoveredPosition === position.position_id}
+              style={{ ["--stress-pct" as string]: stressShare(position, risk) }}
               data-tooltip={`Select ${compactId(position.position_id)} as the active position.`}
               aria-label={`Select ${compactId(position.position_id)}`}
               layout
@@ -1317,6 +1320,7 @@ function SummaryStrip({
   analytics,
   analyticsIsPreset,
   selectedPosition,
+  hoveredPosition,
   setHoveredPosition,
 }: {
   portfolio: Portfolio;
@@ -1324,6 +1328,7 @@ function SummaryStrip({
   analytics: AppData["analytics"];
   analyticsIsPreset: boolean;
   selectedPosition: string;
+  hoveredPosition: string | null;
   setHoveredPosition: (id: string | null) => void;
 }) {
   const headline = analytics?.headline;
@@ -1334,14 +1339,15 @@ function SummaryStrip({
   };
   return (
     <motion.section className="summary-strip" variants={staggerGroup}>
-      <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
-      <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
-      <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" highlightId={selectedPosition} setHoveredPosition={setHoveredPosition} />
+      <Stat label="Gross exposure" value={kpiMoney(portfolio.totals.gross_value_usd)} detail="not capital" highlightId={selectedPosition} highlighted={hoveredPosition === selectedPosition} setHoveredPosition={setHoveredPosition} />
+      <Stat label="Debt" value={kpiMoney(portfolio.totals.debt_value_usd)} detail="borrow liabilities" highlightId={selectedPosition} highlighted={hoveredPosition === selectedPosition} setHoveredPosition={setHoveredPosition} />
+      <Stat label="Net equity" value={kpiMoney(portfolio.totals.net_equity_usd)} detail="capital at risk" highlightId={selectedPosition} highlighted={hoveredPosition === selectedPosition} setHoveredPosition={setHoveredPosition} />
       <Stat
         label="Conditional loss"
         value={kpiMoney(risk.portfolio.total_conditional_loss_usd)}
         detail={risk.portfolio.aggregation_status}
         highlightId={selectedPosition}
+        highlighted={hoveredPosition === selectedPosition}
         setHoveredPosition={setHoveredPosition}
       />
       {headline ? (
@@ -1366,6 +1372,13 @@ function SummaryStrip({
       ) : null}
     </motion.section>
   );
+}
+
+function stressShare(position: PortfolioPosition, risk?: RiskPosition) {
+  const gross = Number(position.gross_value_usd);
+  const loss = Math.abs(Number(risk?.conditional_loss_usd ?? 0));
+  if (!Number.isFinite(gross) || gross <= 0 || !Number.isFinite(loss)) return "0%";
+  return `${Math.min(100, (loss / gross) * 100).toFixed(2)}%`;
 }
 
 function DependencyGraphView({
@@ -2928,6 +2941,7 @@ function Stat({
   detail,
   valueKind = "figure",
   highlightId,
+  highlighted = false,
   setHoveredPosition,
 }: {
   label: string;
@@ -2935,12 +2949,14 @@ function Stat({
   detail?: string;
   valueKind?: "figure" | "text";
   highlightId?: string;
+  highlighted?: boolean;
   setHoveredPosition?: (id: string | null) => void;
 }) {
   return (
     <motion.div
       className="stat"
       data-value-kind={valueKind}
+      data-highlighted={highlighted}
       data-tooltip={detail ? `${label}: ${value}. ${detail}` : `${label}: ${value}`}
       variants={riseItem}
       onMouseEnter={() => {
