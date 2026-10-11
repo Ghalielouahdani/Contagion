@@ -77,3 +77,46 @@ def _proxy_depth(quotes: list[dict]) -> float:
             size = float(q["size_usd"])
             return size * (1 - loss) / loss
     return float(quotes[-1]["size_usd"]) * 1000
+
+
+PENDLE_SIZES_USD = (250_000, 500_000, 1_000_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000)
+
+
+def _pendle_route(pt: str, stable: str, amount_raw: int) -> int:
+    registry = _registry()
+    url = registry["protocols"]["pendle"]["convert_api"].format(chain_id=1)
+    query = urllib.parse.urlencode({
+        "receiver": registry["aggregator"]["quote_receiver"], "slippage": "0.01", "enableAggregator": "true",
+        "tokensIn": pt, "tokensOut": stable, "amountsIn": str(amount_raw),
+    })
+    request = urllib.request.Request(f"{url}?{query}", headers={"user-agent": "defi-contagion-discovery/0.1"})
+    with urllib.request.urlopen(request, timeout=40) as response:
+        return int(json.loads(response.read())["routes"][0]["outputs"][0]["amount"])
+
+
+def pendle_quote_curve(pt_address: str, pt_symbol: str, pt_price_usd: float, stable: str = "USDC",
+                       stable_price_usd: float = 1.0, sizes_usd: tuple[int, ...] = PENDLE_SIZES_USD) -> dict:
+    """An exit_venues entry from Pendle router quotes (PT -> stable), the route P1's venues adapter uses.
+
+    The Pendle AMM concentrates liquidity around the implied rate, so a constant-product proxy on total pool
+    liquidity overstates the impact by orders of magnitude. Sizes stop at the first one the router cannot route;
+    beyond the largest quote the engine extrapolates and flags it."""
+    buy = _registry()["tokens"][stable]["address"]
+    quotes = []
+    for size_usd in sizes_usd:
+        size_tokens = size_usd / pt_price_usd
+        try:
+            proceeds = _pendle_route(pt_address, buy, int(size_tokens * 10**18)) / 10**6 * stable_price_usd
+        except Exception:  # noqa: BLE001 - no route at this size: the curve ends here
+            break
+        value = size_tokens * pt_price_usd
+        quotes.append({"size_tokens": f"{size_tokens:.2f}", "size_usd": f"{value:.2f}", "proceeds_usd": f"{proceeds:.2f}",
+                       "loss_pct": f"{max(0.0, (1 - proceeds / value) * 100):.4f}", "positions": []})
+        time.sleep(0.3)
+    if not quotes:
+        raise RuntimeError(f"no Pendle route for {pt_symbol}")
+    return {
+        "asset": pt_symbol, "quote_method": "executable_quote", "effective_depth_usd": f"{_proxy_depth(quotes):.2f}",
+        "fee_rate": "0", "gas_usd": "0", "venue_address": None, "source_type": "observed",
+        "field_sources": {"effective_depth_usd": "derived", "fee_rate": "derived", "gas_usd": "assumed"}, "quotes": quotes,
+    }

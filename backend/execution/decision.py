@@ -26,12 +26,16 @@ def ratio(x):  # arrondi 4 décimales
     return str(x.quantize(D("0.0001"), rounding=ROUND_HALF_UP))
 
 
-def annual_carry(position, yields):
-    """Rendement net annuel en $ : garantie/token × APY − dette × APY d'emprunt."""
+def annual_carry(position, yields, asset_yields=None):
+    """Rendement net annuel en $ : garantie/token × APY − dette × APY d'emprunt.
+
+    La garantie rapporte aussi son rendement propre (sUSDe via son taux de change), même si le protocole
+    de prêt ne verse rien dessus : `asset_yields` du snapshot."""
     gross = D(position["gross_value_usd"])
     debt = D(position["debt_value_usd"])
     if position["position_type"] == "collateralized_borrow":
-        return gross * D(yields["collateral_supply_apy"]) - debt * D(yields["debt_borrow_apy"])
+        intrinsic = D((asset_yields or {}).get(position.get("collateral_asset"), {}).get("value", "0"))
+        return gross * (D(yields["collateral_supply_apy"]) + intrinsic) - debt * D(yields["debt_borrow_apy"])
     return gross * D(yields["token_apy"])
 
 
@@ -54,7 +58,7 @@ def decide(position, snapshot, conditional_loss_usd, horizon_days, probability=N
     #  - avec dette : x × garantie (la dette x × debt est remboursée en USDC, sans impact de prix).
     gross = D(position["gross_value_usd"])
     loss0 = D(conditional_loss_usd)
-    carry_h = annual_carry(position, snapshot["yields"][pid]) * D(horizon_days) / D(365)
+    carry_h = annual_carry(position, snapshot["yields"][pid], snapshot.get("asset_yields")) * D(horizon_days) / D(365)
 
     # Une cotation par taille de sortie ; les tailles sans prix sont écartées (jamais de coût inventé).
     quotes = {x: estimator.quote(venue_id, venue, x * gross) for x in FRACTIONS[1:]}

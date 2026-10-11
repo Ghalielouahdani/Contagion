@@ -12,10 +12,10 @@
     "scenario_loss_pct_nav": "0.1613",
     "usde_exposure_usd": "10002863.63",
     "usde_effective_leverage": "1.6126",
-    "derisking_savings_usd": "262845.01",
-    "derisking_savings_bps_nav": "423.7407",
+    "derisking_savings_usd": "57887.83",
+    "derisking_savings_bps_nav": "93.3228",
     "liquidation_protection_net_benefit_usd": "0.00",
-    "targeted_plan_break_even_probability": "0.0049",
+    "targeted_plan_break_even_probability": "0.0033",
     "top_risk_driver": "Loss at the shocked node"
   },
   "factor_exposure": [
@@ -161,24 +161,24 @@
         "pendle_01": "0.5000"
       },
       "loss_reduction_usd": "500143.18",
-      "trading_cost_usd": "264952.93",
-      "foregone_yield_usd": "355.57",
-      "total_cost_usd": "265308.50",
-      "break_even_probability": "0.5305"
+      "trading_cost_usd": "57803.44",
+      "foregone_yield_usd": "1752.83",
+      "total_cost_usd": "59556.27",
+      "break_even_probability": "0.1191"
     },
     "targeted": {
       "plan": "targeted",
       "fractions": {
         "ethena_susde_01": "0.0000",
         "aave_01": "1.0000",
-        "morpho_01": "0.6500",
-        "pendle_01": "0.0500"
+        "morpho_01": "0.6000",
+        "pendle_01": "0.1500"
       },
-      "loss_reduction_usd": "505149.61",
-      "trading_cost_usd": "4876.74",
-      "foregone_yield_usd": "-2413.25",
-      "total_cost_usd": "2463.49",
-      "break_even_probability": "0.0049"
+      "loss_reduction_usd": "510094.69",
+      "trading_cost_usd": "2132.95",
+      "foregone_yield_usd": "-464.52",
+      "total_cost_usd": "1668.44",
+      "break_even_probability": "0.0033"
     },
     "full_exit": {
       "plan": "full_exit",
@@ -189,19 +189,19 @@
         "pendle_01": "1.0000"
       },
       "loss_reduction_usd": "1000286.36",
-      "trading_cost_usd": "1349671.76",
-      "foregone_yield_usd": "711.14",
-      "total_cost_usd": "1350382.90",
-      "break_even_probability": "1.3500"
+      "trading_cost_usd": "664926.85",
+      "foregone_yield_usd": "3505.66",
+      "total_cost_usd": "668432.51",
+      "break_even_probability": "0.6682"
     },
-    "savings_usd": "262845.01",
-    "savings_pct_of_uniform_cost": "0.9907",
-    "savings_bps_nav": "423.7407",
+    "savings_usd": "57887.83",
+    "savings_pct_of_uniform_cost": "0.9720",
+    "savings_bps_nav": "93.3228",
     "cost_per_usd_protected": {
       "ethena_susde_01": "0.0184",
       "aave_01": "-0.0026",
-      "morpho_01": "0.4399",
-      "pendle_01": "3.4522"
+      "morpho_01": "0.4492",
+      "pendle_01": "0.0229"
     }
   },
   "liquidation_protection": [],

@@ -83,6 +83,14 @@ def asset_price(symbol: str, state: MarketState, market: dict | None = None):
     return price * state.fundamental_factor
 
 
+def collateral_yield_apy(position: Position, snapshot: Snapshot) -> float:
+    """Yield earned by a borrow position's collateral: what the lending protocol pays on it (often 0 on Morpho)
+    plus the asset's own yield (sUSDe accrues through its exchange rate). Not for carry_squeeze, which reprices
+    sUSDe itself over the horizon."""
+    supplied = snapshot.yields.get(position.position_id, {}).get("collateral_supply_apy", 0.0)
+    return supplied + snapshot.asset_yields.get(position.collateral_asset or "", 0.0)
+
+
 def position_values(position: Position, state: MarketState, snapshot: Snapshot) -> tuple[float, float]:
     """(gross mark value, debt value) of a position in a given market state."""
     market = snapshot.market(position.position_id)

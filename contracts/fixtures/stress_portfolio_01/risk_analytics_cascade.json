@@ -12,10 +12,10 @@
     "scenario_loss_pct_nav": "0.5332",
     "usde_exposure_usd": "2299104.86",
     "usde_effective_leverage": "0.9056",
-    "derisking_savings_usd": "0.00",
-    "derisking_savings_bps_nav": "0.0000",
-    "liquidation_protection_net_benefit_usd": "11578.93",
-    "targeted_plan_break_even_probability": "0.0098",
+    "derisking_savings_usd": "87.59",
+    "derisking_savings_bps_nav": "0.3450",
+    "liquidation_protection_net_benefit_usd": "11432.05",
+    "targeted_plan_break_even_probability": "0.0078",
     "top_risk_driver": "USDe depeg size"
   },
   "factor_exposure": [
@@ -171,26 +171,26 @@
         "lend_usde_01": "0.5000"
       },
       "loss_reduction_usd": "676839.94",
-      "trading_cost_usd": "6187.59",
-      "foregone_yield_usd": "423.11",
-      "total_cost_usd": "6610.70",
-      "break_even_probability": "0.0098"
+      "trading_cost_usd": "440.12",
+      "foregone_yield_usd": "655.99",
+      "total_cost_usd": "1096.11",
+      "break_even_probability": "0.0016"
     },
     "targeted": {
       "plan": "targeted",
       "fractions": {
-        "ethena_susde_01": "0.5000",
-        "aave_01": "0.5000",
-        "morpho_01": "0.5000",
-        "pendle_01": "0.5000",
-        "lend_susde_01": "0.5000",
-        "lend_usde_01": "0.5000"
+        "ethena_susde_01": "1.0000",
+        "aave_01": "1.0000",
+        "morpho_01": "1.0000",
+        "pendle_01": "1.0000",
+        "lend_susde_01": "0.0000",
+        "lend_usde_01": "0.0000"
       },
-      "loss_reduction_usd": "676839.94",
-      "trading_cost_usd": "6187.59",
-      "foregone_yield_usd": "423.11",
-      "total_cost_usd": "6610.70",
-      "break_even_probability": "0.0098"
+      "loss_reduction_usd": "128626.73",
+      "trading_cost_usd": "829.07",
+      "foregone_yield_usd": "179.46",
+      "total_cost_usd": "1008.53",
+      "break_even_probability": "0.0078"
     },
     "full_exit": {
       "plan": "full_exit",
@@ -203,19 +203,19 @@
         "lend_usde_01": "1.0000"
       },
       "loss_reduction_usd": "1353679.87",
-      "trading_cost_usd": "22608.98",
-      "foregone_yield_usd": "846.22",
-      "total_cost_usd": "23455.20",
-      "break_even_probability": "0.0173"
+      "trading_cost_usd": "829.07",
+      "foregone_yield_usd": "1311.98",
+      "total_cost_usd": "2141.05",
+      "break_even_probability": "0.0016"
     },
-    "savings_usd": "0.00",
-    "savings_pct_of_uniform_cost": "0.0000",
-    "savings_bps_nav": "0.0000",
+    "savings_usd": "87.59",
+    "savings_pct_of_uniform_cost": "0.0799",
+    "savings_bps_nav": "0.3450",
     "cost_per_usd_protected": {
       "ethena_susde_01": "0.0277",
       "aave_01": "-0.0119",
-      "morpho_01": "-0.0029",
-      "pendle_01": "1.4687",
+      "morpho_01": "0.0096",
+      "pendle_01": "0.0271",
       "lend_susde_01": "0.0008",
       "lend_usde_01": "0.0011"
     }
@@ -226,10 +226,10 @@
       "liquidation_penalty_usd": "11545.18",
       "preemptive": {
         "deleverage_usd": "157914.15",
-        "cost_usd": "-33.75",
+        "cost_usd": "113.13",
         "penalty_avoided_usd": "11545.18",
         "mark_loss_avoided_usd": "8088.63",
-        "net_benefit_usd": "11578.93"
+        "net_benefit_usd": "11432.05"
       },
       "during_oracle_lag": null
     }
@@ -267,13 +267,13 @@
         "base_loss_usd": "1353679.87"
       },
       {
-        "assumption": "lend_susde_01 LLTV",
-        "target": "lend_susde_01.lltv",
+        "assumption": "morpho_01 LLTV",
+        "target": "morpho_01.lltv",
         "low_value": "0.8650",
         "high_value": "0.9450",
         "loss_at_low_usd": "1353679.87",
-        "loss_at_high_usd": "506550.20",
-        "swing_usd": "847129.68",
+        "loss_at_high_usd": "495005.02",
+        "swing_usd": "858674.86",
         "base_loss_usd": "1353679.87"
       },
       {
@@ -347,16 +347,6 @@
         "base_loss_usd": "1353679.87"
       },
       {
-        "assumption": "morpho_01 LLTV",
-        "target": "morpho_01.lltv",
-        "low_value": "0.8650",
-        "high_value": "0.9450",
-        "loss_at_low_usd": "1353679.87",
-        "loss_at_high_usd": "1342134.69",
-        "swing_usd": "11545.18",
-        "base_loss_usd": "1353679.87"
-      },
-      {
         "assumption": "PT implied yield shock",
         "target": "pt_implied_apy_shock",
         "low_value": "0.0000",
@@ -391,6 +381,16 @@
         "target": "aave_01.liquidation_threshold",
         "low_value": "0.8800",
         "high_value": "0.9600",
+        "loss_at_low_usd": "1353679.87",
+        "loss_at_high_usd": "1353679.87",
+        "swing_usd": "0.00",
+        "base_loss_usd": "1353679.87"
+      },
+      {
+        "assumption": "lend_susde_01 LLTV",
+        "target": "lend_susde_01.lltv",
+        "low_value": "0.8650",
+        "high_value": "0.9450",
         "loss_at_low_usd": "1353679.87",
         "loss_at_high_usd": "1353679.87",
         "swing_usd": "0.00",

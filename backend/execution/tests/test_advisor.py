@@ -226,3 +226,12 @@ def test_the_ai_is_given_the_loss_mechanism_not_only_totals():
     assert all(D(v) != 0 for v in morpho["loss_components"].values())
     assert context["cascade"]["amplification"] is not None  # the feedback loop it must explain
     assert "total_including_incurred_usd" in system and "loss_components" in system
+
+
+def test_gemini_request_is_deterministic(monkeypatch):
+    import httpx
+
+    sent = {}
+    monkeypatch.setattr(httpx, "post", lambda url, **k: sent.update(k["json"]) or httpx.Response(500))
+    advise(*inputs(), llm=GeminiClient(api_key="test-key", model="gemini-test"))
+    assert sent["generationConfig"]["temperature"] == 0 and "seed" in sent["generationConfig"]

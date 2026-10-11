@@ -107,14 +107,22 @@ def marginal_discount(venue: Venue, sold: float, depth_factor: float) -> float:
 def collect_buckets(portfolio: Portfolio, snapshot: Snapshot, pass_through_override: float | None) -> list[Bucket]:
     buckets: list[Bucket] = []
     covered: set[tuple[str, str]] = set()  # (collateral, loan) pairs with borrower data
+    # Several positions can sit in the same real market (a fund borrowing and lending on one Morpho market):
+    # its borrowers are counted once, keyed by the portfolio's market id.
+    market_ids = {p.position_id: p.market_id for p in portfolio.positions if p.market_id}
+    seen_markets: set[str] = set()
     for key, market in snapshot.markets.items():
         asset, rows = market.get("collateral_asset"), market_buckets(market)
         if asset not in CASCADE_ASSETS or rows is None:
             continue
+        identity = market_ids.get(key, key)
+        if identity in seen_markets:
+            continue
+        seen_markets.add(identity)
         covered.add((asset, market.get("loan_asset", "USDC")))
         for debt, ltv in rows:
             if debt > 0 and ltv > 0:
-                buckets.append(_bucket(key, asset, debt, debt / ltv, market, pass_through_override, "market"))
+                buckets.append(_bucket(identity, asset, debt, debt / ltv, market, pass_through_override, "market"))
     for position in portfolio.positions:
         market = snapshot.market(position.position_id)
         if (not position.is_borrow or market is None or position.collateral_asset not in CASCADE_ASSETS
@@ -264,7 +272,7 @@ def lender_losses(result: CascadeResult, portfolio: Portfolio, snapshot: Snapsho
         if not is_lender(position) or market is None or market.get("total_supply_assets") in (None, "0"):
             continue
         share = min(position.quantity / float(market["total_supply_assets"]), 1.0)
-        bad, under = result.market_losses(position.position_id)
+        bad, under = result.market_losses(position.market_id or position.position_id)
         out[position.position_id] = (share * bad, share * under)
     return out
 

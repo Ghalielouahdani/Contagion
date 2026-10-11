@@ -146,7 +146,14 @@ function VerdictBody({ plan, advice, mode }: { plan: CrisisPlan; advice: ReturnT
         <p>
           Shocked in this scenario: {Object.keys(plan.hedging.shocked_assets).join(", ") || "none"}. Usable to park proceeds:{" "}
           {plan.hedging.assets.filter((a) => a.usable_as_hedge).map((a) => a.asset).join(", ") || "none priced"}.
-          {plan.hedging.unpriced_instruments?.length ? ` Not priced: ${plan.hedging.unpriced_instruments.join(", ")}.` : ""}
+          {plan.hedging.unpriced_instruments?.length ? <>
+            {" Not priced: "}
+            {plan.hedging.unpriced_instruments.map((item, index) => (
+              <span key={item.instrument} title={item.why_unpriced}>
+                {index > 0 ? ", " : ""}{item.instrument}
+              </span>
+            ))}.
+          </> : null}
         </p>
         {plan.warnings.map((w) => <p key={w} className="microcopy">{w}</p>)}
       </section>

@@ -8,14 +8,14 @@
   "currency": "USD",
   "headline": {
     "nav_usd": "2538635.91",
-    "scenario_loss_usd": "216434.63",
-    "scenario_loss_pct_nav": "0.0853",
+    "scenario_loss_usd": "133119.30",
+    "scenario_loss_pct_nav": "0.0524",
     "usde_exposure_usd": "2299104.86",
     "usde_effective_leverage": "0.9056",
-    "derisking_savings_usd": "1994.51",
-    "derisking_savings_bps_nav": "7.8566",
+    "derisking_savings_usd": "626.66",
+    "derisking_savings_bps_nav": "2.4685",
     "liquidation_protection_net_benefit_usd": "0.00",
-    "targeted_plan_break_even_probability": "0.0822",
+    "targeted_plan_break_even_probability": "0.0393",
     "top_risk_driver": "Liquidity lost in the crisis"
   },
   "factor_exposure": [
@@ -159,7 +159,7 @@
   },
   "derisking": {
     "target_loss_reduction_pct": "0.5000",
-    "stress_loss_usd": "106864.56",
+    "stress_loss_usd": "23549.22",
     "uniform": {
       "plan": "uniform",
       "fractions": {
@@ -170,27 +170,27 @@
         "lend_susde_01": "0.5000",
         "lend_usde_01": "0.5000"
       },
-      "loss_reduction_usd": "53432.28",
-      "trading_cost_usd": "6187.59",
-      "foregone_yield_usd": "423.11",
-      "total_cost_usd": "6610.70",
-      "break_even_probability": "0.1237"
+      "loss_reduction_usd": "11774.61",
+      "trading_cost_usd": "440.12",
+      "foregone_yield_usd": "655.99",
+      "total_cost_usd": "1096.11",
+      "break_even_probability": "0.0931"
     },
     "targeted": {
       "plan": "targeted",
       "fractions": {
-        "ethena_susde_01": "1.0000",
+        "ethena_susde_01": "0.0500",
         "aave_01": "0.0000",
         "morpho_01": "1.0000",
-        "pendle_01": "0.4000",
+        "pendle_01": "0.0000",
         "lend_susde_01": "0.0000",
         "lend_usde_01": "0.0000"
       },
-      "loss_reduction_usd": "56179.04",
-      "trading_cost_usd": "4389.13",
-      "foregone_yield_usd": "227.05",
-      "total_cost_usd": "4616.18",
-      "break_even_probability": "0.0822"
+      "loss_reduction_usd": "11933.78",
+      "trading_cost_usd": "333.65",
+      "foregone_yield_usd": "135.80",
+      "total_cost_usd": "469.45",
+      "break_even_probability": "0.0393"
     },
     "full_exit": {
       "plan": "full_exit",
@@ -202,20 +202,20 @@
         "lend_susde_01": "1.0000",
         "lend_usde_01": "1.0000"
       },
-      "loss_reduction_usd": "106864.56",
-      "trading_cost_usd": "22608.98",
-      "foregone_yield_usd": "846.22",
-      "total_cost_usd": "23455.20",
-      "break_even_probability": "0.2195"
+      "loss_reduction_usd": "23549.22",
+      "trading_cost_usd": "829.07",
+      "foregone_yield_usd": "1311.98",
+      "total_cost_usd": "2141.05",
+      "break_even_probability": "0.0909"
     },
-    "savings_usd": "1994.51",
-    "savings_pct_of_uniform_cost": "0.3017",
-    "savings_bps_nav": "7.8566",
+    "savings_usd": "626.66",
+    "savings_pct_of_uniform_cost": "0.5717",
+    "savings_bps_nav": "2.4685",
     "cost_per_usd_protected": {
       "ethena_susde_01": "0.0626",
       "aave_01": "-1.1721",
-      "morpho_01": "-0.0095",
-      "pendle_01": "0.2654",
+      "morpho_01": "0.0315",
+      "pendle_01": "1.3425",
       "lend_susde_01": null,
       "lend_usde_01": null
     }
@@ -228,100 +228,100 @@
         "target": "exit_liquidity_reduction_pct",
         "low_value": "0.6000",
         "high_value": "0.9200",
-        "loss_at_low_usd": "71487.75",
-        "loss_at_high_usd": "890812.08",
-        "swing_usd": "819324.33",
-        "base_loss_usd": "216434.63"
+        "loss_at_low_usd": "23034.53",
+        "loss_at_high_usd": "750444.26",
+        "swing_usd": "727409.73",
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "venue:susde_usdc depth",
         "target": "venue:susde_usdc",
         "low_value": "2.0000",
         "high_value": "0.5000",
-        "loss_at_low_usd": "106864.56",
-        "loss_at_high_usd": "653543.89",
+        "loss_at_low_usd": "23549.22",
+        "loss_at_high_usd": "570228.55",
         "swing_usd": "546679.33",
-        "base_loss_usd": "216434.63"
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "venue:usde_usdc depth",
         "target": "venue:usde_usdc",
         "low_value": "2.0000",
         "high_value": "0.5000",
-        "loss_at_low_usd": "216044.94",
-        "loss_at_high_usd": "395627.13",
+        "loss_at_low_usd": "132729.61",
+        "loss_at_high_usd": "312311.80",
         "swing_usd": "179582.19",
-        "base_loss_usd": "216434.63"
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "Fundamental value shock",
         "target": "fundamental_value_shock_pct",
         "low_value": "0.0000",
         "high_value": "-0.0500",
-        "loss_at_low_usd": "216434.63",
-        "loss_at_high_usd": "306936.58",
-        "swing_usd": "90501.95",
-        "base_loss_usd": "216434.63"
+        "loss_at_low_usd": "133119.30",
+        "loss_at_high_usd": "230672.46",
+        "swing_usd": "97553.17",
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "venue:pendle_pt_susde depth",
         "target": "venue:pendle_pt_susde",
         "low_value": "2.0000",
         "high_value": "0.5000",
-        "loss_at_low_usd": "181447.51",
-        "loss_at_high_usd": "263410.92",
-        "swing_usd": "81963.42",
-        "base_loss_usd": "216434.63"
+        "loss_at_low_usd": "132994.29",
+        "loss_at_high_usd": "133700.78",
+        "swing_usd": "706.50",
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "pendle_01 PT implied APY",
         "target": "pendle_01.pt_implied_apy",
         "low_value": "0.0201",
         "high_value": "0.0801",
-        "loss_at_low_usd": "216967.13",
-        "loss_at_high_usd": "215920.14",
-        "swing_usd": "1046.99",
-        "base_loss_usd": "216434.63"
+        "loss_at_low_usd": "133121.41",
+        "loss_at_high_usd": "133117.25",
+        "swing_usd": "4.16",
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "aave_01 liquidation threshold",
         "target": "aave_01.liquidation_threshold",
         "low_value": "0.8800",
         "high_value": "0.9600",
-        "loss_at_low_usd": "216434.63",
-        "loss_at_high_usd": "216434.63",
+        "loss_at_low_usd": "133119.30",
+        "loss_at_high_usd": "133119.30",
         "swing_usd": "0.00",
-        "base_loss_usd": "216434.63"
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "morpho_01 LLTV",
         "target": "morpho_01.lltv",
         "low_value": "0.8650",
         "high_value": "0.9450",
-        "loss_at_low_usd": "216434.63",
-        "loss_at_high_usd": "216434.63",
+        "loss_at_low_usd": "133119.30",
+        "loss_at_high_usd": "133119.30",
         "swing_usd": "0.00",
-        "base_loss_usd": "216434.63"
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "lend_susde_01 LLTV",
         "target": "lend_susde_01.lltv",
         "low_value": "0.8650",
         "high_value": "0.9450",
-        "loss_at_low_usd": "216434.63",
-        "loss_at_high_usd": "216434.63",
+        "loss_at_low_usd": "133119.30",
+        "loss_at_high_usd": "133119.30",
         "swing_usd": "0.00",
-        "base_loss_usd": "216434.63"
+        "base_loss_usd": "133119.30"
       },
       {
         "assumption": "lend_usde_01 LLTV",
         "target": "lend_usde_01.lltv",
         "low_value": "0.8650",
         "high_value": "0.9450",
-        "loss_at_low_usd": "216434.63",
-        "loss_at_high_usd": "216434.63",
+        "loss_at_low_usd": "133119.30",
+        "loss_at_high_usd": "133119.30",
         "swing_usd": "0.00",
-        "base_loss_usd": "216434.63"
+        "base_loss_usd": "133119.30"
       }
     ],
     "grid": {
@@ -357,92 +357,92 @@
       ],
       "loss_usd": [
         [
-          "22035.76",
-          "23101.96",
-          "24277.35",
-          "25579.59",
-          "27030.38",
-          "28656.70",
-          "30492.45",
-          "32580.88",
-          "34978.02",
-          "37757.83",
-          "41149.15",
-          "54701.98",
-          "71487.75",
-          "92829.65",
-          "120894.71",
-          "159502.37",
-          "216434.63",
-          "462769.72",
-          "879712.68",
-          "909511.86"
+          "593.88",
+          "612.86",
+          "633.98",
+          "657.58",
+          "684.13",
+          "714.22",
+          "748.60",
+          "788.28",
+          "834.57",
+          "891.00",
+          "1088.10",
+          "10842.02",
+          "23034.53",
+          "38710.61",
+          "59612.06",
+          "88880.43",
+          "133119.30",
+          "361206.00",
+          "750002.54",
+          "741090.55"
         ],
         [
-          "67179.31",
-          "68205.00",
-          "69337.31",
-          "70592.02",
-          "71990.11",
-          "73557.66",
-          "75327.47",
-          "77341.40",
-          "79653.71",
-          "82336.03",
-          "85484.94",
-          "96942.51",
-          "113091.20",
-          "133625.85",
-          "160633.48",
-          "197792.79",
-          "252275.79",
-          "480290.09",
-          "867335.66",
-          "911035.08"
+          "46558.30",
+          "46575.25",
+          "46595.53",
+          "46618.20",
+          "46643.69",
+          "46672.59",
+          "46705.62",
+          "46743.72",
+          "46788.18",
+          "46841.97",
+          "46907.16",
+          "54695.49",
+          "66405.18",
+          "81460.49",
+          "101534.23",
+          "129642.93",
+          "171807.27",
+          "382074.42",
+          "741641.22",
+          "747142.49"
         ],
         [
-          "134923.05",
-          "135889.22",
-          "136958.16",
-          "138142.95",
-          "139463.50",
-          "140944.55",
-          "142617.26",
-          "144521.42",
-          "146708.66",
-          "149247.18",
-          "152229.03",
-          "160497.95",
-          "175712.48",
-          "195063.27",
-          "220519.83",
-          "255554.33",
-          "306936.58",
-          "508007.03",
-          "848214.56",
-          "914066.17"
+          "115505.43",
+          "115519.43",
+          "115538.47",
+          "115559.76",
+          "115583.72",
+          "115610.88",
+          "115641.91",
+          "115677.72",
+          "115719.50",
+          "115769.45",
+          "115830.71",
+          "120622.01",
+          "131625.75",
+          "145773.41",
+          "164636.97",
+          "191050.10",
+          "230672.46",
+          "414746.14",
+          "728482.13",
+          "756941.38"
         ],
         [
-          "247905.49",
-          "248779.00",
-          "249742.67",
-          "250814.67",
-          "252010.06",
-          "253351.41",
-          "254867.21",
-          "256593.86",
-          "258578.64",
-          "260884.16",
-          "263595.01",
-          "266944.72",
-          "280659.86",
-          "298109.99",
-          "321075.61",
-          "352696.69",
-          "399096.54",
-          "547993.63",
-          "819640.53",
-          "919067.43"
+          "230418.48",
+          "230431.02",
+          "230444.98",
+          "230464.07",
+          "230485.58",
+          "230509.95",
+          "230537.81",
+          "230569.94",
+          "230607.44",
+          "230651.75",
+          "230706.28",
+          "230889.78",
+          "240765.63",
+          "253463.26",
+          "270393.43",
+          "294097.83",
+          "329659.17",
+          "462804.93",
+          "709672.90",
+          "773147.62"
         ]
       ],
       "liquidatable_positions": [
@@ -542,14 +542,14 @@
     "seed": 20261010,
     "method": "uniform draws of unverified model assumptions within their ranges; scenario parameters fixed",
     "portfolio": {
-      "p05_usd": "179268.65",
-      "p25_usd": "204097.47",
-      "p50_usd": "231008.73",
-      "p75_usd": "275522.70",
-      "p95_usd": "328377.68",
-      "min_usd": "165640.76",
-      "max_usd": "379722.12",
-      "base_usd": "216434.63"
+      "p05_usd": "98717.43",
+      "p25_usd": "118030.38",
+      "p50_usd": "145975.95",
+      "p75_usd": "192381.00",
+      "p95_usd": "242759.83",
+      "min_usd": "90442.31",
+      "max_usd": "288284.23",
+      "base_usd": "133119.30"
     },
     "positions": {
       "ethena_susde_01": {
@@ -583,14 +583,14 @@
         "base_usd": "11365.51"
       },
       "pendle_01": {
-        "p05_usd": "72351.92",
-        "p25_usd": "77762.10",
-        "p50_usd": "83771.00",
-        "p75_usd": "90604.33",
-        "p95_usd": "96459.77",
-        "min_usd": "71155.17",
-        "max_usd": "97584.98",
-        "base_usd": "83620.07"
+        "p05_usd": "257.24",
+        "p25_usd": "279.44",
+        "p50_usd": "305.41",
+        "p75_usd": "336.76",
+        "p95_usd": "365.33",
+        "min_usd": "252.47",
+        "max_usd": "371.01",
+        "base_usd": "304.74"
       },
       "lend_susde_01": {
         "p05_usd": "0.00",
@@ -615,78 +615,78 @@
     },
     "histogram": [
       {
-        "from_usd": "165640.76",
-        "to_usd": "179912.85",
-        "draws": 14
+        "from_usd": "90442.31",
+        "to_usd": "103631.77",
+        "draws": 22
       },
       {
-        "from_usd": "179912.85",
-        "to_usd": "194184.94",
-        "draws": 30
+        "from_usd": "103631.77",
+        "to_usd": "116821.23",
+        "draws": 40
       },
       {
-        "from_usd": "194184.94",
-        "to_usd": "208457.03",
-        "draws": 35
+        "from_usd": "116821.23",
+        "to_usd": "130010.69",
+        "draws": 33
       },
       {
-        "from_usd": "208457.03",
-        "to_usd": "222729.12",
-        "draws": 32
+        "from_usd": "130010.69",
+        "to_usd": "143200.15",
+        "draws": 31
       },
       {
-        "from_usd": "222729.12",
-        "to_usd": "237001.21",
-        "draws": 34
+        "from_usd": "143200.15",
+        "to_usd": "156389.61",
+        "draws": 24
       },
       {
-        "from_usd": "237001.21",
-        "to_usd": "251273.30",
-        "draws": 23
+        "from_usd": "156389.61",
+        "to_usd": "169579.08",
+        "draws": 18
       },
       {
-        "from_usd": "251273.30",
-        "to_usd": "265545.39",
-        "draws": 16
+        "from_usd": "169579.08",
+        "to_usd": "182768.54",
+        "draws": 15
       },
       {
-        "from_usd": "265545.39",
-        "to_usd": "279817.48",
-        "draws": 13
+        "from_usd": "182768.54",
+        "to_usd": "195958.00",
+        "draws": 10
       },
       {
-        "from_usd": "279817.48",
-        "to_usd": "294089.57",
-        "draws": 17
+        "from_usd": "195958.00",
+        "to_usd": "209147.46",
+        "draws": 24
       },
       {
-        "from_usd": "294089.57",
-        "to_usd": "308361.66",
+        "from_usd": "209147.46",
+        "to_usd": "222336.92",
         "draws": 12
       },
       {
-        "from_usd": "308361.66",
-        "to_usd": "322633.75",
-        "draws": 13
+        "from_usd": "222336.92",
+        "to_usd": "235526.38",
+        "draws": 5
       },
       {
-        "from_usd": "322633.75",
-        "to_usd": "336905.84",
-        "draws": 8
+        "from_usd": "235526.38",
+        "to_usd": "248715.85",
+        "draws": 12
       },
       {
-        "from_usd": "336905.84",
-        "to_usd": "351177.93",
+        "from_usd": "248715.85",
+        "to_usd": "261905.31",
+        "draws": 3
+      },
+      {
+        "from_usd": "261905.31",
+        "to_usd": "275094.77",
         "draws": 6
       },
       {
-        "from_usd": "351177.93",
-        "to_usd": "365450.03",
-        "draws": 2
-      },
-      {
-        "from_usd": "365450.03",
-        "to_usd": "379722.12",
+        "from_usd": "275094.77",
+        "to_usd": "288284.23",
         "draws": 1
       }
     ],
@@ -698,19 +698,19 @@
         "assumption": "venue:susde_usdc depth (quoted)",
         "low": "0.8000",
         "high": "1.2500",
-        "rank_correlation": "-0.8510"
+        "rank_correlation": "-0.8683"
       },
       {
         "assumption": "venue:usde_usdc depth (quoted)",
         "low": "0.8000",
         "high": "1.2500",
-        "rank_correlation": "-0.2791"
+        "rank_correlation": "-0.2988"
       },
       {
         "assumption": "venue:pendle_pt_susde depth (quoted)",
         "low": "0.8000",
         "high": "1.2500",
-        "rank_correlation": "-0.1331"
+        "rank_correlation": "0.0384"
       }
     ],
     "fixed_because_verified": [
@@ -813,26 +813,26 @@
         "60089.55"
       ],
       "pendle_01": [
-        "21564.64",
-        "22613.50",
-        "23769.60",
-        "25050.28",
-        "26476.83",
-        "28075.66",
-        "29880.00",
-        "31932.18",
-        "34287.05",
-        "37016.89",
-        "40219.01",
-        "44027.60",
-        "48632.95",
-        "54314.30",
-        "61498.64",
-        "70873.30",
-        "83620.07",
-        "101957.42",
-        "130596.36",
-        "181608.64"
+        "122.75",
+        "124.40",
+        "126.23",
+        "128.27",
+        "130.57",
+        "133.17",
+        "136.15",
+        "139.59",
+        "143.60",
+        "150.05",
+        "157.97",
+        "167.64",
+        "179.73",
+        "195.27",
+        "215.99",
+        "251.36",
+        "304.74",
+        "393.70",
+        "886.22",
+        "13187.33"
       ],
       "lend_susde_01": [
         "0.00",
@@ -880,26 +880,26 @@
       ]
     },
     "total_usd": [
-      "22035.76",
-      "23101.96",
-      "24277.35",
-      "25579.59",
-      "27030.38",
-      "28656.70",
-      "30492.45",
-      "32580.88",
-      "34978.02",
-      "37757.83",
-      "41149.15",
-      "54701.98",
-      "71487.75",
-      "92829.65",
-      "120894.71",
-      "159502.37",
-      "216434.63",
-      "462769.72",
-      "879712.68",
-      "909511.86"
+      "593.88",
+      "612.86",
+      "633.98",
+      "657.58",
+      "684.13",
+      "714.22",
+      "748.60",
+      "788.28",
+      "834.57",
+      "891.00",
+      "1088.10",
+      "10842.02",
+      "23034.53",
+      "38710.61",
+      "59612.06",
+      "88880.43",
+      "133119.30",
+      "361206.00",
+      "750002.54",
+      "741090.55"
     ]
   },
   "assumptions": [

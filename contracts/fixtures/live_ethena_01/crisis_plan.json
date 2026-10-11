@@ -367,10 +367,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "257.16",
             "exit_cost_usd": "264.47",
-            "foregone_yield_usd": "-5.97",
+            "foregone_yield_usd": "706.99",
             "residual_loss_usd": "112666.09",
-            "total_loss_usd": "112924.58",
-            "saving_vs_hold_usd": "37296.87",
+            "total_loss_usd": "113637.55",
+            "saving_vs_hold_usd": "36583.90",
             "quote_status": "executable"
           },
           {
@@ -381,10 +381,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "1028.64",
             "exit_cost_usd": "1035.95",
-            "foregone_yield_usd": "-11.95",
+            "foregone_yield_usd": "1413.98",
             "residual_loss_usd": "75110.73",
-            "total_loss_usd": "76134.73",
-            "saving_vs_hold_usd": "74086.72",
+            "total_loss_usd": "77560.66",
+            "saving_vs_hold_usd": "72660.79",
             "quote_status": "executable"
           },
           {
@@ -395,10 +395,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "2427.39",
             "exit_cost_usd": "2434.70",
-            "foregone_yield_usd": "-17.92",
+            "foregone_yield_usd": "2120.98",
             "residual_loss_usd": "37555.36",
-            "total_loss_usd": "39972.14",
-            "saving_vs_hold_usd": "110249.31",
+            "total_loss_usd": "42111.04",
+            "saving_vs_hold_usd": "108110.41",
             "quote_status": "executable"
           },
           {
@@ -409,18 +409,18 @@
             "gas_usd": "7.31",
             "price_impact_usd": "4716.95",
             "exit_cost_usd": "4724.26",
-            "foregone_yield_usd": "-23.89",
+            "foregone_yield_usd": "2827.97",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "4700.37",
-            "saving_vs_hold_usd": "145521.08",
+            "total_loss_usd": "7552.23",
+            "saving_vs_hold_usd": "142669.22",
             "quote_status": "executable"
           }
         ],
         "best": {
           "action": "sell",
           "fraction": "1.00",
-          "total_loss_usd": "4700.37",
-          "saving_vs_hold_usd": "145521.08"
+          "total_loss_usd": "7552.23",
+          "saving_vs_hold_usd": "142669.22"
         }
       },
       "late": {
@@ -448,10 +448,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "232.09",
             "exit_cost_usd": "239.40",
-            "foregone_yield_usd": "-5.97",
+            "foregone_yield_usd": "706.99",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "233.42",
-            "saving_vs_hold_usd": "-233.42",
+            "total_loss_usd": "946.39",
+            "saving_vs_hold_usd": "-946.39",
             "quote_status": "executable"
           },
           {
@@ -462,10 +462,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "928.35",
             "exit_cost_usd": "935.66",
-            "foregone_yield_usd": "-11.95",
+            "foregone_yield_usd": "1413.98",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "923.71",
-            "saving_vs_hold_usd": "-923.71",
+            "total_loss_usd": "2349.64",
+            "saving_vs_hold_usd": "-2349.64",
             "quote_status": "executable"
           },
           {
@@ -476,10 +476,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "2147.80",
             "exit_cost_usd": "2155.11",
-            "foregone_yield_usd": "-17.92",
+            "foregone_yield_usd": "2120.98",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "2137.19",
-            "saving_vs_hold_usd": "-2137.19",
+            "total_loss_usd": "4276.09",
+            "saving_vs_hold_usd": "-4276.09",
             "quote_status": "executable"
           },
           {
@@ -490,10 +490,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "4199.82",
             "exit_cost_usd": "4207.13",
-            "foregone_yield_usd": "-23.89",
+            "foregone_yield_usd": "2827.97",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "4183.24",
-            "saving_vs_hold_usd": "-4183.24",
+            "total_loss_usd": "7035.10",
+            "saving_vs_hold_usd": "-7035.10",
             "quote_status": "executable"
           }
         ],
@@ -811,10 +811,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "387288.93",
             "exit_cost_usd": "387296.24",
-            "foregone_yield_usd": "-23.89",
+            "foregone_yield_usd": "2827.97",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "387272.35",
-            "saving_vs_hold_usd": "-237050.90",
+            "total_loss_usd": "390124.21",
+            "saving_vs_hold_usd": "-239902.76",
             "quote_status": "executable"
           },
           {
@@ -833,8 +833,8 @@
             "quote_status": "proxy"
           }
         ],
-        "total_loss_usd": "652207.79",
-        "saving_vs_hold_all_usd": "-141559.44",
+        "total_loss_usd": "655059.65",
+        "saving_vs_hold_all_usd": "-144411.30",
         "shared_venue_penalty_usd": "638935.90"
       },
       {
@@ -900,10 +900,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "4716.95",
             "exit_cost_usd": "4724.26",
-            "foregone_yield_usd": "-23.89",
+            "foregone_yield_usd": "2827.97",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "4700.37",
-            "saving_vs_hold_usd": "145521.08",
+            "total_loss_usd": "7552.23",
+            "saving_vs_hold_usd": "142669.22",
             "quote_status": "executable"
           },
           {
@@ -922,8 +922,8 @@
             "quote_status": "proxy"
           }
         ],
-        "total_loss_usd": "109682.28",
-        "saving_vs_hold_all_usd": "400966.07",
+        "total_loss_usd": "112534.14",
+        "saving_vs_hold_all_usd": "398114.21",
         "shared_venue_penalty_usd": "0.00"
       },
       {
@@ -1135,10 +1135,10 @@
             "gas_usd": "7.31",
             "price_impact_usd": "322494.06",
             "exit_cost_usd": "322501.37",
-            "foregone_yield_usd": "-23.89",
+            "foregone_yield_usd": "2827.97",
             "residual_loss_usd": "0.00",
-            "total_loss_usd": "322477.48",
-            "saving_vs_hold_usd": "-322477.48",
+            "total_loss_usd": "325329.34",
+            "saving_vs_hold_usd": "-325329.34",
             "quote_status": "executable"
           },
           {
@@ -1157,8 +1157,8 @@
             "quote_status": "executable"
           }
         ],
-        "total_loss_usd": "543760.00",
-        "saving_vs_hold_all_usd": "-543760.00",
+        "total_loss_usd": "546611.86",
+        "saving_vs_hold_all_usd": "-546611.86",
         "shared_venue_penalty_usd": "531639.88"
       },
       {

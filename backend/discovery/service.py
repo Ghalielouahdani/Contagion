@@ -188,6 +188,8 @@ class _Run:
             "exchange_rates": rates,
             "markets": {pid: m for pid, m in ctx.market_params.items() if pid in self._ids()},
             "yields": {pid: y for pid, y in ctx.yields.items() if pid in self._ids()},
+            # sUSDe's own yield, earned also when it is posted as collateral (Morpho pays none on collateral).
+            **({"asset_yields": {"sUSDe": ctx.facts["susde_apy_selected"]}} if ctx.facts.get("susde_apy_selected") else {}),
             "exit_venues": exit_venues,
             "warnings": [w for w in warnings if not w.startswith("conflict")],
         }
@@ -427,9 +429,31 @@ class _Run:
                 )
         return prices, rates
 
+    def _susde_apy(self, ctx: Ctx, susde: str) -> dict | None:
+        """sUSDe APY from the Pendle API (observed), else the short on-chain window (derived); None if neither."""
+        api = next(
+            (
+                m["underlying_apy_api"]
+                for m in ctx.facts.get("pendle_markets", {}).values()
+                if m["underlying_apy_api"] is not None and self._sy_wraps(ctx, m["sy"], susde)
+            ),
+            None,
+        )
+        onchain = ctx.facts.get("susde_apy_onchain")
+        if api is not None and onchain is not None and abs(api - onchain) > SUSDE_APY_DIVERGENCE:
+            ctx.warnings.append(f"sUSDe APY: Pendle API {api:.2%} vs on-chain {onchain:.2%} over a short window")
+        if api is not None:
+            return {"value": decimal_str(api, 6), "source_type": "observed"}
+        if onchain is not None:
+            return {"value": decimal_str(onchain, 6), "source_type": "derived"}
+        return None
+
     def _holding_yields(self, ctx: Ctx) -> None:
         susde = ctx.registry.token("sUSDe")["address"]
         usde = ctx.registry.token("USDe")["address"]
+        susde_apy = self._susde_apy(ctx, susde)
+        if susde_apy:
+            ctx.facts["susde_apy_selected"] = susde_apy
         for p in self.positions:
             pid = p["position_id"]
             if p["position_type"] != "token_holding" or pid not in self.held:
@@ -440,21 +464,8 @@ class _Run:
             if self.held[pid] != susde:
                 ctx.unresolve(f"position:{pid}", "token yield not observable without a protocol adapter")
                 continue
-            api = next(
-                (
-                    m["underlying_apy_api"]
-                    for m in ctx.facts.get("pendle_markets", {}).values()
-                    if m["underlying_apy_api"] is not None and self._sy_wraps(ctx, m["sy"], susde)
-                ),
-                None,
-            )
-            onchain = ctx.facts.get("susde_apy_onchain")
-            if api is not None and onchain is not None and abs(api - onchain) > SUSDE_APY_DIVERGENCE:
-                ctx.warnings.append(f"sUSDe APY: Pendle API {api:.2%} vs on-chain {onchain:.2%} over a short window")
-            if api is not None:
-                ctx.yields[pid] = {"token_apy": decimal_str(api, 6), "source_type": "observed"}
-            elif onchain is not None:
-                ctx.yields[pid] = {"token_apy": decimal_str(onchain, 6), "source_type": "derived"}
+            if susde_apy:
+                ctx.yields[pid] = {"token_apy": susde_apy["value"], "source_type": susde_apy["source_type"]}
             else:
                 ctx.unresolve(f"position:{pid}", "sUSDe APY unavailable from both sources")
 

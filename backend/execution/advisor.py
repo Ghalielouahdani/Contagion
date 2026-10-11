@@ -144,7 +144,8 @@ class GeminiClient:
             raise AdvisorError(503, "Invalid ADVISOR_MODEL configuration.")
         payload = {"systemInstruction": {"parts": [{"text": system}]},
                    "contents": [{"role": "user", "parts": [{"text": json.dumps(context, ensure_ascii=False)}]}],
-                   "generationConfig": {"temperature": 0.3, "maxOutputTokens": 12000,
+                   # Temperature 0 and a fixed seed: the same plan gets the same analysis on every reload.
+                   "generationConfig": {"temperature": 0, "seed": 7, "maxOutputTokens": 12000,
                                         "responseMimeType": "application/json",
                                         "responseJsonSchema": _provider_schema(schema)}}
         try:

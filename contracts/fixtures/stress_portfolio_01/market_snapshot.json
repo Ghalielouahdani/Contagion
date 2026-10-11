@@ -65,11 +65,32 @@
       "source_type": "observed",
       "field_sources": {
         "liquidation_incentive": "derived",
-        "oracle_pass_through": "derived"
+        "oracle_pass_through": "derived",
+        "borrower_ltv_buckets": "derived"
       },
       "warnings": [
-        "Incentive from Morpho Blue formula min(1.15, 1/(0.3 x LLTV + 0.7)) - 1."
-      ]
+        "Incentive from Morpho Blue formula min(1.15, 1/(0.3 x LLTV + 0.7)) - 1.",
+        "Borrower distribution of this market (31 indexed positions, 100% of on-chain debt) observed at block 26162896, from verified_lending_2026_10_10."
+      ],
+      "total_supply_assets": "109007445.36",
+      "total_borrow_assets": "96963609.18",
+      "borrower_ltv_buckets": [
+        {
+          "ltv": "0.8495",
+          "debt_share": "0.3089"
+        },
+        {
+          "ltv": "0.8793",
+          "debt_share": "0.6869"
+        },
+        {
+          "ltv": "0.9048",
+          "debt_share": "0.0042"
+        }
+      ],
+      "borrower_distribution_source_type": "observed",
+      "collateral_asset": "sUSDe",
+      "loan_asset": "PYUSD"
     },
     "pendle_01": {
       "market_kind": "pendle_pt_market",
@@ -354,27 +375,77 @@
     },
     "venue:pendle_pt_susde": {
       "asset": "PT-sUSDe",
-      "quote_method": "pool_reserves",
-      "effective_depth_usd": "3820497",
-      "observed_liquidity_usd": "3820497",
-      "fee_rate": "0.001",
-      "gas_usd": "40",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "1502890895.41",
+      "fee_rate": "0",
+      "gas_usd": "0",
       "venue_address": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
       "source_type": "observed",
       "field_sources": {
         "effective_depth_usd": "derived",
-        "fee_rate": "assumed",
+        "fee_rate": "derived",
         "gas_usd": "assumed"
-      }
+      },
+      "quotes": [
+        {
+          "size_tokens": "251663.24",
+          "size_usd": "250000.00",
+          "proceeds_usd": "249901.29",
+          "loss_pct": "0.0395",
+          "positions": []
+        },
+        {
+          "size_tokens": "503326.48",
+          "size_usd": "500000.00",
+          "proceeds_usd": "499758.38",
+          "loss_pct": "0.0483",
+          "positions": []
+        },
+        {
+          "size_tokens": "1006652.97",
+          "size_usd": "1000000.00",
+          "proceeds_usd": "999272.01",
+          "loss_pct": "0.0728",
+          "positions": []
+        },
+        {
+          "size_tokens": "2013305.94",
+          "size_usd": "2000000.00",
+          "proceeds_usd": "1997341.43",
+          "loss_pct": "0.1329",
+          "positions": []
+        },
+        {
+          "size_tokens": "3019958.91",
+          "size_usd": "3000000.00",
+          "proceeds_usd": "2990979.76",
+          "loss_pct": "0.3007",
+          "positions": []
+        },
+        {
+          "size_tokens": "4026611.88",
+          "size_usd": "4000000.00",
+          "proceeds_usd": "3879460.04",
+          "loss_pct": "3.0135",
+          "positions": []
+        }
+      ],
+      "observed_liquidity_usd": "3820497"
     }
   },
   "warnings": [
     "Synthetic allocations on real Ethereum markets; not an imported wallet. Recorded observations from blocks 26161879 and 26162896 are composed for stress testing; this is not a fresh or single-block snapshot. Edge evidence retains observation times.",
     "Market parameters, oracles, prices and yields observed on Ethereum mainnet at the block above; holdings are fictional.",
-    "Pendle depth = total observed pool liquidity under a constant-product proxy; the real AMM concentrates liquidity, so impact is overstated.",
     "The only Morpho sUSDe/USDC market holds ~9.5k USD; the position uses the liquid sUSDe/PYUSD market instead.",
     "sUSDe and USDe exit venues: KyberSwap executable quotes from 0.5m to 150m USD, taken after the snapshot block (not block-pinned).",
     "Markets, oracles, prices, APYs and borrower distributions observed on Ethereum mainnet at the block above; lender holdings are fictional. Lenders exit through the market's idle liquidity, not a DEX.",
-    "Collateral exit venues: KyberSwap executable quotes from 0.5m to 150m USD at build time (not block-pinned); they price the liquidators' forced selling in the liquidation cascade."
-  ]
+    "Collateral exit venues: KyberSwap executable quotes from 0.5m to 150m USD at build time (not block-pinned); they price the liquidators' forced selling in the liquidation cascade.",
+    "Pendle PT exit: Pendle router executable quotes (PT -> USDC), taken after the snapshot block; the AMM concentrates liquidity, so the old constant-product proxy on total pool liquidity overstated the impact."
+  ],
+  "asset_yields": {
+    "sUSDe": {
+      "value": "0.0485",
+      "source_type": "observed"
+    }
+  }
 }

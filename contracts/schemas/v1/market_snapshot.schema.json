@@ -82,6 +82,13 @@
       "additionalProperties": {
         "$ref": "common.schema.json#/$defs/sourced_value"
       }
+    },
+    "asset_yields": {
+      "type": "object",
+      "description": "Optional. Intrinsic APY of an asset, earned by whoever holds it, including as collateral (e.g. sUSDe accrues through its exchange rate while lending protocols pay no supply yield on it). Keyed by asset symbol.",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/sourced_value"
+      }
     }
   },
   "$defs": {

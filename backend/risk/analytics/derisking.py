@@ -15,6 +15,7 @@ from dataclasses import dataclass
 
 from backend.risk.liquidity import exit_cost
 from backend.risk.model import Portfolio, ScenarioOutcome, Snapshot
+from backend.risk.pricing import collateral_yield_apy
 
 STEP = 0.05
 
@@ -34,7 +35,7 @@ def build_legs(portfolio: Portfolio, snapshot: Snapshot, outcome: ScenarioOutcom
     for p in portfolio.positions:
         y = snapshot.yields.get(p.position_id, {})
         if p.is_borrow:
-            annual = y.get("collateral_supply_apy", 0.0) * p.gross_value_usd - y.get("debt_borrow_apy", 0.0) * p.debt_value_usd
+            annual = collateral_yield_apy(p, snapshot) * p.gross_value_usd - y.get("debt_borrow_apy", 0.0) * p.debt_value_usd
         else:
             annual = y.get("token_apy", 0.0) * p.gross_value_usd
         venue = p.exit_venue_id if p.exit_venue_id in snapshot.venues else None

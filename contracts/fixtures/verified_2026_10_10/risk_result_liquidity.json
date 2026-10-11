@@ -504,22 +504,23 @@
       "position_id": "pendle_01",
       "gross_value_before_usd": "1996715.41",
       "gross_value_after_usd": "1996715.41",
-      "executable_value_after_usd": "552622.74",
+      "executable_value_after_usd": "1853012.85",
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "1996715.41",
-      "net_equity_after_usd": "552622.74",
-      "conditional_loss_usd": "1444092.67",
+      "net_equity_after_usd": "1853012.85",
+      "conditional_loss_usd": "143702.56",
       "loss_components": {
         "market_repricing": "0.00",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "1444092.67"
+        "execution_haircut": "143702.56"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "Proxy depth; standalone exit."
+        "venue:pendle_pt_susde: selling 1,996,715 USD with 20% of normal depth left (like 9,983,577 USD in today's book) is beyond the largest executable quote (4,000,000 USD); cost extrapolated with the constant-product proxy through that quote.",
+        "Priced on executable quotes; standalone exit."
       ],
       "contagion": {
         "paths": [
@@ -547,8 +548,8 @@
       "trace": [
         {
           "id": "exit:venue:pendle_pt_susde",
-          "label": "Execution cost on venue:pendle_pt_susde (proxy)",
-          "formula": "proxy: cost(x) = x^2 / (k x depth + x)",
+          "label": "Execution cost on venue:pendle_pt_susde (extrapolated)",
+          "formula": "executable quotes: cost(x) = k x (x / k) x loss(x / k), loss interpolated between quoted sizes; beyond the largest quote, constant product through it",
           "inputs": [
             {
               "name": "size sold",
@@ -561,18 +562,38 @@
               "value": "0.200000",
               "unit": "ratio",
               "source": "user_scenario"
-            },
-            {
-              "name": "effective depth",
-              "value": "3820497.00",
-              "unit": "usd",
-              "source": "observed"
             }
           ],
           "result": {
-            "value": "1444092.67",
+            "value": "143702.56",
             "unit": "usd"
-          }
+          },
+          "rows": [
+            {
+              "size_usd": "250000.00",
+              "loss_pct": "0.039500"
+            },
+            {
+              "size_usd": "500000.00",
+              "loss_pct": "0.048300"
+            },
+            {
+              "size_usd": "1000000.00",
+              "loss_pct": "0.072800"
+            },
+            {
+              "size_usd": "2000000.00",
+              "loss_pct": "0.132900"
+            },
+            {
+              "size_usd": "3000000.00",
+              "loss_pct": "0.300700"
+            },
+            {
+              "size_usd": "4000000.00",
+              "loss_pct": "3.013500"
+            }
+          ]
         },
         {
           "id": "loss",
@@ -599,13 +620,13 @@
             },
             {
               "name": "execution haircut",
-              "value": "1444092.67",
+              "value": "143702.56",
               "unit": "usd",
               "source": "derived"
             }
           ],
           "result": {
-            "value": "1444092.67",
+            "value": "143702.56",
             "unit": "usd"
           }
         }
@@ -614,8 +635,8 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6202968.85",
-    "net_equity_after_usd": "176157.17",
-    "total_conditional_loss_usd": "6026811.68",
+    "net_equity_after_usd": "1476547.28",
+    "total_conditional_loss_usd": "4726421.57",
     "shared_liquidity_penalty_usd": "1228485.04",
     "aggregation_status": "complete"
   },
@@ -635,13 +656,13 @@
       "inputs": [
         {
           "name": "joint cost",
-          "value": "7112633.88",
+          "value": "5812243.78",
           "unit": "usd",
           "source": "derived"
         },
         {
           "name": "standalone costs",
-          "value": "5884148.84",
+          "value": "4583758.74",
           "unit": "usd",
           "source": "derived"
         }
@@ -677,7 +698,7 @@
         },
         {
           "name": "pendle_01",
-          "value": "1444092.67",
+          "value": "143702.56",
           "unit": "usd",
           "source": "derived"
         },
@@ -689,10 +710,10 @@
         }
       ],
       "result": {
-        "value": "6026811.68",
+        "value": "4726421.57",
         "unit": "usd"
       },
-      "note": "97.16% of net equity (6202968.85 USD)."
+      "note": "76.20% of net equity (6202968.85 USD)."
     }
   ],
   "contagion": {

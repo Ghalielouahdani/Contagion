@@ -1,6 +1,6 @@
 """Recompute a fixture set's risk outputs from its inputs, so stored results never drift from the engine.
 
-Usage: python -m backend.risk.regenerate contracts/fixtures/<set> [--no-surface] [--crisis-only]
+Usage: python -m backend.risk.regenerate contracts/fixtures/<set> [--no-surface] [--derived-only]
 
 For every scenario_request<suffix>.json: risk_result<suffix>.json = simulate(portfolio, snapshot,
 request, graph) and risk_analytics<suffix>.json = analyze(...) at the preset (offline pages show the
@@ -8,9 +8,10 @@ analytics of every scenario), declared in the manifest. Then risk_surface.json. 
 "golden": true) hold hand-derived expectations: their existing results are never overwritten,
 only missing ones are added.
 
-Also writes crisis_plan<suffix>.json: P3's crisis verdict for each preset (scenario assumed to happen),
-so the dashboard's Decision page works offline. Dashboard artifacts, not schema v1 contracts: they are
-not listed in the manifest. --crisis-only rewrites just these.
+Also rewrites, for each preset, the offline dashboard artifacts derived from the engine:
+risk_analytics<suffix>.json (value analytics) and crisis_plan<suffix>.json (P3's crisis verdict, scenario
+assumed to happen). Crisis plans are not schema v1 contracts and are not listed in the manifest.
+--derived-only rewrites just these two families, leaving stored risk results untouched.
 """
 
 from __future__ import annotations
@@ -37,6 +38,22 @@ def crisis_plans(folder: Path) -> None:
         (folder / f"crisis_plan{suffix}.json").write_text(json.dumps(plan, indent=2) + "\n")
 
 
+def analytics(folder: Path) -> None:
+    from backend.risk.analytics import analyze
+
+    load = lambda name: json.loads((folder / f"{name}.json").read_text())  # noqa: E731
+    portfolio, snapshot = load("portfolio"), load("market_snapshot")
+    for request_file in sorted(folder.glob("scenario_request*.json")):
+        suffix = request_file.stem.removeprefix("scenario_request")
+        result = analyze(portfolio, snapshot, load(request_file.stem))
+        (folder / f"risk_analytics{suffix}.json").write_text(json.dumps(result, indent=2) + "\n")
+
+
+def derived(folder: Path) -> None:
+    analytics(folder)
+    crisis_plans(folder)
+
+
 def regenerate(folder: Path, surface: bool = True) -> None:
     load = lambda name: json.loads((folder / f"{name}.json").read_text())  # noqa: E731
     manifest = load("manifest")
@@ -57,13 +74,13 @@ def regenerate(folder: Path, surface: bool = True) -> None:
         manifest["files"][result_name] = {"path": f"{result_name}.json", "schema": "../../schemas/v1/risk_result.schema.json"}
         print(f"{folder.name}/{result_name}: {result['scenario_id']} loss {result['portfolio']['total_conditional_loss_usd']}")
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    crisis_plans(folder)
+    derived(folder)
     if surface:
         build_surface(str(folder))
 
 
 if __name__ == "__main__":
-    if "--crisis-only" in sys.argv:
-        crisis_plans(Path(sys.argv[1]))
+    if "--derived-only" in sys.argv:
+        derived(Path(sys.argv[1]))
     else:
         regenerate(Path(sys.argv[1]), surface="--no-surface" not in sys.argv)

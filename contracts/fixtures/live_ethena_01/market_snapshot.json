@@ -147,6 +147,12 @@
       "source_type": "observed"
     }
   },
+  "asset_yields": {
+    "sUSDe": {
+      "value": "0.049495",
+      "source_type": "observed"
+    }
+  },
   "exit_venues": {
     "venue:pendle_pt_susde": {
       "asset": "PT-sUSDE-26NOV2026",

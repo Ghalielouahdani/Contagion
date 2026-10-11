@@ -14,6 +14,7 @@ from __future__ import annotations
 from backend.risk.liquidity import exit_cost
 from backend.risk.metrics import deleverage_needed
 from backend.risk.model import Portfolio, ScenarioOutcome, Snapshot
+from backend.risk.pricing import collateral_yield_apy
 
 
 def _trade_cost(size: float, snapshot: Snapshot, venue_id: str) -> float | None:
@@ -38,7 +39,7 @@ def protection(portfolio: Portfolio, snapshot: Snapshot, outcome: ScenarioOutcom
         size = deleverage_needed(market, impact.gross_before, debt, oracle_factor)
         trade = _trade_cost(size, snapshot, position.exit_venue_id)
         y = snapshot.yields.get(position.position_id, {})
-        carry = size * (y.get("collateral_supply_apy", 0.0) - y.get("debt_borrow_apy", 0.0)) * horizon_days / 365
+        carry = size * (collateral_yield_apy(position, snapshot) - y.get("debt_borrow_apy", 0.0)) * horizon_days / 365
         market_drop = (impact.gross_before - impact.gross_after) / impact.gross_before
         preemptive = None
         if trade is not None:

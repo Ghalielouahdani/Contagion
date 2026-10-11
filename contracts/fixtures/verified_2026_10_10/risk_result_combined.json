@@ -1146,22 +1146,23 @@
       "position_id": "pendle_01",
       "gross_value_before_usd": "1996715.41",
       "gross_value_after_usd": "1392693.85",
-      "executable_value_after_usd": "493397.56",
+      "executable_value_after_usd": "1321227.25",
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "1996715.41",
-      "net_equity_after_usd": "493397.57",
-      "conditional_loss_usd": "1503317.84",
+      "net_equity_after_usd": "1321227.26",
+      "conditional_loss_usd": "675488.15",
       "loss_components": {
         "market_repricing": "604021.55",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
-        "execution_haircut": "899296.29"
+        "execution_haircut": "71466.60"
       },
       "risk_metric": null,
       "source_type": "derived",
       "calculation_status": "computed",
       "warnings": [
-        "PT valued with implied-APY discount approximation."
+        "PT valued with implied-APY discount approximation.",
+        "venue:pendle_pt_susde: selling 1,392,694 USD with 20% of normal depth left (like 6,963,469 USD in today's book) is beyond the largest executable quote (4,000,000 USD); cost extrapolated with the constant-product proxy through that quote."
       ],
       "contagion": {
         "paths": [
@@ -1315,8 +1316,8 @@
         },
         {
           "id": "exit:venue:pendle_pt_susde",
-          "label": "Execution cost on venue:pendle_pt_susde (proxy)",
-          "formula": "proxy: cost(x) = x^2 / (k x depth + x)",
+          "label": "Execution cost on venue:pendle_pt_susde (extrapolated)",
+          "formula": "executable quotes: cost(x) = k x (x / k) x loss(x / k), loss interpolated between quoted sizes; beyond the largest quote, constant product through it",
           "inputs": [
             {
               "name": "size sold",
@@ -1329,18 +1330,38 @@
               "value": "0.200000",
               "unit": "ratio",
               "source": "user_scenario"
-            },
-            {
-              "name": "effective depth",
-              "value": "3820497.00",
-              "unit": "usd",
-              "source": "observed"
             }
           ],
           "result": {
-            "value": "899296.29",
+            "value": "71466.60",
             "unit": "usd"
-          }
+          },
+          "rows": [
+            {
+              "size_usd": "250000.00",
+              "loss_pct": "0.039500"
+            },
+            {
+              "size_usd": "500000.00",
+              "loss_pct": "0.048300"
+            },
+            {
+              "size_usd": "1000000.00",
+              "loss_pct": "0.072800"
+            },
+            {
+              "size_usd": "2000000.00",
+              "loss_pct": "0.132900"
+            },
+            {
+              "size_usd": "3000000.00",
+              "loss_pct": "0.300700"
+            },
+            {
+              "size_usd": "4000000.00",
+              "loss_pct": "3.013500"
+            }
+          ]
         },
         {
           "id": "loss",
@@ -1367,13 +1388,13 @@
             },
             {
               "name": "execution haircut",
-              "value": "899296.29",
+              "value": "71466.60",
               "unit": "usd",
               "source": "derived"
             }
           ],
           "result": {
-            "value": "1503317.84",
+            "value": "675488.15",
             "unit": "usd"
           }
         }
@@ -1382,8 +1403,8 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6202968.85",
-    "net_equity_after_usd": "582831.34",
-    "total_conditional_loss_usd": "5620137.51",
+    "net_equity_after_usd": "1410661.03",
+    "total_conditional_loss_usd": "4792307.82",
     "shared_liquidity_penalty_usd": "14508.19",
     "aggregation_status": "complete"
   },
@@ -1395,7 +1416,7 @@
   "warnings": [
     "Portfolio total uses a joint exit per shared venue, behind the liquidation selling; it exceeds the sum of position losses by shared_liquidity_penalty_usd.",
     "Liquidators sell seized collateral into the crisis venues before the fund exits (one round; the price impact does not feed back into oracles).",
-    "Running the depeg (3,058,270 USD) and the liquidity crisis (6,026,812 USD) separately and adding them gives 9,085,081 USD, overstating the joint loss by 3,464,944 USD: the separate liquidity run sells pre-depeg values."
+    "Running the depeg (3,058,270 USD) and the liquidity crisis (4,726,422 USD) separately and adding them gives 7,784,691 USD, overstating the joint loss by 2,992,383 USD: the separate liquidity run sells pre-depeg values."
   ],
   "trace": [
     {
@@ -1405,13 +1426,13 @@
       "inputs": [
         {
           "name": "joint cost",
-          "value": "2807222.85",
+          "value": "1979393.16",
           "unit": "usd",
           "source": "derived"
         },
         {
           "name": "standalone costs",
-          "value": "2792714.67",
+          "value": "1964884.98",
           "unit": "usd",
           "source": "derived"
         }
@@ -1447,7 +1468,7 @@
         },
         {
           "name": "pendle_01",
-          "value": "1503317.84",
+          "value": "675488.15",
           "unit": "usd",
           "source": "derived"
         },
@@ -1459,10 +1480,10 @@
         }
       ],
       "result": {
-        "value": "5620137.51",
+        "value": "4792307.82",
         "unit": "usd"
       },
-      "note": "90.60% of net equity (6202968.85 USD)."
+      "note": "77.26% of net equity (6202968.85 USD)."
     }
   ],
   "comparison": {
@@ -1470,10 +1491,10 @@
       {
         "run_id": "without_liquidation_selling",
         "description": "Same depeg and liquidity loss, liquidators' sales not queued ahead of the fund's exit.",
-        "total_conditional_loss_usd": "4739063.48"
+        "total_conditional_loss_usd": "3911233.78"
       }
     ],
-    "excess_loss_usd": "881074.03",
+    "excess_loss_usd": "881074.04",
     "excess_meaning": "Contagion through liquidity: extra exit cost because liquidations sell into the same venues first."
   },
   "contagion": {

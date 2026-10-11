@@ -279,5 +279,11 @@
   "warnings": [
     "Markets, oracles, prices, APYs and borrower distributions observed on Ethereum mainnet at the block above; lender holdings are fictional. Lenders exit through the market's idle liquidity, not a DEX.",
     "Collateral exit venues: KyberSwap executable quotes from 0.5m to 150m USD at build time (not block-pinned); they price the liquidators' forced selling in the liquidation cascade."
-  ]
+  ],
+  "asset_yields": {
+    "sUSDe": {
+      "value": "0.0485",
+      "source_type": "observed"
+    }
+  }
 }

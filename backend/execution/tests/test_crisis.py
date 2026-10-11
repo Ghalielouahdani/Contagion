@@ -54,9 +54,25 @@ def test_exits_are_priced_at_the_scenario_depth():
 
 
 def test_thin_pool_makes_a_partial_exit_best():
-    pendle = row(plan(""), "pendle_01")["early"]
-    assert pendle["best"]["action"] == "sell" and pendle["best"]["fraction"] == "0.25"
+    # Convex exit cost: on a thin venue the last slices cost more than the loss they avoid, so a partial exit wins.
+    # The real Pendle router curve is deep enough for this PT (selling it all costs ~0.1%), so the thin venue is
+    # built here on purpose: a constant-product venue at 2m USD of depth (thinner still, holding wins outright).
+    snapshot = load("market_snapshot.json")
+    venue = snapshot["exit_venues"]["venue:pendle_pt_susde"]
+    venue.update(quote_method="proxy", effective_depth_usd="2000000")
+    venue.pop("quotes", None)
+    thin = crisis_plan(load("portfolio.json"), snapshot, load("scenario_request.json"), load("risk_result.json"))
+    pendle = row(thin, "pendle_01")["early"]
+    assert pendle["best"]["action"] == "sell" and D(pendle["best"]["fraction"]) < 1  # 25%
     assert D(option(pendle, "sell", "1.00")["total_loss_usd"]) > D(pendle["best"]["total_loss_usd"])
+
+
+def test_real_pendle_quotes_make_the_full_exit_cheap():
+    pendle = row(plan(""), "pendle_01")["early"]
+    full = option(pendle, "sell", "1.00")
+    assert full["quote_status"] == "executable"
+    assert D(full["exit_cost_usd"]) < D("0.005") * D(full["sold_usd"])  # well under 0.5% of what is sold
+    assert pendle["best"] == {k: full[k] for k in ("action", "fraction", "total_loss_usd", "saving_vs_hold_usd")}
 
 
 def test_late_reaction_never_counts_the_sunk_loss_as_avoidable():

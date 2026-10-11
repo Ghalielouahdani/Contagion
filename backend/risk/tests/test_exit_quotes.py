@@ -78,5 +78,5 @@ def test_live_derisking_savings_come_from_real_costs():
         v.pop("quotes", None)
     quoted = Decimal(analyze(portfolio, snapshot, request)["headline"]["derisking_savings_usd"])
     proxied = Decimal(analyze(portfolio, proxy, request)["headline"]["derisking_savings_usd"])
-    assert quoted == Decimal("3767.25")
+    assert quoted == Decimal("3710.41")  # 3,767.25 before sUSDe collateral yield counted in foregone carry
     assert proxied > 40 * quoted

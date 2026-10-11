@@ -74,12 +74,12 @@ Perte : **36 582 $, soit 61 % du capital de la position pour un depeg de 5 %**. 
 
 **Ce que P3 propose** (vraies cotations de sortie) :
 
-| Sortie | Coût de sortie | Perte si le choc arrive | Seuil p\* |
-|---|---|---|---|
-| 0 % (garder) | 0 $ | 36 582 $ | — |
-| 25 % | 87 $ | 27 437 $ | ≈ 1,2 % |
-| 50 % | 118 $ | 18 291 $ | ≈ 1,1 % |
-| 100 % | 246 $ | 0 $ | ≈ 1,0 % |
+| Sortie | Coût de sortie | Rendement perdu (7 j) | Perte si le choc arrive | Seuil p\* |
+|---|---|---|---|---|
+| 0 % (garder) | 0 $ | 0 $ | 36 582 $ | — |
+| 25 % | 87 $ | 28 $ | 27 437 $ | ≈ 1,25 % |
+| 50 % | 118 $ | 56 $ | 18 291 $ | ≈ 0,96 % |
+| 100 % | 246 $ | 113 $ | 0 $ | ≈ 0,98 % |
 
 **Le verdict** :
 - **sans probabilité** : `INSUFFICIENT_DATA`, avec l'information utile : sortir coûte environ 246 $ pour éviter 36 582 $ ;
@@ -87,13 +87,9 @@ Perte : **36 582 $, soit 61 % du capital de la position pour un depeg de 5 %**. 
 
 **La lecture pour le gérant** : avec un LTV de 0,88 sur un collatéral dont l'oracle suit l'USDe, se désendetter est rentable dès qu'on croit à un depeg de 5 % avec **plus d'environ 1 % de chances** sur la semaine. Ne rien faire, c'est accepter de perdre 61 % du capital de la ligne pour un mouvement de prix modeste.
 
-### Limite visible dans cet exemple (à corriger)
+### Le rendement du collatéral est compté
 
-Le moteur affiche aujourd'hui un **rendement perdu négatif** (−353 $) et des seuils à **0 %**. Le snapshot met `collateral_supply_apy = 0` pour Morpho, ce qui est exact pour Morpho lui-même. Mais le collatéral **sUSDe** rapporte environ 4,85 % par an à travers son taux de change, et ce rendement est omis : sortir semble alors faire *gagner* de l'argent.
-
-Avec ce rendement compté, le portage est d'environ +5 870 $ par an, soit 113 $ sur 7 jours. Les seuils deviennent ceux du tableau ci-dessus (≈ 1 à 1,2 %). La recommandation ne change pas, mais le seuil affiché doit être corrigé.
-
-C'est un point ouvert déjà noté pour P1 dans le [README](README.md) : compter le rendement intrinsèque du collatéral sUSDe dans `yields`.
+Morpho ne verse rien sur le collatéral (`collateral_supply_apy = 0`), mais le sUSDe déposé continue de rapporter son propre rendement à travers son taux de change (4,85 % par an, observé on-chain). Le snapshot le porte dans `asset_yields`, et `collateral_yield_apy` (backend/risk/pricing.py) l'ajoute au portage. Sortir fait donc renoncer à environ 113 $ sur 7 jours, d'où les seuils d'environ 1 % ci-dessus. Avant cette correction, le rendement perdu était négatif (−353 $) et tous les seuils à 0 % : sortir semblait faire gagner de l'argent.
 
 ## Ce qui est attendu en sortie
 
@@ -147,5 +143,12 @@ Fonctionnement : le moteur calcule, l'IA explique et compose trois stratégies �
 Corrections faites :
 - l'IA reçoit maintenant les composantes de perte de chaque position, la cascade et les exécutions de référence, et doit nommer les positions les plus touchées et leur canal. Ses explications sont devenues spécifiques au portefeuille (bad debt des prêteurs, boucle de liquidation) ;
 - chaque stratégie tardive porte `total_including_incurred_usd`, et le dashboard compare toujours sur cette base.
+- l'appel est déterministe (température 0, graine fixe) : deux exécutions sur le même plan donnent la même recommandation et les mêmes stratégies.
 
 **Conclusion** : le verdict reste celui du moteur, déterministe et vérifiable. L'IA apporte une explication lisible et des alternatives chiffrées, mais elle n'est **pas fiable comme décideur**. Le dashboard affiche donc « l'analyste perd X $ de plus que le verdict : le verdict reste » quand elle s'en écarte.
+
+## Limites restantes
+
+- **Distribution des emprunteurs Aave** : la cascade utilise la vraie distribution des LTV pour les marchés Morpho (sUSDe/PYUSD, USDe/RLUSD), mais pas pour Aave, où il faudrait un indexeur des comptes de l'e-mode. Pour Aave, seule notre propre position est liquidée.
+- **Jeu `live_ethena_01`** : la cassette de découverte n'enregistre pas encore les LTV des emprunteurs ; la cascade y reste limitée aux positions du portefeuille.
+- **Au-delà des tailles cotées**, le coût de sortie est extrapolé et signalé comme tel. Le routeur Pendle ne trouve plus de route au-delà d'environ 4 M$ pour le PT-sUSDe.

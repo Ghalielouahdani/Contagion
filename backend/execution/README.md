@@ -198,7 +198,7 @@ Sources are tried per exit size in priority order; `quote_status` reports the on
 
 ## Limitations
 
-- **The proxy overstates price impact on stable pools.** Constant-product maths ignores stableswap curves (Curve) and the Pendle AMM; real quotes should be lower for USDe/USDC and sUSDe/USDC.
+- **The proxy overstates price impact on stable pools.** Constant-product maths ignores stableswap curves (Curve) and the Pendle AMM. USDe, sUSDe and PT-sUSDe now carry real executable quote curves (KyberSwap, Pendle router), so the proxy only remains for venues without quotes.
 - **Exiting sUSDe is not instantaneous.** Redeeming sUSDe for USDe goes through Ethena's cooldown period, so a fast exit depends on secondary-market liquidity (the venue), which is what the model prices.
 - **Shared venues are priced standalone.** `ethena_susde_01` and `morpho_01` both sell on `venue:susde_usdc`; a simultaneous exit costs more than the sum of standalone costs (flagged in the portfolio summary).
 - **Residual loss is pro rata (blueprint rule).** In the liquidity crisis the forced-sale haircut is convex, so (1 − x) × L overstates the remaining risk (aave_01 keeping 75 %: 81,325 USD real vs 107,143 USD pro rata), which biases towards exiting.
@@ -206,7 +206,7 @@ Sources are tried per exit size in priority order; `quote_status` reports the on
 
 ## Open points for the team
 
-- **P1:** `morpho_01` has `collateral_supply_apy = 0.00`, but its sUSDe collateral accrues ≈7 %/yr through the exchange rate (same as `ethena_susde_01`). With 0 % the carry is −110,000 USD/yr instead of ≈ +100,000 USD/yr, which lowers its break-even probabilities.
+- **P1 (fixed):** `morpho_01` pays no collateral APY on Morpho, but its sUSDe collateral keeps accruing through the exchange rate. The snapshot now carries it in `asset_yields` and the carry counts it, so exiting gives up ≈113 USD over 7 days and the break-even is ≈1 %.
 - **P3 schema (additive):** allow `null` cost fields when `quote_status = "unavailable"`, so the UI can show "no price" instead of a missing row.
 - **P2 / team:** compute the liquidity-scenario residual loss on the remaining size instead of pro rata.
 - **Team:** with zero conditional loss and no probability, rule 1 returns `INSUFFICIENT_DATA` although STAY dominates for every probability; returning STAY would not invent a probability.

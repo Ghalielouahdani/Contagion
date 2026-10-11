@@ -10,14 +10,14 @@
     {
       "position_id": "ethena_susde_01",
       "gross_value_before_usd": "2002942.89",
-      "gross_value_after_usd": "1902795.74",
+      "gross_value_after_usd": "1900383.02",
       "executable_value_after_usd": null,
       "debt_after_usd": "0.00",
       "net_equity_before_usd": "2002942.89",
-      "net_equity_after_usd": "1902795.75",
-      "conditional_loss_usd": "100147.14",
+      "net_equity_after_usd": "1900383.02",
+      "conditional_loss_usd": "102559.87",
       "loss_components": {
-        "market_repricing": "100147.14",
+        "market_repricing": "102559.87",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
         "execution_haircut": "0.00"
@@ -66,7 +66,7 @@
             },
             {
               "name": "sUSDe beta to USDe",
-              "value": "1.000000",
+              "value": "1.024092",
               "unit": "ratio",
               "source": "user_scenario"
             },
@@ -90,7 +90,7 @@
             }
           ],
           "result": {
-            "value": "1.189247",
+            "value": "1.187739",
             "unit": "price"
           }
         },
@@ -113,7 +113,7 @@
             }
           ],
           "result": {
-            "value": "1902795.74",
+            "value": "1900383.02",
             "unit": "usd"
           }
         },
@@ -130,19 +130,19 @@
             },
             {
               "name": "net after the depeg alone",
-              "value": "1902795.74",
+              "value": "1900383.02",
               "unit": "usd",
               "source": "derived"
             },
             {
               "name": "net after all shocks",
-              "value": "1902795.74",
+              "value": "1900383.02",
               "unit": "usd",
               "source": "derived"
             }
           ],
           "result": {
-            "value": "100147.14",
+            "value": "102559.87",
             "unit": "usd"
           },
           "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
@@ -154,7 +154,7 @@
           "inputs": [
             {
               "name": "market repricing",
-              "value": "100147.14",
+              "value": "102559.87",
               "unit": "usd",
               "source": "derived"
             },
@@ -178,7 +178,7 @@
             }
           ],
           "result": {
-            "value": "100147.14",
+            "value": "102559.87",
             "unit": "usd"
           }
         }
@@ -469,14 +469,14 @@
     {
       "position_id": "morpho_01",
       "gross_value_before_usd": "3004414.33",
-      "gross_value_after_usd": "2854193.62",
+      "gross_value_after_usd": "2850574.53",
       "executable_value_after_usd": null,
       "debt_after_usd": "2000134.00",
       "net_equity_before_usd": "1004280.33",
-      "net_equity_after_usd": "854059.61",
-      "conditional_loss_usd": "150220.72",
+      "net_equity_after_usd": "850440.52",
+      "conditional_loss_usd": "153839.81",
       "loss_components": {
-        "market_repricing": "150220.72",
+        "market_repricing": "153839.81",
         "backing_impairment": "0.00",
         "liquidation_penalty": "0.00",
         "execution_haircut": "0.00"
@@ -484,11 +484,11 @@
       "risk_metric": {
         "type": "ltv",
         "before": "0.6657",
-        "after": "0.7008",
+        "after": "0.7017",
         "threshold": "0.9150",
         "liquidatable": false,
         "distance_to_liquidation_before_pct": "0.2724",
-        "distance_to_liquidation_after_pct": "0.2341"
+        "distance_to_liquidation_after_pct": "0.2332"
       },
       "source_type": "derived",
       "calculation_status": "computed",
@@ -583,7 +583,7 @@
             },
             {
               "name": "sUSDe beta to USDe",
-              "value": "1.000000",
+              "value": "1.024092",
               "unit": "ratio",
               "source": "user_scenario"
             },
@@ -607,7 +607,7 @@
             }
           ],
           "result": {
-            "value": "1.189247",
+            "value": "1.187739",
             "unit": "price"
           }
         },
@@ -641,7 +641,7 @@
             },
             {
               "name": "collateral value after",
-              "value": "2854193.62",
+              "value": "2850574.53",
               "unit": "usd",
               "source": "derived"
             },
@@ -665,7 +665,7 @@
             }
           ],
           "result": {
-            "value": "854059.62",
+            "value": "850440.53",
             "unit": "usd"
           }
         },
@@ -682,19 +682,19 @@
             },
             {
               "name": "net after the depeg alone",
-              "value": "854059.62",
+              "value": "850440.53",
               "unit": "usd",
               "source": "derived"
             },
             {
               "name": "net after all shocks",
-              "value": "854059.62",
+              "value": "850440.53",
               "unit": "usd",
               "source": "derived"
             }
           ],
           "result": {
-            "value": "150220.72",
+            "value": "153839.81",
             "unit": "usd"
           },
           "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
@@ -718,7 +718,7 @@
             },
             {
               "name": "market move of the collateral",
-              "value": "-0.050000",
+              "value": "-0.051205",
               "unit": "pct",
               "source": "derived"
             },
@@ -736,7 +736,7 @@
             }
           ],
           "result": {
-            "value": "2854193.62",
+            "value": "2850574.53",
             "unit": "usd"
           },
           "note": "Pass-through 1 = the oracle reads the market price; 0 = it ignores the depeg (exchange-rate oracle)."
@@ -754,7 +754,7 @@
             },
             {
               "name": "oracle collateral",
-              "value": "2854193.62",
+              "value": "2850574.53",
               "unit": "usd",
               "source": "derived"
             },
@@ -766,10 +766,10 @@
             }
           ],
           "result": {
-            "value": "0.700770",
+            "value": "0.701660",
             "unit": "ratio"
           },
-          "note": "Before: 0.6657. Liquidatable: False. Distance to liquidation after: 23.41% of further oracle price drop."
+          "note": "Before: 0.6657. Liquidatable: False. Distance to liquidation after: 23.32% of further oracle price drop."
         },
         {
           "id": "loss",
@@ -778,7 +778,7 @@
           "inputs": [
             {
               "name": "market repricing",
-              "value": "150220.72",
+              "value": "153839.81",
               "unit": "usd",
               "source": "derived"
             },
@@ -802,7 +802,7 @@
             }
           ],
           "result": {
-            "value": "150220.72",
+            "value": "153839.81",
             "unit": "usd"
           }
         }
@@ -987,8 +987,8 @@
   ],
   "portfolio": {
     "net_equity_before_usd": "6202968.85",
-    "net_equity_after_usd": "5702825.67",
-    "total_conditional_loss_usd": "500143.18",
+    "net_equity_after_usd": "5696793.85",
+    "total_conditional_loss_usd": "506175.00",
     "shared_liquidity_penalty_usd": "0.00",
     "aggregation_status": "complete"
   },
@@ -1007,26 +1007,35 @@
     },
     "final_moves": {
       "USDe": "-0.0500",
-      "sUSDe": "-0.0500"
+      "sUSDe": "-0.0512"
     },
     "trough_moves": {
       "USDe": "-0.0500",
-      "sUSDe": "-0.0500"
+      "sUSDe": "-0.9905"
     },
-    "amplification": "1.0000",
+    "amplification": "1.0241",
     "rounds": [
       {
         "round": 1,
+        "liquidated_debt_usd": "96963609.18",
+        "collateral_sold_usd": "4853955.49",
+        "moves": {
+          "USDe": "-0.0500",
+          "sUSDe": "-0.9905"
+        }
+      },
+      {
+        "round": 2,
         "liquidated_debt_usd": "0.00",
         "collateral_sold_usd": "0.00",
         "moves": {
           "USDe": "-0.0500",
-          "sUSDe": "-0.0500"
+          "sUSDe": "-0.0512"
         }
       }
     ],
-    "liquidated_debt_usd": "0.00",
-    "bad_debt_usd": "0.00",
+    "liquidated_debt_usd": "96963609.18",
+    "bad_debt_usd": "92233580.44",
     "stuck_debt_usd": "0.00",
     "converged": true
   },
@@ -1071,14 +1080,21 @@
         "value": "-0.050000",
         "unit": "pct"
       },
-      "note": "Final sUSDe move -5.00%; positions are priced at these final moves.",
+      "note": "Final sUSDe move -5.12%; positions are priced at these final moves.",
       "rows": [
         {
           "round": "1.000000",
+          "liquidated_debt_usd": "96963609.18",
+          "collateral_sold_usd": "4853955.49",
+          "usde_move": "-0.050000",
+          "susde_move": "-0.990500"
+        },
+        {
+          "round": "2.000000",
           "liquidated_debt_usd": "0.00",
           "collateral_sold_usd": "0.00",
           "usde_move": "-0.050000",
-          "susde_move": "-0.050000"
+          "susde_move": "-0.051205"
         }
       ]
     },
@@ -1089,7 +1105,7 @@
       "inputs": [
         {
           "name": "ethena_susde_01",
-          "value": "100147.14",
+          "value": "102559.87",
           "unit": "usd",
           "source": "derived"
         },
@@ -1101,7 +1117,7 @@
         },
         {
           "name": "morpho_01",
-          "value": "150220.72",
+          "value": "153839.81",
           "unit": "usd",
           "source": "derived"
         },
@@ -1119,10 +1135,10 @@
         }
       ],
       "result": {
-        "value": "500143.18",
+        "value": "506175.00",
         "unit": "usd"
       },
-      "note": "8.06% of net equity (6202968.85 USD)."
+      "note": "8.16% of net equity (6202968.85 USD)."
     }
   ],
   "comparison": {
@@ -1133,7 +1149,7 @@
         "total_conditional_loss_usd": "500143.18"
       }
     ],
-    "excess_loss_usd": "0.00",
+    "excess_loss_usd": "6031.82",
     "excess_meaning": "Loss added by the cascade: forced selling pushes prices further and triggers new liquidations."
   },
   "contagion": {

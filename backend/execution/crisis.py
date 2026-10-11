@@ -18,6 +18,8 @@ sont chiffrées ensemble (vendre deux positions dans la même pool coûte plus q
 """
 from __future__ import annotations
 
+from backend.risk.pricing import collateral_yield_apy
+
 from decimal import Decimal as D, ROUND_HALF_UP
 
 import backend.risk  # noqa: F401  (enregistre les sept scénarios)
@@ -59,7 +61,7 @@ class _Context:
         y = self.snapshot.yields.get(self.position.position_id, {})
         p = self.position
         if p.is_borrow:
-            annual = _d(y.get("collateral_supply_apy", 0.0)) * self.gross_before \
+            annual = _d(collateral_yield_apy(p, self.snapshot)) * self.gross_before \
                 - _d(y.get("debt_borrow_apy", 0.0)) * _d(p.debt_value_usd)
         else:
             annual = _d(y.get("token_apy", 0.0)) * self.gross_before

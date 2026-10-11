@@ -130,5 +130,11 @@
     "All values are fixture assumptions; the two markets differ only by their oracle.",
     "Borrower LTV buckets are assumed; P1 must index borrower positions (Morpho positions per market) to replace them.",
     "Collateral exit venues (USDe, sUSDe) carry assumed proxy depths from demo_ethena_01: they price liquidators' selling in the cascade scenario."
-  ]
+  ],
+  "asset_yields": {
+    "sUSDe": {
+      "value": "0.07",
+      "source_type": "assumed"
+    }
+  }
 }

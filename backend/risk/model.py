@@ -30,6 +30,7 @@ class Position:
     collateral_quantity: float | None = None
     debt_asset: str | None = None
     debt_quantity: float | None = None
+    market_id: str | None = None  # the protocol market (Morpho id, Aave pool, Pendle market); identifies shared markets
 
     @property
     def is_borrow(self) -> bool:
@@ -52,6 +53,7 @@ class Position:
             collateral_quantity=num(raw.get("collateral_quantity")),
             debt_asset=raw.get("debt_asset"),
             debt_quantity=num(raw.get("debt_quantity")),
+            market_id=raw.get("market_id"),
         )
 
 
@@ -82,6 +84,7 @@ class Snapshot:
     venues: dict[str, Venue]
     verified: bool
     yields: dict[str, dict[str, float]] = field(default_factory=dict)  # position_id -> {token_apy, collateral_supply_apy, debt_borrow_apy}
+    asset_yields: dict[str, float] = field(default_factory=dict)  # asset -> intrinsic APY (e.g. sUSDe exchange-rate accrual)
     # Provenance of each input for the calculation trace: "price:<sym>", "rate:<key>", "market:<id>",
     # "venue:<id>", "yield:<id>" -> source_type ("verified" for an on-chain verified market).
     sources: dict[str, str] = field(default_factory=dict)
@@ -108,6 +111,7 @@ class Snapshot:
                 pid: {k: float(v) for k, v in y.items() if k.endswith("_apy")}
                 for pid, y in raw.get("yields", {}).items()
             },
+            asset_yields={asset: float(v["value"]) for asset, v in raw.get("asset_yields", {}).items()},
             sources=_sources(raw),
         )
 

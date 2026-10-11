@@ -12,9 +12,9 @@
     "scenario_loss_pct_nav": "0.0026",
     "usde_exposure_usd": "2299104.86",
     "usde_effective_leverage": "0.9056",
-    "derisking_savings_usd": "8211.23",
-    "derisking_savings_bps_nav": "32.3450",
-    "liquidation_protection_net_benefit_usd": "12721.90",
+    "derisking_savings_usd": "3461.82",
+    "derisking_savings_bps_nav": "13.6366",
+    "liquidation_protection_net_benefit_usd": "11895.25",
     "targeted_plan_break_even_probability": "-0.0523",
     "top_risk_driver": "sUSDe APY"
   },
@@ -171,10 +171,10 @@
         "lend_usde_01": "0.5000"
       },
       "loss_reduction_usd": "3240.91",
-      "trading_cost_usd": "6187.59",
-      "foregone_yield_usd": "1813.33",
-      "total_cost_usd": "8000.92",
-      "break_even_probability": "2.4687"
+      "trading_cost_usd": "440.12",
+      "foregone_yield_usd": "2811.39",
+      "total_cost_usd": "3251.52",
+      "break_even_probability": "1.0033"
     },
     "targeted": {
       "plan": "targeted",
@@ -203,18 +203,18 @@
         "lend_usde_01": "1.0000"
       },
       "loss_reduction_usd": "6481.81",
-      "trading_cost_usd": "22608.98",
-      "foregone_yield_usd": "3626.67",
-      "total_cost_usd": "26235.65",
-      "break_even_probability": "4.0476"
+      "trading_cost_usd": "829.07",
+      "foregone_yield_usd": "5622.79",
+      "total_cost_usd": "6451.86",
+      "break_even_probability": "0.9954"
     },
-    "savings_usd": "8211.23",
-    "savings_pct_of_uniform_cost": "1.0263",
-    "savings_bps_nav": "32.3450",
+    "savings_usd": "3461.82",
+    "savings_pct_of_uniform_cost": "1.0647",
+    "savings_bps_nav": "13.6366",
     "cost_per_usd_protected": {
       "ethena_susde_01": null,
       "aave_01": "-0.0709",
-      "morpho_01": "-0.0375",
+      "morpho_01": "0.0215",
       "pendle_01": null,
       "lend_susde_01": null,
       "lend_usde_01": null
@@ -226,10 +226,10 @@
       "liquidation_penalty_usd": "12114.53",
       "preemptive": {
         "deleverage_usd": "207371.88",
-        "cost_usd": "-607.36",
+        "cost_usd": "219.28",
         "penalty_avoided_usd": "12114.53",
         "mark_loss_avoided_usd": "0.00",
-        "net_benefit_usd": "12721.90"
+        "net_benefit_usd": "11895.25"
       },
       "during_oracle_lag": null
     }

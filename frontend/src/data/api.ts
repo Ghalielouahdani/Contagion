@@ -426,7 +426,7 @@ export type CrisisPlan = {
     warnings: string[];
   }>;
   strategies: { early: CrisisStrategy[]; late: CrisisStrategy[] };
-  hedging: { shocked_assets: Record<string, string>; assets: Array<{ asset: string; usable_as_hedge: boolean }>; unpriced_instruments?: string[]; warnings: string[] };
+  hedging: { shocked_assets: Record<string, string>; assets: Array<{ asset: string; usable_as_hedge: boolean }>; unpriced_instruments?: Array<{ instrument: string; why_unpriced: string }>; warnings: string[] };
   warnings: string[];
 };
 export type CrisisAdvice = {
