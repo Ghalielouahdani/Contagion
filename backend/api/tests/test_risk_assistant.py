@@ -138,6 +138,7 @@ def test_provider_transport_and_key_redaction(monkeypatch):
 
 def test_news_feed_is_explicitly_unconfigured(monkeypatch):
     monkeypatch.setenv("RISK_NEWS_URL", "")
+    monkeypatch.setenv("RISK_NEWS_PROVIDER", "")
     body = client.get("/api/v1/risk/news").json()
     assert body["status"] == "not_configured" and body["articles"] == []
 
