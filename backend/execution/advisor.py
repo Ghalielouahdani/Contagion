@@ -18,7 +18,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-from backend.execution.crisis import CrisisModel, TIMINGS, plan_from_model, usd
+from backend.execution.crisis import EXIT_ONLY, TIMINGS, CrisisModel, plan_from_model, usd
 
 ROOT = Path(__file__).resolve().parents[2]
 ACTIONS = ["hold", "sell", "deleverage", "withdraw"]
@@ -182,6 +182,16 @@ def _metric(row: dict) -> dict | None:
     return {k: m.get(k) for k in ("type", "before", "after", "threshold", "liquidatable", "distance_to_liquidation_after_pct")}
 
 
+def _holding_components(components: dict, holding_loss: str) -> dict:
+    """Ce que garder coûte, composante par composante : sans la vente forcée (garder ne vend rien), avec le
+    plafond de responsabilité limitée recalculé comme dans crisis.py. Leur somme vaut loss_if_kept_usd."""
+    kept = {k: D(v) for k, v in components.items() if k not in EXIT_ONLY | {"limited_liability"}}
+    cap = D(holding_loss) - sum(kept.values(), D(0))
+    if abs(cap) >= D("0.005"):
+        kept["limited_liability"] = cap
+    return {k: usd(v) for k, v in kept.items() if abs(v) >= D("0.005")}
+
+
 def build_context(plan: dict, risk_result: dict, scenario_request: dict) -> dict:
     """Données envoyées à l'IA : uniquement des chiffres calculés, sans adresses ni secrets."""
     metrics = {row["position_id"]: _metric(row) for row in risk_result["positions"]}
@@ -190,7 +200,7 @@ def build_context(plan: dict, risk_result: dict, scenario_request: dict) -> dict
     for row in plan["positions"]:
         entry = {"position_id": row["position_id"], "position_type": row["position_type"],
                  "loss_if_kept_usd": row["holding_loss_usd"], "liquidation_metric": metrics.get(row["position_id"]),
-                 "loss_components": {k: v for k, v in components.get(row["position_id"], {}).items() if D(v) != 0},
+                 "loss_components": _holding_components(components.get(row["position_id"], {}), row["holding_loss_usd"]),
                  "notes": row["warnings"], "available_actions": {}}
         for timing in TIMINGS:
             block = row[timing]

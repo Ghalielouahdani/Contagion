@@ -1,0 +1,1520 @@
+{
+ "meta": {
+  "block": 26166225,
+  "observed_at": "2026-10-11T02:30:05Z",
+  "chain_id": 1,
+  "wallet": "0xcf0a12cbd8088fc5f84ad431e71787157041cd69",
+  "recorded_by": "backend.discovery.wallet"
+ },
+ "entries": {
+  "http [\"GET\",\"https://api-v2.pendle.finance/core/v1/1/markets/active\",{},{}]": {
+   "markets": [
+    {
+     "name": "wstETH",
+     "address": "0x34280882267ffa6383b363e278b027be083bbe3b",
+     "expiry": "2027-12-30T00:00:00.000Z",
+     "pt": "1-0xb253eff1104802b97ac7e3ac9fdd73aece295a2c",
+     "yt": "1-0x04b7fa1e727d7290d6e24fa9b426d0c940283a95",
+     "sy": "1-0xcbc72d92b2dc8187414f6734718563898740c0bc",
+     "underlyingAsset": "1-0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+     "details": {
+      "liquidity": 5152052.849842715,
+      "pendleApy": 0.0009567877694489108,
+      "impliedApy": 0.021313087936750463,
+      "feeRate": 0.0004999999993486881,
+      "yieldRange": {
+       "min": 0.029978328225930276,
+       "max": 0.07247767045580256
+      },
+      "aggregatedApy": 0.02362682234158158,
+      "maxBoostedApy": 0.025062003995754947
+     },
+     "isNew": false,
+     "isPrime": true,
+     "timestamp": "2023-05-29T07:40:11.000Z",
+     "categoryIds": [
+      "eth",
+      "lido"
+     ]
+    },
+    {
+     "name": "superUSDC",
+     "address": "0x61703e1ea2887fffd4b5f777bafd6abd7122bcf9",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0xd4e6ea03d2e8bfeb5fa5c03ae9352514b1829218",
+     "yt": "1-0x6316ebb9ef25bd9bb0432b291ee737066560138b",
+     "sy": "1-0x4d654f255d54637112844bd8802b716170904fee",
+     "underlyingAsset": "1-0xf6ebea08a0dfd44825f67fa9963911c81be2a947",
+     "details": {
+      "liquidity": 377532.25581408833,
+      "pendleApy": 0.00775749747542831,
+      "impliedApy": 0.08171385866923475,
+      "feeRate": 0.001545455916864391,
+      "yieldRange": {
+       "min": 0.05,
+       "max": 0.21
+      },
+      "aggregatedApy": 0.10160843196615954,
+      "maxBoostedApy": 0.16610870638664157
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-04-27T20:52:47.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "superWETH",
+     "address": "0x384509537ce5daa5740baeb6d1ee0eb2847ea8a8",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0x1cfaed2df5ee27b078e96fafa10709c5548fc1b7",
+     "yt": "1-0x775f0f7690c2ceed13d20f9a302d1e8069d56b3b",
+     "sy": "1-0x3aecaedfb92efbbac95e5c458c56e94070cb9179",
+     "underlyingAsset": "1-0xa036823b9a24f63c32553367bf181ee04229c3ac",
+     "details": {
+      "liquidity": 350115.32048746623,
+      "pendleApy": 0.00972470247805589,
+      "impliedApy": 0.05901545244285189,
+      "feeRate": 0.0011720818479485917,
+      "yieldRange": {
+       "min": 0.02,
+       "max": 0.12999999999999998
+      },
+      "aggregatedApy": 0.0720430403979089,
+      "maxBoostedApy": 0.11828690887513167
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-04-27T20:59:47.000Z",
+     "categoryIds": [
+      "points",
+      "eth"
+     ]
+    },
+    {
+     "name": "srRoyAPYUSD",
+     "address": "0x0e201d27ded56cf4a0da8853d7604743de217435",
+     "expiry": "2026-11-05T00:00:00.000Z",
+     "pt": "1-0x44db865cc6d5768703fb5bf73dfb7a5a0f95c1fc",
+     "yt": "1-0x7cf9ea7bc05c6b3f8517b71f8d87feecb006def4",
+     "sy": "1-0xa99a50d95003e7687d7962f29aad6cdd3655d411",
+     "underlyingAsset": "1-0xbd373c9d3d8976a4fecc504a93c768bbe8c3227c",
+     "details": {
+      "liquidity": 149704.46179406645,
+      "pendleApy": 0,
+      "impliedApy": 0.15349999999999864,
+      "feeRate": 0.002731891893999805,
+      "yieldRange": {
+       "min": 0.07,
+       "max": 0.12999999999999998
+      },
+      "aggregatedApy": 0.15289912830501395,
+      "maxBoostedApy": 0.15289912830501395
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-01T21:08:11.000Z",
+     "categoryIds": [
+      "points",
+      "rwa",
+      "strc",
+      "apyx"
+     ]
+    },
+    {
+     "name": "jrRoyAPYUSD",
+     "address": "0x5949c3bfdf9babd759170a3a75c4fe52b03e6797",
+     "expiry": "2026-11-05T00:00:00.000Z",
+     "pt": "1-0xd70be760f0bc3009db4563fe0b9eee54883adb50",
+     "yt": "1-0x56467eef9be9bcd025c24d4437525e02acbe310b",
+     "sy": "1-0x464a2b93b6633707470bcd2c81d34519f38e1e9c",
+     "underlyingAsset": "1-0xab2ab53e1e2e2c5d7202918ec8c873712bcc4a2d",
+     "details": {
+      "liquidity": 984608.9483140216,
+      "pendleApy": 0.001966840499331403,
+      "impliedApy": 0.19322967646372602,
+      "feeRate": 0.0035264030258483903,
+      "yieldRange": {
+       "min": 0.115,
+       "max": 0.3
+      },
+      "aggregatedApy": 0.08279874635283468,
+      "maxBoostedApy": 0.08574900710183178
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-01T21:41:47.000Z",
+     "categoryIds": [
+      "points",
+      "rwa",
+      "strc",
+      "apyx"
+     ]
+    },
+    {
+     "name": "fxSAVE",
+     "address": "0x8308e53f584a7e5f0c581059d9ba971c0bec9454",
+     "expiry": "2026-10-29T00:00:00.000Z",
+     "pt": "1-0x079c3469143804af5d0d645a878c371dbe8d038e",
+     "yt": "1-0x1964590af52cd77c2f30970bdbcb4d6e3dbdc615",
+     "sy": "1-0x13945b761b2ed3219a497a46d15a8923f418d2ab",
+     "underlyingAsset": "1-0x7743e50f534a7f9f1791dde7dcd89f7783eefc39",
+     "details": {
+      "liquidity": 1448848.8031713685,
+      "pendleApy": 0.002153725826358832,
+      "impliedApy": 0.08469520872953651,
+      "feeRate": 0.0017459976098341823,
+      "yieldRange": {
+       "min": 0.04,
+       "max": 0.16999999999999998
+      },
+      "aggregatedApy": 0.10181065208149379,
+      "maxBoostedApy": 0.14920563717392243
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-15T03:12:47.000Z",
+     "categoryIds": [
+      "stables"
+     ]
+    },
+    {
+     "name": "WOUSD",
+     "address": "0x30ee7618e0ef0682f0f354d6f84be87de6b8878c",
+     "expiry": "2026-12-17T00:00:00.000Z",
+     "pt": "1-0xeccde3a92f8ad4884a2613d9ef1556103c26728f",
+     "yt": "1-0x4f93641804ddd289ce8917533169a767ce17cd9a",
+     "sy": "1-0xe22deabf5b174437092ae9ac79761b03ef178ca8",
+     "underlyingAsset": "1-0xd2af830e8cbdfed6cc11bab697bb25496ed6fa62",
+     "details": {
+      "liquidity": 126000.2390662612,
+      "pendleApy": 0,
+      "impliedApy": 0.06531747432468826,
+      "feeRate": 0.0012662558903497878,
+      "yieldRange": {
+       "min": 0.030000000000000002,
+       "max": 0.11999999999999998
+      },
+      "aggregatedApy": 0.06328586760268982,
+      "maxBoostedApy": 0.06328586760268982
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-15T04:19:47.000Z",
+     "categoryIds": [
+      "stables"
+     ]
+    },
+    {
+     "name": "sUSDS",
+     "address": "0x9c560ebaf78e596cbcc27411d633a74d628dd7dc",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0xdc169abe56461a2e0c034da431ac2a3ebf596094",
+     "yt": "1-0xc7b8551c6b286ce0b44952320e940bd3dee58a09",
+     "sy": "1-0xbe3d4ec488a0a042bb86f9176c24f8cd54018ba7",
+     "underlyingAsset": "1-0xa3931d71877c0e7a3148cb7eb4463524fec27fbd",
+     "details": {
+      "liquidity": 4769802.576520483,
+      "pendleApy": 0.0024878896205654745,
+      "impliedApy": 0.048851890183492896,
+      "feeRate": 0.0009985765669870972,
+      "yieldRange": {
+       "min": 0.03,
+       "max": 0.11999999999999998
+      },
+      "aggregatedApy": 0.046406325522395556,
+      "maxBoostedApy": 0.05013815995324377
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-15T07:10:23.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa",
+      "skymoney",
+      "fixed-rates",
+      "yt-leverage"
+     ]
+    },
+    {
+     "name": "apyUSD",
+     "address": "0xc5f938a8ef5f3bf9e72f5aa094baf5e03f4727d3",
+     "expiry": "2026-11-05T00:00:00.000Z",
+     "pt": "1-0xb5be35d8ff83d431899b95851cb17a2b4bcef150",
+     "yt": "1-0x85cc1b74fc95abb6b9b6060c56334ba3e4b88ed4",
+     "sy": "1-0x04f8dca7bccd8997ac57ca6fef7c705e17d6bcb6",
+     "underlyingAsset": "1-0x38eeb52f0771140d10c4e9a9a72349a329fe8a6a",
+     "details": {
+      "liquidity": 19657517.54207048,
+      "pendleApy": 0.000470402292397606,
+      "impliedApy": 0.16066347149630378,
+      "feeRate": 0.002875610410699503,
+      "yieldRange": {
+       "min": 0.08000000000000002,
+       "max": 0.29
+      },
+      "aggregatedApy": 0.14985272487950194,
+      "maxBoostedApy": 0.15055832831809834
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-16T00:37:59.000Z",
+     "categoryIds": [
+      "points",
+      "rwa",
+      "strc",
+      "apyx"
+     ]
+    },
+    {
+     "name": "apxUSD",
+     "address": "0xaf0349fb9b1ba07d34381870c59b560b31412660",
+     "expiry": "2026-11-05T00:00:00.000Z",
+     "pt": "1-0xaf687b5ecb525ccea96115088999b4ed80c388b6",
+     "yt": "1-0x7fbc01c63b0ac372ec75907f3a1d8adc8cf28e1f",
+     "sy": "1-0x4f116ee5bcd227d1a1c4f57918d694a4abe7b3fc",
+     "underlyingAsset": "1-0x98a878b1cd98131b271883b390f68d2c90674665",
+     "details": {
+      "liquidity": 1626159.2520056588,
+      "pendleApy": 0.004008972550474882,
+      "impliedApy": 0.13591080165113723,
+      "feeRate": 0.002652893384752497,
+      "yieldRange": {
+       "min": 0.060000000000000005,
+       "max": 0.24999999999999997
+      },
+      "aggregatedApy": 0.06006449011583061,
+      "maxBoostedApy": 0.06607794894154292
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-16T00:44:47.000Z",
+     "categoryIds": [
+      "points",
+      "rwa",
+      "strc",
+      "apyx"
+     ]
+    },
+    {
+     "name": "USD3",
+     "address": "0x4a5067c3ff1abb7449244025b0e37feaf77d8e3e",
+     "expiry": "2026-12-17T00:00:00.000Z",
+     "pt": "1-0x7f47c3e6b2c00fc4eb4d5ae50d0ab0ab6888eb4d",
+     "yt": "1-0x5cffcc9ddef0fdcf395e2ea24ca5ed5a12032706",
+     "sy": "1-0xea3bc608f32847b97965c5e1648bdfcd4c2c40d0",
+     "underlyingAsset": "1-0x056b269eb1f75477a8666ae8c7fe01b64dd55ecc",
+     "details": {
+      "liquidity": 7171687.487662116,
+      "pendleApy": 0.004867191311894273,
+      "impliedApy": 0.15049536015472542,
+      "feeRate": 0.0026439829591216046,
+      "yieldRange": {
+       "min": 0.03500000000000001,
+       "max": 0.19999999999999998
+      },
+      "aggregatedApy": 0.1362207217459881,
+      "maxBoostedApy": 0.1435215087138295
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-05-19T02:32:23.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa"
+     ]
+    },
+    {
+     "name": "jrUSDe",
+     "address": "0x78f6927ab0600c445178645f3c64afec85f6dd8a",
+     "expiry": "2026-10-22T00:00:00.000Z",
+     "pt": "1-0x9786a09cbb2efb23046542576ffd9a235aa3ca07",
+     "yt": "1-0xfed516abb3dd311b370a774209c2b56738d86334",
+     "sy": "1-0x4f6673346ab4813f1665327ab39087008cc7d76f",
+     "underlyingAsset": "1-0xc58d044404d8b14e953c115e67823784dea53d8f",
+     "details": {
+      "liquidity": 715914.5724641945,
+      "pendleApy": 0.0021360332297912826,
+      "impliedApy": 0.06533879414523014,
+      "feeRate": 0.0012281730649155165,
+      "yieldRange": {
+       "min": 0.030000000000000002,
+       "max": 0.11999999999999998
+      },
+      "aggregatedApy": 0.058601599478424395,
+      "maxBoostedApy": 0.06180564932311131
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-05T18:14:59.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "ethena"
+     ]
+    },
+    {
+     "name": "srUSDe",
+     "address": "0x66ec657c59cdcaf171ab43b83da3942758bf8a97",
+     "expiry": "2026-10-22T00:00:00.000Z",
+     "pt": "1-0x59bc9fae5d62b19d4f8d07d758047acb9ee19d34",
+     "yt": "1-0xfe6040719cca36aeb85e352f48fe956057728814",
+     "sy": "1-0xc9bfebc79a722c05dc34bd2a227ef2db19fd1b8e",
+     "underlyingAsset": "1-0x3d7d6fdf07ee548b939a80edbc9b2256d0cdc003",
+     "details": {
+      "liquidity": 3683113.5525629544,
+      "pendleApy": 0.0015199729658084687,
+      "impliedApy": 0.05648619273297628,
+      "feeRate": 0.001072917563744058,
+      "yieldRange": {
+       "min": 0.019999999999999997,
+       "max": 0.08999999999999998
+      },
+      "aggregatedApy": 0.05313261154774881,
+      "maxBoostedApy": 0.05541257099646151
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-05T18:16:59.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "ethena",
+      "pt-looping"
+     ]
+    },
+    {
+     "name": "sUSDf",
+     "address": "0x84cda226022b5d6012b418e76b815b967ecc785b",
+     "expiry": "2026-12-17T00:00:00.000Z",
+     "pt": "1-0x5987440ec8fa7f8976fe5d324e052a3140c9f333",
+     "yt": "1-0xd94d3b841ea48a0e0b3cfc75296686d19af3cf8a",
+     "sy": "1-0xa780d7f775b4eff6846a8c28981f086bc6a7d637",
+     "underlyingAsset": "1-0xc8cf6d7991f15525488b2a83df53468d682ba4b0",
+     "details": {
+      "liquidity": 235616.02132155836,
+      "pendleApy": 0.006252736343716606,
+      "impliedApy": 0.04244656481752007,
+      "feeRate": 0.0008109384594052749,
+      "yieldRange": {
+       "min": 0.04,
+       "max": 0.10999999999999999
+      },
+      "aggregatedApy": 0.05832690037716567,
+      "maxBoostedApy": 0.06770600489274058
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-08T03:13:11.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "reUSD",
+     "address": "0x13285bcbc27f92b47b4edb99d744c07b48c977c0",
+     "expiry": "2026-12-10T00:00:00.000Z",
+     "pt": "1-0xecfafdc7741323a945a163ed068b5a3c43483957",
+     "yt": "1-0xa8bd3b21291ace53927b35563fc80615919e63d7",
+     "sy": "1-0x9487bd5a3b16ecb5f3184453e3ee75b800141648",
+     "underlyingAsset": "1-0x5086bf358635b81d8c47c66d1c8b9e567db70c72",
+     "details": {
+      "liquidity": 12414776.542506604,
+      "pendleApy": 0.0031173720276225004,
+      "impliedApy": 0.11809523402020772,
+      "feeRate": 0.002216131296696844,
+      "yieldRange": {
+       "min": 0.060000000000000005,
+       "max": 0.18999999999999997
+      },
+      "aggregatedApy": 0.10387896699472751,
+      "maxBoostedApy": 0.10855502503616127
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-09T14:29:47.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa",
+      "rexyz",
+      "pt-looping"
+     ]
+    },
+    {
+     "name": "reUSDe",
+     "address": "0x90b70c407f1077f8eb92bf423b44cd92329b737a",
+     "expiry": "2026-12-10T00:00:00.000Z",
+     "pt": "1-0x2ae4f59e500b6ddeb88c480edf277eda54a00205",
+     "yt": "1-0xfd9aa51f530369ff5024bc3f6d6f3a00a789f94a",
+     "sy": "1-0x47dfd0c8eee949748c1d5cb6b695a4aba5fe7379",
+     "underlyingAsset": "1-0xddc0f880ff6e4e22e4b74632fbb43ce4df6ccc5a",
+     "details": {
+      "liquidity": 4702456.411621647,
+      "pendleApy": 0.002374586807422755,
+      "impliedApy": 0.18461387944611207,
+      "feeRate": 0.003399615342895901,
+      "yieldRange": {
+       "min": 0.09000000000000001,
+       "max": 0.21
+      },
+      "aggregatedApy": 0.17462654238453873,
+      "maxBoostedApy": 0.17818842259567286
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-09T14:39:47.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa",
+      "rexyz",
+      "lp-with-no-il"
+     ]
+    },
+    {
+     "name": "sUSD3",
+     "address": "0x7972de1c2f9f11f622a188fbae8c0a943880424f",
+     "expiry": "2026-12-17T00:00:00.000Z",
+     "pt": "1-0x41f45d21502bde8211e94d94ef2eeebcfc48a6ac",
+     "yt": "1-0xc7aa07578e1f7b3e2c567f8fece72ee1fd218437",
+     "sy": "1-0x77d2bc95ab51b75960ec3a01e112460ea7bafb20",
+     "underlyingAsset": "1-0xf689555121e529ff0463e191f9bd9d1e496164a7",
+     "details": {
+      "liquidity": 1289406.91678692,
+      "pendleApy": 0.00679467110237716,
+      "impliedApy": 0.2454660243061808,
+      "feeRate": 0.004087574336582689,
+      "yieldRange": {
+       "min": 0.060000000000000005,
+       "max": 0.25999999999999995
+      },
+      "aggregatedApy": 0.24048050823725517,
+      "maxBoostedApy": 0.25067251489082093
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-19T19:33:47.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa"
+     ]
+    },
+    {
+     "name": "USP",
+     "address": "0x3ffdf143cbe1e594fba183e2b9035eb027a732ec",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0xc83f11814428b91b7f176ba927c57043e89786cb",
+     "yt": "1-0xafb351cdcd9600fa75d29d5eac3d867e7870f69b",
+     "sy": "1-0xf5145335540c4116956c0936b7db08d1a862a2d9",
+     "underlyingAsset": "1-0x098697ba3fee4ea76294c5d6a466a4e3b3e95fe6",
+     "details": {
+      "liquidity": 31873.1075823327,
+      "pendleApy": 0,
+      "impliedApy": 0.18879999999999897,
+      "feeRate": 0.003210754411181016,
+      "yieldRange": {
+       "min": 0.07,
+       "max": 0.15999999999999998
+      },
+      "aggregatedApy": 0.2058751400354764,
+      "maxBoostedApy": 0.2058751400354764
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-25T15:34:11.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "pufETH",
+     "address": "0x79a8b102dd39329aafecc69499c0f6d07f2f959d",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0xa32877eee252d78d5e4fa00285d4cc2066d15bac",
+     "yt": "1-0x0a35ccc9651634efe92e266fcc2c691b106b1bbf",
+     "sy": "1-0x253008ba4ae2f3e6488dc998a5321d4eb1a0c905",
+     "underlyingAsset": "1-0xd9a442856c234a39a81a089c06451ebaa4306a72",
+     "details": {
+      "liquidity": 294910.525107715,
+      "pendleApy": 0,
+      "impliedApy": 0.038009896478271576,
+      "feeRate": 0.0007463829012195333,
+      "yieldRange": {
+       "min": 0.019999999999999997,
+       "max": 0.06999999999999999
+      },
+      "aggregatedApy": 0.033112235536577425,
+      "maxBoostedApy": 0.033112235536577425
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-06-27T16:09:23.000Z",
+     "categoryIds": [
+      "points",
+      "eth"
+     ]
+    },
+    {
+     "name": "mixUSDC",
+     "address": "0x4b912476356c914b154524c59b5a438a88e99429",
+     "expiry": "2026-10-29T00:00:00.000Z",
+     "pt": "1-0x45c00ec1a2797b507d3e955b208fb275795da669",
+     "yt": "1-0x89c7d1cdb6b2a5c09f25de59fd4bee47921bbf4d",
+     "sy": "1-0x0e012d6a77a7f6c91de7cb74c2732553876d1d61",
+     "underlyingAsset": "1-0x9b44efca3e2a707b63dc00ce79d646e5e5d24ba5",
+     "details": {
+      "liquidity": 52301.94875413374,
+      "pendleApy": 0,
+      "impliedApy": 0.05000073706560837,
+      "feeRate": 0.0009762872702281378,
+      "yieldRange": {
+       "min": 0.019999999999999997,
+       "max": 0.09999999999999998
+      },
+      "aggregatedApy": 0.05469840106328659,
+      "maxBoostedApy": 0.05469840106328659
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-07-15T15:55:23.000Z",
+     "categoryIds": [
+      "stables"
+     ]
+    },
+    {
+     "name": "mixWETH",
+     "address": "0x392ac82951ef3b32512bc5be0dfb6a762c43bb81",
+     "expiry": "2026-10-29T00:00:00.000Z",
+     "pt": "1-0xcc8ca5c2a0862a37ee3946b80e12ebb2bfb524f0",
+     "yt": "1-0x729c3798d061eb9fbd88f1348aa73a244ec166e9",
+     "sy": "1-0x3870cf5e2eab623a74d2af1007295963b1c5a12f",
+     "underlyingAsset": "1-0x29bcfed246ce37319d94eba107db90c453d4c43d",
+     "details": {
+      "liquidity": 69157.50312393549,
+      "pendleApy": 0,
+      "impliedApy": 0.020232123893388243,
+      "feeRate": 0.00039587025255860553,
+      "yieldRange": {
+       "min": 0.009999999999999995,
+       "max": 0.05999999999999999
+      },
+      "aggregatedApy": 0.022190323880110246,
+      "maxBoostedApy": 0.022190323880110246
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-07-15T15:57:47.000Z",
+     "categoryIds": [
+      "eth"
+     ]
+    },
+    {
+     "name": "strUSD",
+     "address": "0xac028348c46d3455899a2b9b50077c11960eaddb",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0x74299580811e1c3c1a2831db079ba0a8f513998f",
+     "yt": "1-0xc4bb3ec6588ff14d7676445a40f2716e690a3203",
+     "sy": "1-0x7e8a16e87fa6b0f2e657db47f3dbfe2e981ef211",
+     "underlyingAsset": "1-0x280839980a7ed0d7717f64125fe241012e5f5815",
+     "details": {
+      "liquidity": 4590143.8091711635,
+      "pendleApy": 0.001705385163305438,
+      "impliedApy": 0.11420331668148043,
+      "feeRate": 0.002209803243826025,
+      "yieldRange": {
+       "min": 0.060000000000000005,
+       "max": 0.3
+      },
+      "aggregatedApy": 0.10751409241560055,
+      "maxBoostedApy": 0.1100721701605587
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-07-19T18:15:59.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "lp-with-no-il"
+     ]
+    },
+    {
+     "name": "trUSD",
+     "address": "0xfcf009cb3135da12a6eb1f73f3ee05392a7bc947",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0x7191878f1fe834b28f4d0cead0e4375b814c4abb",
+     "yt": "1-0x1fcdb1e747419bb8d1a029c4d1f83b41e8afe8ce",
+     "sy": "1-0xa09482f2f6cb5f2177b05144bc276d06b8b818eb",
+     "underlyingAsset": "1-0xd0580192e98ea6ceb9c7b6191ed2e27560911697",
+     "details": {
+      "liquidity": 1130095.7902811458,
+      "pendleApy": 0.0034152207643292245,
+      "impliedApy": 0.10383807609099582,
+      "feeRate": 0.0018771359457760983,
+      "yieldRange": {
+       "min": 0.05000000000000001,
+       "max": 0.28
+      },
+      "aggregatedApy": 0.029780561063643227,
+      "maxBoostedApy": 0.034903392210137066
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-07-19T18:16:11.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "sUSN",
+     "address": "0x16d3126ee82ee36816499fb9db6f647c6addd09c",
+     "expiry": "2027-07-22T00:00:00.000Z",
+     "pt": "1-0x6a0efc272e8dd4fc5affea17376dcf107cbcbc0f",
+     "yt": "1-0xdfaacdd9035febaba7e582f660da3c43fb85e292",
+     "sy": "1-0xa0a2c8c94bf30227f84af6e054025945a51d0eff",
+     "underlyingAsset": "1-0xe24a3dc889621612422a64e6388927901608b91d",
+     "details": {
+      "liquidity": 1178710.7270575706,
+      "pendleApy": 0.0019853840197596845,
+      "impliedApy": 0.08613066994850715,
+      "feeRate": 0.0016561769372598345,
+      "yieldRange": {
+       "min": 0.04,
+       "max": 0.14
+      },
+      "aggregatedApy": 0.08254726085647007,
+      "maxBoostedApy": 0.0855253368861096
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-07-21T14:13:23.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "sAID",
+     "address": "0x50d746e1c7987396b47b0a95ebd94bccaaf7a2d9",
+     "expiry": "2026-12-31T00:00:00.000Z",
+     "pt": "1-0xf6e9dd9696bf932864ebbcd34395221a16f3c62b",
+     "yt": "1-0x4f26c150c90f1bfe2009cd26bd1d998a800dbbb4",
+     "sy": "1-0x39fb0bb5d696ec6da2d827649cf3a3f00299d2dd",
+     "underlyingAsset": "1-0xb3b3c527ba57cd61648e2ec2f5e006a0b390a9f8",
+     "details": {
+      "liquidity": 70238.66558026547,
+      "pendleApy": 0,
+      "impliedApy": 0.0896592530037863,
+      "feeRate": 0.0016441994352573985,
+      "yieldRange": {
+       "min": 0.049999999999999996,
+       "max": 0.15
+      },
+      "aggregatedApy": 0.09286595621390634,
+      "maxBoostedApy": 0.09286595621390634
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-07-26T17:10:11.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "rwa"
+     ]
+    },
+    {
+     "name": "sBOLD",
+     "address": "0xeb603c5a42d49d3b2e078191c23bf3f5d25bc219",
+     "expiry": "2027-02-04T00:00:00.000Z",
+     "pt": "1-0x2a21f68b60156860615bd27ac958df817df45aa3",
+     "yt": "1-0xc802c127ac01e06610a6a5c12ce5b70ce93924e4",
+     "sy": "1-0xa73fb4f3a3f3889e41387973afc542fa06785981",
+     "underlyingAsset": "1-0x50bd66d59911f5e086ec87ae43c811e0d059dd11",
+     "details": {
+      "liquidity": 270090.2939616916,
+      "pendleApy": 0,
+      "impliedApy": 0.05211071570412873,
+      "feeRate": 0.001016482290548737,
+      "yieldRange": {
+       "min": 0.02,
+       "max": 0.15
+      },
+      "aggregatedApy": 0.05383585085247986,
+      "maxBoostedApy": 0.05383585085247986
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-04T08:45:59.000Z",
+     "categoryIds": [
+      "stables"
+     ]
+    },
+    {
+     "name": "SIERRA",
+     "address": "0x22fcdf7be34a72bddbf4a6eeeb489b1f29062f0b",
+     "expiry": "2026-10-22T00:00:00.000Z",
+     "pt": "1-0x17c47b0cedec9b41e639f5ec1a053e9135db2a6d",
+     "yt": "1-0x9dafdd6a02d49d821f140cb6863f185223fc5f58",
+     "sy": "1-0x9845bbb51d326fe4d5e7cbd47ce157a33d7936ef",
+     "underlyingAsset": "1-0xbceb5f6877d979ec621ae694da1102cb95691ad3",
+     "details": {
+      "liquidity": 10980326.299161384,
+      "pendleApy": 0.0007894556383157094,
+      "impliedApy": 0.09772421769203765,
+      "feeRate": 0.0018586005001834938,
+      "yieldRange": {
+       "min": 0.05999999999999999,
+       "max": 0.14
+      },
+      "aggregatedApy": 0.08131280251783089,
+      "maxBoostedApy": 0.08249698597530446
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-04T14:13:59.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "rwa"
+     ]
+    },
+    {
+     "name": "USDat",
+     "address": "0x4ccf6deb3d1895373f604b418ff55d8adae8b846",
+     "expiry": "2027-01-14T00:00:00.000Z",
+     "pt": "1-0xba96292ee7673e3b546cc90db6d97111cd9a314f",
+     "yt": "1-0x480c3c9470fa4bbda030f6396fa4b17adefc1ce0",
+     "sy": "1-0x7a7de491e1be5287874904e2b7c8488249a4d0a9",
+     "underlyingAsset": "1-0x23238f20b894f29041f48d88ee91131c395aaa71",
+     "details": {
+      "liquidity": 2174292.038872217,
+      "pendleApy": 0.01706975175571943,
+      "impliedApy": 0.08265779827459485,
+      "feeRate": 0.001618341084366648,
+      "yieldRange": {
+       "min": 0.03500000000000001,
+       "max": 0.12999999999999998
+      },
+      "aggregatedApy": 0.10151212938331851,
+      "maxBoostedApy": 0.14953359342824074
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-08T20:26:35.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "rwa",
+      "strc",
+      "saturn",
+      "points-market"
+     ]
+    },
+    {
+     "name": "sUSDat",
+     "address": "0xb6fe0f0811931a38aa97534bac3c147437223e38",
+     "expiry": "2027-01-14T00:00:00.000Z",
+     "pt": "1-0x0b985c624bb2949432cce77cfd246f01390a0517",
+     "yt": "1-0xc38901aa77112efc519a1f8bd501eb2f68055689",
+     "sy": "1-0x8917f8c7feb840b5837edc7e128123baa2f289f9",
+     "underlyingAsset": "1-0xd166337499e176bbc38a1fbd113ab144e5bd2df7",
+     "details": {
+      "liquidity": 1395704.1465395906,
+      "pendleApy": 0.003964129540340212,
+      "impliedApy": 0.14004661824800557,
+      "feeRate": 0.0027364954360680205,
+      "yieldRange": {
+       "min": 0.08,
+       "max": 0.24999999999999997
+      },
+      "aggregatedApy": 0.12348685160154875,
+      "maxBoostedApy": 0.12943304591205906
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-08T20:27:47.000Z",
+     "categoryIds": [
+      "points",
+      "rwa",
+      "strc",
+      "saturn"
+     ]
+    },
+    {
+     "name": "sUSDe",
+     "address": "0x47ad2cd1dd15739a7a035b9d3b7828d916fef77e",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0xb195b618ea52b77cb2a58846f452f59f8dfa9390",
+     "yt": "1-0x89e6e5f7c3a60e7d6347f054051a29a272f4ce44",
+     "sy": "1-0xbf98480425a29197e5d99d003017f63a1e595d02",
+     "underlyingAsset": "1-0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+     "details": {
+      "liquidity": 3819948.061339407,
+      "pendleApy": 0.001769987729533978,
+      "impliedApy": 0.050110323834583026,
+      "feeRate": 0.0009792415961249468,
+      "yieldRange": {
+       "min": 0.03,
+       "max": 0.10999999999999999
+      },
+      "aggregatedApy": 0.05155659033687317,
+      "maxBoostedApy": 0.05421157193117414
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-10T05:19:47.000Z",
+     "categoryIds": [
+      "stables",
+      "ethena",
+      "points",
+      "rwa",
+      "fixed-rates",
+      "blue-chips"
+     ]
+    },
+    {
+     "name": "siUSD",
+     "address": "0x1f34887b270bfaf56cf7973572654874c8ed740e",
+     "expiry": "2026-10-22T00:00:00.000Z",
+     "pt": "1-0xe3cdf5b8d7aedfc9f768dbdcc334146fae989188",
+     "yt": "1-0x30aa5125e9f3d958911b180e1bbc83d7086e6a7e",
+     "sy": "1-0x9f30507c264cc6eb5be35b18ff9ad7b4539aa920",
+     "underlyingAsset": "1-0xdbdc1ef57537e34680b898e1febd3d68c7389bcb",
+     "details": {
+      "liquidity": 3320576.4913605493,
+      "pendleApy": 0.00275047565055548,
+      "impliedApy": 0.09847844668127004,
+      "feeRate": 0.0018401983250324605,
+      "yieldRange": {
+       "min": 0.045000000000000005,
+       "max": 0.13999999999999999
+      },
+      "aggregatedApy": 0.08631595036735196,
+      "maxBoostedApy": 0.09044166384318517
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-12T15:19:47.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "srUSDat",
+     "address": "0xdf2e3e0250f679d6284a39a0c1a16a850a9d7aa6",
+     "expiry": "2027-01-14T00:00:00.000Z",
+     "pt": "1-0x2c3e7c0fab3d546ea0715d2a96fbdf598711a062",
+     "yt": "1-0xf26e7953bab8b301945bb551b4607dffa8500de0",
+     "sy": "1-0x9d0fc59f88acb85520a8cfb74c7fe141d8563185",
+     "underlyingAsset": "1-0xfaa9a0e1db9e22ae3a20b2b58a68dc24d053d066",
+     "details": {
+      "liquidity": 218810.59242407957,
+      "pendleApy": 0.007196039161558839,
+      "impliedApy": 0.1068043230116349,
+      "feeRate": 0.0019808837259154277,
+      "yieldRange": {
+       "min": 0.060000000000000005,
+       "max": 0.15
+      },
+      "aggregatedApy": 0.10261679601594192,
+      "maxBoostedApy": 0.11341085475828018
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-13T11:28:47.000Z",
+     "categoryIds": [
+      "strc",
+      "points",
+      "rwa",
+      "strata",
+      "saturn",
+      "lo-incentives"
+     ]
+    },
+    {
+     "name": "sUSDD",
+     "address": "0xbeab098b510f758cd35122ee345957b8eccbb322",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0x459bcab2490843ad1fe1e4feff7f7ea16a14408b",
+     "yt": "1-0xc08aaed663c1c257f677f9d4b92a7a265967e54f",
+     "sy": "1-0xdd0c9da25f8eb47116f3bed8a311899a5eb449b4",
+     "underlyingAsset": "1-0xc5d6a7b61d18afa11435a889557b068bb9f29930",
+     "details": {
+      "liquidity": 5125890.556199747,
+      "pendleApy": 0.0013422364134802625,
+      "impliedApy": 0.0543900786367828,
+      "feeRate": 0.001008774368269627,
+      "yieldRange": {
+       "min": 0.029999999999999992,
+       "max": 0.08999999999999998
+      },
+      "aggregatedApy": 0.061932117280471044,
+      "maxBoostedApy": 0.06394547190069144
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-18T06:28:35.000Z",
+     "categoryIds": [
+      "stables",
+      "yt-leverage"
+     ]
+    },
+    {
+     "name": "STRCx",
+     "address": "0x8ce3a13852d13e0e991c677a8c6137584e2b7635",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0x599ef448e1d3378ed2dd7982d4b00615d9e5bf77",
+     "yt": "1-0x2875133b91909eb332fcf1e8664d0965a5fc5ca9",
+     "sy": "1-0x3aaaf43a1f8d327fdf24dc93654eb17e319883c5",
+     "underlyingAsset": "1-0x1aad217b8f78dba5e6693460e8470f8b1a3977f3",
+     "details": {
+      "liquidity": 1261004.5192075614,
+      "pendleApy": 0.028632242555061346,
+      "impliedApy": 0.24697057733253658,
+      "feeRate": 0.004413801284042451,
+      "yieldRange": {
+       "min": 0.1,
+       "max": 0.44999999999999996
+      },
+      "aggregatedApy": 0.21863664399814503,
+      "maxBoostedApy": 0.261585007830737
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-08-24T08:28:23.000Z",
+     "categoryIds": [
+      "strc",
+      "rwa",
+      "points",
+      "stocks"
+     ]
+    },
+    {
+     "name": "USDx",
+     "address": "0x0bef762d2094ac80821c657dea6783fc43435292",
+     "expiry": "2026-12-03T00:00:00.000Z",
+     "pt": "1-0xa4b3a2eec53863fe2c9ab0041d480cf964942e84",
+     "yt": "1-0xa91277e31f6be8c33850dde8dfacb27bad1be6fb",
+     "sy": "1-0xa7606952845269dc7377cba3c7c7bda133dd97f7",
+     "underlyingAsset": "1-0xa1fa7777974312f7d801a8880714a218f76233f8",
+     "details": {
+      "liquidity": 2232970.8319964088,
+      "pendleApy": 0.00294623500594189,
+      "impliedApy": 0.14629822541916182,
+      "feeRate": 0.002934884810274374,
+      "yieldRange": {
+       "min": 0.060000000000000005,
+       "max": 0.27
+      },
+      "aggregatedApy": 0.06400251797224958,
+      "maxBoostedApy": 0.06842187048116243
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-02T05:42:35.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "rwa"
+     ]
+    },
+    {
+     "name": "sUSDx",
+     "address": "0x5e572498e9f83650f0ff24194999bddb4b390928",
+     "expiry": "2026-12-03T00:00:00.000Z",
+     "pt": "1-0x06ebad062fd573ca31a72d6dfb0f425da2153985",
+     "yt": "1-0x96dcb9501bcc8128b7683980a63250448ea5334b",
+     "sy": "1-0x3b184870f40ca026341593cedb37ab09e611e928",
+     "underlyingAsset": "1-0xeb892628d1e58bc475a6dcb7f5dbc4f591632aa4",
+     "details": {
+      "liquidity": 6132891.903358786,
+      "pendleApy": 0.002949619271325968,
+      "impliedApy": 0.18791292016975913,
+      "feeRate": 0.0035324937635150544,
+      "yieldRange": {
+       "min": 0.08,
+       "max": 0.3
+      },
+      "aggregatedApy": 0.18923788010842424,
+      "maxBoostedApy": 0.19366230901541318
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-02T05:53:35.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "rwa"
+     ]
+    },
+    {
+     "name": "NGI+",
+     "address": "0x03005432d0f02c46d48ccd859d677d261640e5e1",
+     "expiry": "2026-12-10T00:00:00.000Z",
+     "pt": "1-0x47f4d6505e39998bbabf325def4c4861695ac8f5",
+     "yt": "1-0x7a3d12d8262b0246f4bbf8da354272e73a831a4b",
+     "sy": "1-0xcad69479358c1ef3560f29f278966df772abf42f",
+     "underlyingAsset": "1-0xf252c5bd43907a6cab079e990845a37a7c5730d9",
+     "details": {
+      "liquidity": 248507.93724087958,
+      "pendleApy": 0,
+      "impliedApy": 0.18261450838568027,
+      "feeRate": 0.003291613315749009,
+      "yieldRange": {
+       "min": 0.09,
+       "max": 0.28
+      },
+      "aggregatedApy": 0.10838608758899684,
+      "maxBoostedApy": 0.10838608758899684
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-08T02:09:23.000Z",
+     "categoryIds": [
+      "rwa",
+      "_featured"
+     ]
+    },
+    {
+     "name": "siUSD",
+     "address": "0xd44f2630260ff3805d7cb317d4f6740b0044c408",
+     "expiry": "2027-01-07T00:00:00.000Z",
+     "pt": "1-0x76543ac61ba84c6feeee76c6a918127bf0ca5fd1",
+     "yt": "1-0xd42f23aa6d2b886524006c6aecb1ad80579e736c",
+     "sy": "1-0x9f30507c264cc6eb5be35b18ff9ad7b4539aa920",
+     "underlyingAsset": "1-0xdbdc1ef57537e34680b898e1febd3d68c7389bcb",
+     "details": {
+      "liquidity": 11160787.402472632,
+      "pendleApy": 0.0014491337623440614,
+      "impliedApy": 0.09935441664616551,
+      "feeRate": 0.0019272511151324778,
+      "yieldRange": {
+       "min": 0.055,
+       "max": 0.14
+      },
+      "aggregatedApy": 0.08453854119395099,
+      "maxBoostedApy": 0.08671224183746708
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-09T14:18:35.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "srnOPAL",
+     "address": "0x3e81f92001cd428dd6f2ef1421939da6a3d9f1bd",
+     "expiry": "2027-01-07T00:00:00.000Z",
+     "pt": "1-0x1e20339f4449de327b64a5a9c8dcabb1e72ce016",
+     "yt": "1-0xad20225471238b56274302fe6866beb250c0c397",
+     "sy": "1-0xefc86eda0d06f6c608f75e4bc918d079c6779cec",
+     "underlyingAsset": "1-0x8a646edc4633adba5ec87dedaf3af958e268fe96",
+     "details": {
+      "liquidity": 61870.00834531335,
+      "pendleApy": 0,
+      "impliedApy": 0.08684683809710103,
+      "feeRate": 0.0015907459894377585,
+      "yieldRange": {
+       "min": 0.049999999999999996,
+       "max": 0.15
+      },
+      "aggregatedApy": 0.09673604202387144,
+      "maxBoostedApy": 0.09673604202387144
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-13T14:19:11.000Z",
+     "categoryIds": [
+      "rwa",
+      "stables",
+      "strata"
+     ]
+    },
+    {
+     "name": "mAPOLLO",
+     "address": "0xb8858f53f71a127a7a6e2d015c722bfbeb1810c3",
+     "expiry": "2027-03-18T00:00:00.000Z",
+     "pt": "1-0xd9fa32c4a0d9d58d1e75e8159b9c4b1c545143d8",
+     "yt": "1-0xf503c7af30ff1813de175c43429763315e299e45",
+     "sy": "1-0xe1e22d55e23900f30599d8bee74a0801f09b4e58",
+     "underlyingAsset": "1-0x7cf9dec92ca9fd46f8d86e7798b72624bc116c05",
+     "details": {
+      "liquidity": 2884981.134652062,
+      "pendleApy": 0.0017078894215291488,
+      "impliedApy": 0.07032654448650955,
+      "feeRate": 0.0013540889211158813,
+      "yieldRange": {
+       "min": 0.05,
+       "max": 0.10999999999999999
+      },
+      "aggregatedApy": 0.07565926795155126,
+      "maxBoostedApy": 0.07822110208384497
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-14T01:54:59.000Z",
+     "categoryIds": [
+      "points",
+      "stables",
+      "midas"
+     ]
+    },
+    {
+     "name": "aptUSD",
+     "address": "0xb94f1423b4a95b0115f913daa6c4b8744a74e3b2",
+     "expiry": "2027-01-14T00:00:00.000Z",
+     "pt": "1-0x87f3a8c7b3db5d342163b078d02deeb1ea56af05",
+     "yt": "1-0xc082266de75051cc13042d45461a1f5781f5df88",
+     "sy": "1-0xd9a5a7ba8094daf3af47e8e4af4bd13f96fdc7ab",
+     "underlyingAsset": "1-0x093df218d70ea6036afa26704a1c70d12010b908",
+     "details": {
+      "liquidity": 102983.65563446375,
+      "pendleApy": 0,
+      "impliedApy": 0.06888428616470832,
+      "feeRate": 0.0012584019451618023,
+      "yieldRange": {
+       "min": 0.029999999999999995,
+       "max": 0.08999999999999998
+      },
+      "aggregatedApy": 0.06009111498276865,
+      "maxBoostedApy": 0.06009111498276865
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-15T18:57:59.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa",
+      "points"
+     ]
+    },
+    {
+     "name": "USDG",
+     "address": "0xb986fe3f6ecf16c13e769b0d6d2a0bc41449d54f",
+     "expiry": "2027-03-25T00:00:00.000Z",
+     "pt": "1-0x203a918321f920763c2b8ccc2cbf5b3a5ba748d1",
+     "yt": "1-0x8e5ae33b762076244fb4ebbd15ba837a176726f4",
+     "sy": "1-0x2b4715bc201375aea9f55866473aa99d8321b71a",
+     "underlyingAsset": "1-0xe343167631d89b6ffc58b88d6b7fb0228795491d",
+     "details": {
+      "liquidity": 398354.85538408475,
+      "pendleApy": 0.0077534836274135025,
+      "impliedApy": 0.03553505909869781,
+      "feeRate": 0.0006882652698425584,
+      "yieldRange": {
+       "min": 0.02,
+       "max": 0.06999999999999999
+      },
+      "aggregatedApy": 0.04151979484240491,
+      "maxBoostedApy": 0.0876868956914558
+     },
+     "isNew": false,
+     "isPrime": false,
+     "timestamp": "2026-09-21T07:07:11.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa"
+     ]
+    },
+    {
+     "name": "sUSG",
+     "address": "0x68b647308f86f8669eaced155a9168769ce72265",
+     "expiry": "2026-11-26T00:00:00.000Z",
+     "pt": "1-0xe2dbd6bafcd6b1da90483108f0f437addf7bd885",
+     "yt": "1-0x89cedb3c823315c9922d8eb841c114782d5a4de2",
+     "sy": "1-0xe31b01ce6f29107cf8870599911703fa2aa36e1c",
+     "underlyingAsset": "1-0xf17d6f98a5c6eaa99d149079984119e0a4ef6900",
+     "details": {
+      "liquidity": 141238.75322636226,
+      "pendleApy": 0.021079711349996443,
+      "impliedApy": 0.1699078674261696,
+      "feeRate": 0.0032312518351127473,
+      "yieldRange": {
+       "min": 0.05,
+       "max": 0.19999999999999998
+      },
+      "aggregatedApy": 0.2975243476304486,
+      "maxBoostedApy": 0.4918572859591741
+     },
+     "isNew": true,
+     "isPrime": false,
+     "timestamp": "2026-09-25T09:16:59.000Z",
+     "categoryIds": [
+      "stables",
+      "points"
+     ]
+    },
+    {
+     "name": "jrUSDe",
+     "address": "0x64c809c69d8881341afe7d67c559a048ddd9d129",
+     "expiry": "2027-02-25T00:00:00.000Z",
+     "pt": "1-0x1e47528b06e814e7a3d5aa7518d640edc8b407e5",
+     "yt": "1-0xb52ff2ee15ed61564f150f12ce28b350e3dce26a",
+     "sy": "1-0x4f6673346ab4813f1665327ab39087008cc7d76f",
+     "underlyingAsset": "1-0xc58d044404d8b14e953c115e67823784dea53d8f",
+     "details": {
+      "liquidity": 34476.2891507731,
+      "pendleApy": 0.05745666507499619,
+      "impliedApy": 0.04679700134026765,
+      "feeRate": 0.000581038428965952,
+      "yieldRange": {
+       "min": 0.030000000000000002,
+       "max": 0.12999999999999998
+      },
+      "aggregatedApy": 0.11082116187983251,
+      "maxBoostedApy": 0.1970061594923268
+     },
+     "isNew": true,
+     "isPrime": false,
+     "timestamp": "2026-10-02T18:24:23.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "ethena"
+     ]
+    },
+    {
+     "name": "srUSDe",
+     "address": "0xb7c7eafa97c0a2322c977576b88e71e6b8e8242d",
+     "expiry": "2027-02-25T00:00:00.000Z",
+     "pt": "1-0xd2e5a2467552a8df873177c02fc6fde4720d1bf1",
+     "yt": "1-0x1d03e1859e0b10fc4943fd9204c008c8293d416d",
+     "sy": "1-0xc9bfebc79a722c05dc34bd2a227ef2db19fd1b8e",
+     "underlyingAsset": "1-0x3d7d6fdf07ee548b939a80edbc9b2256d0cdc003",
+     "details": {
+      "liquidity": 54392.689855813274,
+      "pendleApy": 0.036520957665134704,
+      "impliedApy": 0.04127842949588256,
+      "feeRate": 0.0007988051488054815,
+      "yieldRange": {
+       "min": 0.019999999999999997,
+       "max": 0.09999999999999999
+      },
+      "aggregatedApy": 0.08226536699315148,
+      "maxBoostedApy": 0.13704680349085352
+     },
+     "isNew": true,
+     "isPrime": false,
+     "timestamp": "2026-10-02T18:26:59.000Z",
+     "categoryIds": [
+      "stables",
+      "points",
+      "ethena",
+      "pt-looping"
+     ]
+    },
+    {
+     "name": "USDfr",
+     "address": "0xf3f7b3a8f2518603796dddb61392ad0e322118b6",
+     "expiry": "2027-01-28T00:00:00.000Z",
+     "pt": "1-0x1d5aaa79322d825bc4689ee25ccb868374af2662",
+     "yt": "1-0x80e159f4f82a9e480c109c06288c2d457e6e36cc",
+     "sy": "1-0xef10d4ed86e12b57f1fa178d3ab7bfd5cc2f97df",
+     "underlyingAsset": "1-0xcc07e7c4e5e35affd47b351e420a22c667d7f83d",
+     "details": {
+      "liquidity": 251576.45834540526,
+      "pendleApy": 0.02058247530055129,
+      "impliedApy": 0.056249066861549624,
+      "feeRate": 0.0010950783224974447,
+      "yieldRange": {
+       "min": 0.020000000000000007,
+       "max": 0.19999999999999998
+      },
+      "aggregatedApy": 0.03476402025745163,
+      "maxBoostedApy": 0.06563773320827856
+     },
+     "isNew": true,
+     "isPrime": false,
+     "timestamp": "2026-10-07T09:20:35.000Z",
+     "categoryIds": [
+      "stables",
+      "rwa"
+     ]
+    },
+    {
+     "name": "sUSDfr",
+     "address": "0x687dedecd5d2899ef497b3ff13af066ac3d152b0",
+     "expiry": "2027-01-28T00:00:00.000Z",
+     "pt": "1-0xdbd5fb715b833fbea448ab756f02c7617ecb97be",
+     "yt": "1-0x9ce7a40030918ecc11de14431192a6845a9a8912",
+     "sy": "1-0xa6e23d9a6f7f4fb5ec305b50b29418dd119eb692",
+     "underlyingAsset": "1-0xaf559d1d59b33ca4b950ab2091372af8a773e234",
+     "details": {
+      "liquidity": 1794541.494133417,
+      "pendleApy": 0.011534099298228356,
+      "impliedApy": 0.2917886560018246,
+      "feeRate": 0.005261076402220066,
+      "yieldRange": {
+       "min": 0.08000000000000002,
+       "max": 0.39999999999999997
+      },
+      "aggregatedApy": 0.32483135272116814,
+      "maxBoostedApy": 0.34213250166851067
+     },
+     "isNew": true,
+     "isPrime": false,
+     "timestamp": "2026-10-07T09:22:47.000Z",
+     "categoryIds": [
+      "rwa",
+      "stables"
+     ]
+    }
+   ]
+  },
+  "http [\"POST\",\"https://blue-api.morpho.org/graphql\",{},{\"query\":\"{ userByAddress(address: \\\"0xcf0a12cbd8088fc5f84ad431e71787157041cd69\\\", chainId: 1) { marketPositions { market { marketId collateralAsset { address symbol } loanAsset { address symbol } } } } }\"}]": {
+   "data": {
+    "userByAddress": {
+     "marketPositions": [
+      {
+       "market": {
+        "marketId": "0x88a18b2f4d94e7ad27a381b15531c06abf05a7c99dd5d3c3679875fed6f7e742",
+        "collateralAsset": {
+         "address": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+         "symbol": "sUSDe"
+        },
+        "loanAsset": {
+         "address": "0xC139190F447e929f090Edeb554D95AbB8b18aC1C",
+         "symbol": "USDtb"
+        }
+       }
+      },
+      {
+       "market": {
+        "marketId": "0x3274643db77a064abd3bc851de77556a4ad2e2f502f4f0c80845fa8f909ecf0b",
+        "collateralAsset": {
+         "address": "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
+         "symbol": "sUSDS"
+        },
+        "loanAsset": {
+         "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+         "symbol": "USDT"
+        }
+       }
+      },
+      {
+       "market": {
+        "marketId": "0xdc5333039bcf15f1237133f74d5806675d83d9cf19cfd4cfdd9be674842651bf",
+        "collateralAsset": {
+         "address": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+         "symbol": "sUSDe"
+        },
+        "loanAsset": {
+         "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+         "symbol": "USDT"
+        }
+       }
+      },
+      {
+       "market": {
+        "marketId": "0x0367161b7cb23dfd03747dd3815d1c445b0437b648a6d50346249c6e7b92ff1b",
+        "collateralAsset": {
+         "address": "0xdC169AbE56461A2E0c034Da431Ac2a3ebf596094",
+         "symbol": "PT-sUSDS-26NOV2026"
+        },
+        "loanAsset": {
+         "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+         "symbol": "USDT"
+        }
+       }
+      },
+      {
+       "market": {
+        "marketId": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+        "collateralAsset": {
+         "address": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+         "symbol": "sUSDe"
+        },
+        "loanAsset": {
+         "address": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
+         "symbol": "PYUSD"
+        }
+       }
+      },
+      {
+       "market": {
+        "marketId": "0x1e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64",
+        "collateralAsset": {
+         "address": "0xeCfaFdC7741323a945A163ed068B5a3C43483957",
+         "symbol": "PT-reUSD-10DEC2026"
+        },
+        "loanAsset": {
+         "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+         "symbol": "USDC"
+        }
+       }
+      },
+      {
+       "market": {
+        "marketId": "0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+        "collateralAsset": {
+         "address": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+         "symbol": "USDe"
+        },
+        "loanAsset": {
+         "address": "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD",
+         "symbol": "RLUSD"
+        }
+       }
+      }
+     ]
+    }
+   },
+   "extensions": {
+    "complexity": 1090,
+    "maximumComplexity": 1000000
+   }
+  },
+  "rpc [\"eth_blockNumber\",[]]": "0x18f43d4",
+  "rpc [\"eth_call\",[{\"data\":\"0x026b1d5f\",\"to\":\"0x2f39d218133afab8f2b819b1066c7e434ad94e9e\"},\"0x18f43d1\"]]": "0x00000000000000000000000087870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0x4c9edd5852cd905f086c759e8383e09bff1e68b3\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000012",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0x6c3ea9036406852006290770bedfcaba0e23a0e8\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000006",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0x8292bb45bf1ee4d140127049757c2e0ff06317ed\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000012",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0x9d39a5de30e57443bff2a8307a4256c8797a3497\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000012",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000006",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0xb195b618ea52b77cb2a58846f452f59f8dfa9390\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000012",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0xdac17f958d2ee523a2206206994597c13d831ec7\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000006",
+  "rpc [\"eth_call\",[{\"data\":\"0x313ce567\",\"to\":\"0xdc169abe56461a2e0c034da431ac2a3ebf596094\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000012",
+  "rpc [\"eth_call\",[{\"data\":\"0x35ea6a750000000000000000000000004c9edd5852cd905f086c759e8383e09bff1e68b3\",\"to\":\"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2\"},\"0x18f43d1\"]]": "0x100000000000000000000003e8020c85580002faf08009c485122a621d4c000000000000000000000000000000000000000000000377c2cc20958686606c7af5000000000000000000000000000000000000000000020b02f21684244d9be6d4000000000000000000000000000000000000000003b69038edce3c8ea7734a9a00000000000000000000000000000000000000000036b554fa638ece6ca9083c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006acaed93000000000000000000000000000000000000000000000000000000000000001e0000000000000000000000004f5923fc5fd4a93352581b38b7cd26943012decf000000000000000000000000102633152313c81cd80419b6ecf66d14ad68949a000000000000000000000000015396e1f286289ae23a762088e863b3ec4651450000000000000000000000009ec6f08190dea04a54f8afc53db96134e5e3fdfb0000000000000000000000000000000000000000000000fb02f120a19a888ef200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x35ea6a750000000000000000000000006c3ea9036406852006290770bedfcaba0e23a0e8\",\"to\":\"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2\"},\"0x18f43d1\"]]": "0x100000000000000000000003e8001406f4000112a88003e8850629fe1e78000000000000000000000000000000000000000000000388457723b43627711d86c30000000000000000000000000000000000000000001fd2a460bee4f18d5e7829000000000000000000000000000000000000000003cce17011eac25c6e6f4c68000000000000000000000000000000000000000000286d391d5d0d0f827424500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006acae8a7000000000000000000000000000000000000000000000000000000000000001b0000000000000000000000000c0d01abf3e6adfca0989ebba9d6e85dd58eab1e000000000000000000000000102633152313c81cd80419b6ecf66d14ad68949a00000000000000000000000057b67e4de077085fd0af2174e9c14871be6645460000000000000000000000009ec6f08190dea04a54f8afc53db96134e5e3fdfb000000000000000000000000000000000000000000000000000000002b2179b800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x35ea6a750000000000000000000000009d39a5de30e57443bff2a8307a4256c8797a3497\",\"to\":\"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2\"},\"0x18f43d1\"]]": "0x100000000000000000000003e800a6e49c000000000007d081122a621d4c00000000000000000000000000000000000000000000033b30743a7cf5252add6fd400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033b2e3c9fd0803ce800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006aca9ff300000000000000000000000000000000000000000000000000000000000000200000000000000000000000004579a27af00a62c0eb156349f31b345c08386419000000000000000000000000102633152313c81cd80419b6ecf66d14ad68949a000000000000000000000000effde9bfa8ec77c14c364055a200746d6e12bed60000000000000000000000009ec6f08190dea04a54f8afc53db96134e5e3fdfb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x35ea6a75000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48\",\"to\":\"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2\"},\"0x18f43d1\"]]": "0x100000000000000000000007d00b2d05e000a0eebb0003e8850628d21e781d4c000000000000000000000000000000000000000003d79cbefe03c49d6a22ed8b000000000000000000000000000000000000000000219b43c2568120088bf8870000000000000000000000000000000000000000040c9d047f0df0a340d107fe00000000000000000000000000000000000000000027a010c3f97a79d0617e040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006acaf46b000000000000000000000000000000000000000000000000000000000000000300000000000000000000000098c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c000000000000000000000000102633152313c81cd80419b6ecf66d14ad68949a00000000000000000000000072e95b8931767c79ba4eee721354d6e99a61d0040000000000000000000000009ec6f08190dea04a54f8afc53db96134e5e3fdfb0000000000000000000000000000000000000000000000000000002a9e2db92c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7\",\"to\":\"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2\"},\"0x18f43d1\"]]": "0x100000000000000000000003e80cf6c96000b82da88003e8850628d21e781d4c000000000000000000000000000000000000000003cef0fedd241979522d55f50000000000000000000000000000000000000000001c3143266f92f3b574977400000000000000000000000000000000000000000408a4e76703b22704276de700000000000000000000000000000000000000000022d389bd780629df4279370000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006acaf2d3000000000000000000000000000000000000000000000000000000000000000800000000000000000000000023878914efe38d27c4d67ab83ed1b93a74d4086a000000000000000000000000102633152313c81cd80419b6ecf66d14ad68949a0000000000000000000000006df1c1e379bc5a00a7b4c6e67a203333772f45a80000000000000000000000009ec6f08190dea04a54f8afc53db96134e5e3fdfb00000000000000000000000000000000000000000000000000000033a775e63500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x5c60e39a0367161b7cb23dfd03747dd3815d1c445b0437b648a6d50346249c6e7b92ff1b\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000004b1445159160000000000000000000000000000000000000000000000004707398aacadcee7000000000000000000000000000000000000000000000000000003ea2589027c0000000000000000000000000000000000000000000000003b30cf699e34934c000000000000000000000000000000000000000000000000000000006aca5e170000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x5c60e39a90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x00000000000000000000000000000000000000000000000000006324460f0918000000000000000000000000000000000000000000000005c3c1fe76d47c899a00000000000000000000000000000000000000000000000000005830197b474a0000000000000000000000000000000000000000000000051c761aa6205e3a75000000000000000000000000000000000000000000000000000000006ac9ade30000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x5c60e39ad9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000295f894fee6c136d00829600000000000000000000000000000000000002765d46276af4a44d33812b63d500000000000000000000000000000000000000000025cd9302a13ccf0dceff2b000000000000000000000000000000000000023fe0c61d003802465c906592bc000000000000000000000000000000000000000000000000000000006ac9d1770000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x015396e1f286289ae23a762088e863b3ec465145\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x4579a27af00a62c0eb156349f31b345c08386419\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x4c9edd5852cd905f086c759e8383e09bff1e68b3\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x4f5923fc5fd4a93352581b38b7cd26943012decf\"},\"0x18f43d1\"]]": "0x00000000000000000000000000000000000000000019f6d4f938a7caf8d23c69",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x57b67e4de077085fd0af2174e9c14871be664546\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x6df1c1e379bc5a00a7b4c6e67a203333772f45a8\"},\"0x18f43d1\"]]": "0x00000000000000000000000000000000000000000000000000000d64345b5030",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x72e95b8931767c79ba4eee721354d6e99a61d004\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000006385ce5fe86",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x9d39a5de30e57443bff2a8307a4256c8797a3497\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xb195b618ea52b77cb2a58846f452f59f8dfa9390\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x70a08231000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xeffde9bfa8ec77c14c364055a200746d6e12bed6\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x93c520620367161b7cb23dfd03747dd3815d1c445b0437b648a6d50346249c6e7b92ff1b000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018b66eb80400000000000000000000000000000000000000000000000001c1ef562a8ca567",
+  "rpc [\"eth_call\",[{\"data\":\"0x93c520621e9d614631a7df0ec07fb05b2c8cb2491575fd1a63a33bf187a6afb295a4fc64000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x93c520623274643db77a064abd3bc851de77556a4ad2e2f502f4f0c80845fa8f909ecf0b000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x93c5206288a18b2f4d94e7ad27a381b15531c06abf05a7c99dd5d3c3679875fed6f7e742000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x93c5206290ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f14bd340648e83c30000000000000000000000000000000000000000000d38ae229af5b5dba4643d",
+  "rpc [\"eth_call\",[{\"data\":\"0x93c52062d9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051e245d6096ca4ec7463c497bf0000000000000000000000000000000000000000000601d974e240abef410000",
+  "rpc [\"eth_call\",[{\"data\":\"0x93c52062dc5333039bcf15f1237133f74d5806675d83d9cf19cfd4cfdd9be674842651bf000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0x4c9edd5852cd905f086c759e8383e09bff1e68b3\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000045553446500000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0x6c3ea9036406852006290770bedfcaba0e23a0e8\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000055059555344000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0x8292bb45bf1ee4d140127049757c2e0ff06317ed\"},\"0x18f43d1\"]]": "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000005524c555344000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0x9d39a5de30e57443bff2a8307a4256c8797a3497\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000057355534465000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000045553444300000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0xb195b618ea52b77cb2a58846f452f59f8dfa9390\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001250542d73555344452d32364e4f56323032360000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0xdac17f958d2ee523a2206206994597c13d831ec7\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000045553445400000000000000000000000000000000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0x95d89b41\",\"to\":\"0xdc169abe56461a2e0c034da431ac2a3ebf596094\"},\"0x18f43d1\"]]": "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001250542d73555344532d32364e4f56323032360000000000000000000000000000",
+  "rpc [\"eth_call\",[{\"data\":\"0xbf92857c000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000b2402779ea37f0000000000000000000000000000000000000000000000000007a7c28c0391c800000000000000000000000000000000000000000000000000027b919e47abf50000000000000000000000000000000000000000000000000000000000002454000000000000000000000000000000000000000000000000000000000000238c00000000000000000000000000000000000000000000000012c84bfb4225ee28",
+  "rpc [\"eth_call\",[{\"data\":\"0xeddf1b79000000000000000000000000cf0a12cbd8088fc5f84ad431e71787157041cd69\",\"to\":\"0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2\"},\"0x18f43d1\"]]": "0x000000000000000000000000000000000000000000000000000000000000000a",
+  "rpc [\"eth_chainId\",[]]": "0x1"
+ }
+}

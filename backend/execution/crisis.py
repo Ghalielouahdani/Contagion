@@ -50,7 +50,12 @@ class _Context:
         self.position, self.impact, self.snapshot, self.k = position, impact, snapshot, k
         self.venue = snapshot.venues.get(position.exit_venue_id)
         self.components = {name: _d(v) for name, v in published["loss_components"].items()}
-        self.holding_loss = sum(v for name, v in self.components.items() if name not in EXIT_ONLY)
+        kept = sum(v for name, v in self.components.items() if name not in EXIT_ONLY | {"limited_liability"})
+        # Responsabilité limitée (dette sans recours) : la perte ne dépasse jamais le capital net de départ.
+        # Le plafond publié par P2 inclut la décote de vente forcée ; il est recalculé sans elle (même règle
+        # que cap_loss), sinon garder afficherait un gain dès que cette décote dépasse le capital.
+        self.holding_loss = min(kept, _d(published["net_equity_before_usd"])) \
+            if "limited_liability" in self.components else kept
         self.penalty = self.components.get("liquidation_penalty", D(0))
         self.gross_before = _d(published["gross_value_before_usd"])
         self.gross_after = _d(published["gross_value_after_usd"])

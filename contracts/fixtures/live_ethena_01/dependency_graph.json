@@ -1715,6 +1715,7 @@
   "warnings": [
     "Positions are fictional (data_origin); markets, tokens, oracles and venues are real, read on chain 1 at block 26162114.",
     "Protocol API data (Pendle, Morpho, KyberSwap) is read at observed_at, not at the pinned block.",
+    "Morpho API unavailable: not in cassette: http [\"POST\",\"https://blue-api.morpho.org/graphql\",{},{\"query\":\"{ marketPositions(first: 500, skip: 0, orderBy: BorrowShares, orderDirection: Desc, where: { mar",
     "morpho_01: fictional debt 2000000 USDC exceeds the market's total borrow (3902.65); the position could not exist at this size",
     "venue:susde_usdc: depth is calibrated on the joint size; for ethena_susde_01 alone the proxy gives 5.59% loss vs 0.09% quoted (see quotes)",
     "venue:susde_usdc: depth is calibrated on the joint size; for morpho_01 alone the proxy gives 8.15% loss vs 0.16% quoted (see quotes)"

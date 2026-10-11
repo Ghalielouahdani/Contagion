@@ -17,10 +17,6 @@
       "value": "0.99905453",
       "source_type": "observed"
     },
-    "PYUSD": {
-      "value": "1.000067",
-      "source_type": "observed"
-    },
     "ETH": {
       "value": "2494.63670555",
       "source_type": "observed"
@@ -86,9 +82,14 @@
         "oracle_explanation": "no USDe market feed on the active path; inputs: rate:sUSDe",
         "oracle_backup_pass_through": null,
         "api_borrow_apy": 0.0006233813748174002,
+        "api_supply_apy": 0.00025479861760678026,
         "api_supply_usd": 9543.87701568991,
         "api_borrow_usd": 3901.684152006879
-      }
+      },
+      "collateral_asset": "sUSDe",
+      "loan_asset": "USDC",
+      "total_supply_assets": "9546.33",
+      "total_borrow_assets": "3902.65"
     },
     "pendle_01": {
       "market_kind": "pendle_pt_market",
@@ -252,6 +253,7 @@
   "warnings": [
     "Positions are fictional (data_origin); markets, tokens, oracles and venues are real, read on chain 1 at block 26162114.",
     "Protocol API data (Pendle, Morpho, KyberSwap) is read at observed_at, not at the pinned block.",
+    "Morpho API unavailable: not in cassette: http [\"POST\",\"https://blue-api.morpho.org/graphql\",{},{\"query\":\"{ marketPositions(first: 500, skip: 0, orderBy: BorrowShares, orderDirection: Desc, where: { mar",
     "morpho_01: fictional debt 2000000 USDC exceeds the market's total borrow (3902.65); the position could not exist at this size",
     "venue:susde_usdc: depth is calibrated on the joint size; for ethena_susde_01 alone the proxy gives 5.59% loss vs 0.09% quoted (see quotes)",
     "venue:susde_usdc: depth is calibrated on the joint size; for morpho_01 alone the proxy gives 8.15% loss vs 0.16% quoted (see quotes)"

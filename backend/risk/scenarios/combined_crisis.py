@@ -110,11 +110,14 @@ def _run(portfolio: Portfolio, snapshot: Snapshot, request: ScenarioRequest, for
                 f"without it the haircut would be {exit_cost(venue, size, k):,.0f} USD.")
 
     joint = sum(queued_haircut(snapshot.venues[vid], size, forced.get(vid, 0.0), k) for vid, size in exits.items())
-    outcome.shared_liquidity_penalty = joint - standalone
+    # On a measured curve whose proceeds stop growing with size (the venue is drained), the joint cost can come
+    # out below the sum of standalone costs. The total then keeps the standalone costs: never below them.
+    outcome.shared_liquidity_penalty = max(joint - standalone, 0.0)
     T.step(outcome.trace, "shared_liquidity_penalty", "Shared exit venues: selling together costs more",
-           "sum over venues of the joint marginal cost behind liquidations - sum of standalone costs",
+           "max(sum over venues of the joint marginal cost behind liquidations - sum of standalone costs, 0)",
            [T.inp("joint cost", joint, T.USD, T.DERIVED), T.inp("standalone costs", standalone, T.USD, T.DERIVED)],
-           outcome.shared_liquidity_penalty, T.USD, note="Exists only at portfolio level: no single position carries it.")
+           outcome.shared_liquidity_penalty, T.USD, note="Exists only at portfolio level: no single position carries it."
+           + (" Joint cost below the standalone sum (drained venue): floored at 0." if joint < standalone else ""))
     if outcome.shared_liquidity_penalty > 0:
         outcome.warnings.append(
             "Portfolio total uses a joint exit per shared venue, behind the liquidation selling; it exceeds "

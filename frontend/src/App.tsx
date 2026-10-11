@@ -872,7 +872,7 @@ function PortfolioDashboard({
                 <td>{money(position.net_equity_usd)}</td>
                 <td>{position.exit_venue_id}</td>
                 <td>
-                  <Badge tone="warn">{position.data_origin}</Badge>
+                  <Badge tone={sourceTone(position.data_origin)}>{position.data_origin === "observed" ? "real wallet" : position.data_origin}</Badge>
                 </td>
               </tr>
             ))}

@@ -635,7 +635,7 @@
       },
       {
         "asset": "RLUSD",
-        "issuer": null,
+        "issuer": "ripple",
         "price_usd": null,
         "shocked_in_scenario": false,
         "shock_reason": null,
@@ -644,12 +644,12 @@
           {
             "from": "USDe",
             "status": "unavailable",
-            "reason": "USDe or RLUSD not in P1 token registry"
+            "reason": "no quote in snapshot; on-demand quotes disabled"
           },
           {
             "from": "sUSDe",
             "status": "unavailable",
-            "reason": "sUSDe or RLUSD not in P1 token registry"
+            "reason": "no quote in snapshot; on-demand quotes disabled"
           }
         ]
       }

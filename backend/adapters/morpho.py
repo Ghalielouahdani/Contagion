@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+from types import SimpleNamespace
 
 from backend.adapters import oracles
 from backend.adapters.base import ZERO_ADDRESS, Ctx, Entity, decimal_str
@@ -125,6 +126,8 @@ class MorphoAdapter:
             )
         if position_id:
             self._snapshot(ctx, position_id, mid, params, lltv, borrow_apy, passthrough, api, oracle)
+            self._borrowers(ctx, position_id, mid, oracle, lltv, supply_assets, borrow_assets,
+                            ctx.token_meta(collateral), loan_meta)
         return [Entity("token", collateral), Entity("token", loan)]
 
     # helpers -----------------------------------------------------------------------------
@@ -173,6 +176,52 @@ class MorphoAdapter:
         )
         data = self._graphql(ctx, q)
         return (data or {}).get("markets", {}).get("items", [])
+
+    def _borrowers(self, ctx: Ctx, position_id: str, mid: str, oracle: str, lltv: float, supply_raw: int,
+                   borrow_raw: int, coll_meta, loan_meta) -> None:
+        """Market sides, totals and the real borrower LTV distribution (the liquidation cascade's input).
+        Borrowers come from the Morpho indexer and are reconciled with the on-chain debt; when the
+        indexer is unreachable the market keeps its totals and the cascade only sees the portfolio."""
+        from backend.discovery.morpho import ltv_distribution  # discovery helper, no import cycle at load
+
+        market = ctx.market_params[position_id]
+        market.update(
+            collateral_asset=coll_meta.symbol,
+            loan_asset=loan_meta.symbol,
+            total_supply_assets=decimal_str(supply_raw / 10**loan_meta.decimals, 2),
+            total_borrow_assets=decimal_str(borrow_raw / 10**loan_meta.decimals, 2),
+        )
+        rows, skip, page = [], 0, 500
+        try:
+            price = ctx.evm.call(oracle, "price()(uint256)").value
+            while True:
+                q = (
+                    "{ marketPositions(first: %d, skip: %d, orderBy: BorrowShares, orderDirection: Desc, "
+                    'where: { marketUniqueKey_in: [%s], chainId_in: [%d], borrowShares_gte: "1" }) '
+                    "{ items { state { collateral borrowAssets } } } }" % (page, skip, json.dumps(mid), ctx.chain_id)
+                )
+                data = self._graphql(ctx, q)
+                if data is None:
+                    return
+                items = data["marketPositions"]["items"]
+                rows += [{"collateral": int(i["state"]["collateral"]), "borrow": int(i["state"]["borrowAssets"])}
+                         for i in items if i["state"] and int(i["state"]["borrowAssets"]) > 0]
+                if len(items) < page:
+                    break
+                skip += page
+        except (SourceError, KeyError, TypeError) as exc:
+            ctx.warnings.append(f"Morpho market {mid}: borrower distribution unavailable ({exc})")
+            return
+        if not rows:
+            return
+        dist = ltv_distribution(SimpleNamespace(lltv=lltv, oracle_price=price, loan_decimals=loan_meta.decimals,
+                                                total_borrow_assets=borrow_raw / 10**loan_meta.decimals), rows)
+        market.update(borrower_ltv_buckets=dist["buckets"], borrower_distribution_source_type="observed")
+        market["field_sources"]["borrower_ltv_buckets"] = "derived"
+        market.setdefault("warnings", []).append(
+            f"Borrower distribution from {dist['borrowers']} indexed positions (Morpho API) at oracle prices; "
+            f"{dist['coverage']:.2%} of on-chain debt covered."
+        )
 
     @staticmethod
     def _cross_check(ctx: Ctx, mid: str, api: dict | None, params) -> None:
@@ -233,6 +282,7 @@ class MorphoAdapter:
                 "oracle_explanation": passthrough.explanation if passthrough else None,
                 "oracle_backup_pass_through": passthrough.backup_value if passthrough else None,
                 "api_borrow_apy": api_state.get("borrowApy"),
+                "api_supply_apy": api_state.get("supplyApy"),
                 "api_supply_usd": api_state.get("supplyAssetsUsd"),
                 "api_borrow_usd": api_state.get("borrowAssetsUsd"),
             },

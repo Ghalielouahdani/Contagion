@@ -1422,7 +1422,7 @@
     {
       "id": "shared_liquidity_penalty",
       "label": "Shared exit venues: selling together costs more",
-      "formula": "sum over venues of the joint marginal cost behind liquidations - sum of standalone costs",
+      "formula": "max(sum over venues of the joint marginal cost behind liquidations - sum of standalone costs, 0)",
       "inputs": [
         {
           "name": "joint cost",

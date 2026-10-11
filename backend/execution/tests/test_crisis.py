@@ -112,3 +112,16 @@ def test_risk_result_from_another_request_is_rejected():
 def test_plan_without_risk_result_recomputes_it():
     p = crisis_plan(load("portfolio.json"), load("market_snapshot.json"), load("scenario_request.json"))
     assert p["positions"] == plan("")["positions"]
+
+
+def test_holding_never_shows_a_gain_when_the_exit_haircut_exceeds_the_equity():
+    # A leveraged position whose forced sale would cost more than its equity: P2 caps the loss at the
+    # equity (limited_liability). Holding pays no haircut, so the cap must not turn into a gain.
+    snapshot = load("market_snapshot.json")
+    venue = snapshot["exit_venues"]["venue:susde_usdc"]
+    venue.update(quote_method="proxy", effective_depth_usd="50000")
+    venue.pop("quotes", None)
+    request = load("scenario_request_liquidity.json")
+    thin = crisis_plan(load("portfolio.json"), snapshot, request)
+    morpho = row(thin, "morpho_01")
+    assert D(morpho["holding_loss_usd"]) >= 0

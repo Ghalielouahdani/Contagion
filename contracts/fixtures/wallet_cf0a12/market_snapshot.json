@@ -1,0 +1,431 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "snapshot_wallet_cf0a12",
+  "as_of": "2026-10-11T02:29:23Z",
+  "chain_id": 1,
+  "block_number": 26166225,
+  "prices_usd": {
+    "USDe": {
+      "value": "0.99959682",
+      "source_type": "observed"
+    },
+    "USDC": {
+      "value": "0.99988047",
+      "source_type": "observed"
+    },
+    "USDT": {
+      "value": "0.99902517",
+      "source_type": "observed"
+    },
+    "PYUSD": {
+      "value": "1.00000305",
+      "source_type": "observed"
+    },
+    "RLUSD": {
+      "value": "1.000022",
+      "source_type": "observed"
+    },
+    "ETH": {
+      "value": "2506.98054686",
+      "source_type": "observed"
+    },
+    "sUSDe": {
+      "value": "1.25193865",
+      "source_type": "derived"
+    }
+  },
+  "exchange_rates": {
+    "sUSDe_USDe": {
+      "value": "1.252443613052",
+      "source_type": "observed"
+    }
+  },
+  "markets": {
+    "morpho_susde_pyusd": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.915",
+      "liquidation_incentive": "0.026167",
+      "oracle_pass_through": "1",
+      "oracle_type": "exchange_rate_x_market_feed",
+      "oracle_address": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "liquidation_incentive": "derived",
+        "oracle_pass_through": "derived",
+        "borrower_ltv_buckets": "derived"
+      },
+      "details": {
+        "market_id": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+        "loan_token": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+        "collateral_token": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "irm": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+        "oracle_explanation": "reads a USDe market feed (USDe/USD); inputs: rate:sUSDe, feed:USDe/USD, feed:PYUSD/USD (quote)",
+        "oracle_backup_pass_through": null,
+        "api_borrow_apy": 0.041754314824066496,
+        "api_supply_apy": 0.037056657084868466,
+        "api_supply_usd": 108973229.31127512,
+        "api_borrow_usd": 96934315.07623702
+      },
+      "collateral_asset": "sUSDe",
+      "loan_asset": "PYUSD",
+      "total_supply_assets": "109007445.36",
+      "total_borrow_assets": "96963609.18",
+      "borrower_ltv_buckets": [
+        {
+          "ltv": "0.8495",
+          "debt_share": "0.3089"
+        },
+        {
+          "ltv": "0.8792",
+          "debt_share": "0.6869"
+        },
+        {
+          "ltv": "0.9047",
+          "debt_share": "0.0042"
+        }
+      ],
+      "borrower_distribution_source_type": "observed",
+      "warnings": [
+        "Borrower distribution from 31 indexed positions (Morpho API) at oracle prices; 100.01% of on-chain debt covered."
+      ]
+    },
+    "morpho_usde_rlusd": {
+      "market_kind": "morpho_blue_market",
+      "lltv": "0.915",
+      "liquidation_incentive": "0.026167",
+      "oracle_pass_through": "1",
+      "oracle_type": "market_price_feed",
+      "oracle_address": "0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7",
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "liquidation_incentive": "derived",
+        "oracle_pass_through": "derived",
+        "borrower_ltv_buckets": "derived"
+      },
+      "details": {
+        "market_id": "0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+        "loan_token": "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+        "collateral_token": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "irm": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+        "oracle_explanation": "reads a USDe market feed (USDe/USD); inputs: feed:USDe/USD, feed:RLUSD/USD (quote)",
+        "oracle_backup_pass_through": null,
+        "api_borrow_apy": 0.04839011261410902,
+        "api_supply_apy": 0.044123710955948574,
+        "api_supply_usd": 50025445.626430094,
+        "api_borrow_usd": 45709094.79592813
+      },
+      "collateral_asset": "USDe",
+      "loan_asset": "RLUSD",
+      "total_supply_assets": "50017116.38",
+      "total_borrow_assets": "45701052.32",
+      "borrower_ltv_buckets": [
+        {
+          "ltv": "0.7862",
+          "debt_share": "0.0241"
+        },
+        {
+          "ltv": "0.8039",
+          "debt_share": "0.0208"
+        },
+        {
+          "ltv": "0.8830",
+          "debt_share": "0.9033"
+        },
+        {
+          "ltv": "0.9055",
+          "debt_share": "0.0518"
+        }
+      ],
+      "borrower_distribution_source_type": "observed",
+      "warnings": [
+        "Borrower distribution from 10 indexed positions (Morpho API) at oracle prices; 100.01% of on-chain debt covered."
+      ]
+    },
+    "aave_usde_usdc": {
+      "market_kind": "aave_v3_reserve",
+      "liquidation_threshold": "0.93",
+      "liquidation_bonus": "0.021",
+      "oracle_pass_through": "0",
+      "oracle_type": "proxy_asset_feed",
+      "oracle_address": "0xc26d4a1c46d884cff6de9800b6ae7a8cf48b4ff8",
+      "emode_category": 10,
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "oracle_pass_through": "derived",
+        "liquidation_bonus": "derived"
+      },
+      "details": {
+        "pool": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "market_name": "Aave Ethereum Market",
+        "ltv": "0.91",
+        "emode_label": "PT-USDe Stablecoins July 2025",
+        "oracle_explanation": "no USDe market feed on the active path; inputs: feed:USDT/USD",
+        "debt_oracle_address": "0x3f73f03aa83b2a48ed27e964ed0fdb590332095b",
+        "debt_oracle_type": "proxy_asset_feed"
+      }
+    },
+    "aave_usde_usdt": {
+      "market_kind": "aave_v3_reserve",
+      "liquidation_threshold": "0.93",
+      "liquidation_bonus": "0.021",
+      "oracle_pass_through": "0",
+      "oracle_type": "proxy_asset_feed",
+      "oracle_address": "0xc26d4a1c46d884cff6de9800b6ae7a8cf48b4ff8",
+      "emode_category": 10,
+      "verified": true,
+      "source_type": "observed",
+      "field_sources": {
+        "oracle_pass_through": "derived",
+        "liquidation_bonus": "derived"
+      },
+      "details": {
+        "pool": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "market_name": "Aave Ethereum Market",
+        "ltv": "0.91",
+        "emode_label": "PT-USDe Stablecoins July 2025",
+        "oracle_explanation": "no USDe market feed on the active path; inputs: feed:USDT/USD",
+        "debt_oracle_address": "0x260326c220e469358846b187ee53328303efe19c",
+        "debt_oracle_type": "proxy_asset_feed"
+      }
+    }
+  },
+  "yields": {
+    "morpho_susde_pyusd": {
+      "collateral_supply_apy": "0",
+      "debt_borrow_apy": "0.041754",
+      "source_type": "observed",
+      "field_sources": {
+        "collateral_supply_apy": "derived",
+        "debt_borrow_apy": "derived"
+      }
+    },
+    "morpho_usde_rlusd": {
+      "collateral_supply_apy": "0",
+      "debt_borrow_apy": "0.048398",
+      "source_type": "observed",
+      "field_sources": {
+        "collateral_supply_apy": "derived",
+        "debt_borrow_apy": "derived"
+      }
+    },
+    "aave_usde_usdc": {
+      "collateral_supply_apy": "0.002473",
+      "debt_borrow_apy": "0.04907",
+      "source_type": "derived"
+    },
+    "aave_usde_usdt": {
+      "collateral_supply_apy": "0.002473",
+      "debt_borrow_apy": "0.043001",
+      "source_type": "derived"
+    }
+  },
+  "asset_yields": {
+    "sUSDe": {
+      "value": "0.048604",
+      "source_type": "derived"
+    }
+  },
+  "exit_venues": {
+    "venue:susde_usdc": {
+      "asset": "sUSDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "2745520.62",
+      "fee_rate": "0",
+      "gas_usd": "41.59",
+      "venue_address": null,
+      "source_type": "derived",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived",
+        "gas_usd": "observed"
+      },
+      "quotes": [
+        {
+          "size_tokens": "399380.592651",
+          "size_usd": "500000",
+          "proceeds_usd": "499731.55",
+          "loss_pct": "0.0537",
+          "positions": []
+        },
+        {
+          "size_tokens": "798761.185302",
+          "size_usd": "1000000",
+          "proceeds_usd": "999319.77",
+          "loss_pct": "0.068",
+          "positions": []
+        },
+        {
+          "size_tokens": "1597522.370605",
+          "size_usd": "2000000",
+          "proceeds_usd": "1997775.29",
+          "loss_pct": "0.1112",
+          "positions": []
+        },
+        {
+          "size_tokens": "3993805.926512",
+          "size_usd": "5000000",
+          "proceeds_usd": "3805704.85",
+          "loss_pct": "23.8859",
+          "positions": []
+        },
+        {
+          "size_tokens": "7987611.853025",
+          "size_usd": "10000000",
+          "proceeds_usd": "3573904.21",
+          "loss_pct": "64.261",
+          "positions": []
+        },
+        {
+          "size_tokens": "15975223.70605",
+          "size_usd": "20000000",
+          "proceeds_usd": "2414274.12",
+          "loss_pct": "87.9286",
+          "positions": []
+        },
+        {
+          "size_tokens": "15983700.405075",
+          "size_usd": "20010612.31",
+          "proceeds_usd": "2414274.38",
+          "loss_pct": "87.935",
+          "positions": [
+            "morpho_susde_pyusd"
+          ]
+        },
+        {
+          "size_tokens": "39938059.265125",
+          "size_usd": "50000000",
+          "proceeds_usd": "2414489.59",
+          "loss_pct": "95.171",
+          "positions": []
+        },
+        {
+          "size_tokens": "119814177.795374",
+          "size_usd": "150000000",
+          "proceeds_usd": "2423988.19",
+          "loss_pct": "98.384",
+          "positions": []
+        }
+      ]
+    },
+    "venue:usde_usdc": {
+      "asset": "USDe",
+      "quote_method": "executable_quote",
+      "effective_depth_usd": "2850201.32",
+      "fee_rate": "0",
+      "gas_usd": "19.59",
+      "venue_address": null,
+      "source_type": "derived",
+      "field_sources": {
+        "effective_depth_usd": "derived",
+        "fee_rate": "derived",
+        "gas_usd": "observed"
+      },
+      "quotes": [
+        {
+          "size_tokens": "500201.67131",
+          "size_usd": "500000",
+          "proceeds_usd": "499950.03",
+          "loss_pct": "0.01",
+          "positions": []
+        },
+        {
+          "size_tokens": "1000403.34262",
+          "size_usd": "1000000",
+          "proceeds_usd": "999761.12",
+          "loss_pct": "0.0239",
+          "positions": []
+        },
+        {
+          "size_tokens": "2000806.685239",
+          "size_usd": "2000000",
+          "proceeds_usd": "1998977.62",
+          "loss_pct": "0.0511",
+          "positions": []
+        },
+        {
+          "size_tokens": "5002016.713098",
+          "size_usd": "5000000",
+          "proceeds_usd": "3542424.99",
+          "loss_pct": "29.1515",
+          "positions": []
+        },
+        {
+          "size_tokens": "7262288.65",
+          "size_usd": "7259360.64",
+          "proceeds_usd": "3348476.93",
+          "loss_pct": "53.8737",
+          "positions": [
+            "morpho_usde_rlusd"
+          ]
+        },
+        {
+          "size_tokens": "9955512.670021",
+          "size_usd": "9951498.81",
+          "proceeds_usd": "3350392.31",
+          "loss_pct": "66.3328",
+          "positions": [
+            "aave_usde_usdc"
+          ]
+        },
+        {
+          "size_tokens": "10004033.426197",
+          "size_usd": "10000000",
+          "proceeds_usd": "3350399.18",
+          "loss_pct": "66.496",
+          "positions": []
+        },
+        {
+          "size_tokens": "20008066.852394",
+          "size_usd": "20000000",
+          "proceeds_usd": "3788133.24",
+          "loss_pct": "81.0593",
+          "positions": []
+        },
+        {
+          "size_tokens": "21433263.643163",
+          "size_usd": "21424622.18",
+          "proceeds_usd": "3788122.3",
+          "loss_pct": "82.3188",
+          "positions": [
+            "aave_usde_usdt"
+          ]
+        },
+        {
+          "size_tokens": "38651064.963184",
+          "size_usd": "38635481.63",
+          "proceeds_usd": "2654383.22",
+          "loss_pct": "93.1297",
+          "positions": [
+            "morpho_usde_rlusd",
+            "aave_usde_usdc",
+            "aave_usde_usdt"
+          ]
+        },
+        {
+          "size_tokens": "50020167.130984",
+          "size_usd": "50000000",
+          "proceeds_usd": "2673657.44",
+          "loss_pct": "94.6527",
+          "positions": []
+        },
+        {
+          "size_tokens": "150060501.392952",
+          "size_usd": "150000000",
+          "proceeds_usd": "1758878.97",
+          "loss_pct": "98.8274",
+          "positions": []
+        }
+      ]
+    }
+  },
+  "warnings": [
+    "Wallet 0xcf0a12cbd8088fc5f84ad431e71787157041cd69 read on-chain at block 26166225 (2026-10-11T02:30:05Z).",
+    "Morpho PT-sUSDS-26NOV2026/USDT (0x0367161b7cb23dfd03747dd3815d1c445b0437b648a6d50346249c6e7b92ff1b): collateral outside the Ethena scope of the engine",
+    "Aave account is cross-margined: its collateral and debt are split pro rata into one position per collateral/debt pair; each pair is checked against the same liquidation threshold, which approximates the account's single health factor.",
+    "Positions read from a real wallet on chain 1 at block 26166225; markets, tokens, oracles and venues are real, read at the same block.",
+    "Protocol API data (Pendle, Morpho, KyberSwap) is read at observed_at, not at the pinned block."
+  ]
+}

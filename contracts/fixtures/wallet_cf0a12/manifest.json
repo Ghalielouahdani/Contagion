@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "fixture_set_id": "wallet_cf0a12",
+  "description": "Real wallet 0xcf0a12cbd8088fc5f84ad431e71787157041cd69: positions read on Ethereum at block 26166225 (2026-10-11T02:30:05Z). Built by backend/discovery/wallet.py.",
+  "ids": {
+    "portfolio_id": "wallet_cf0a12_portfolio",
+    "graph_id": "graph_wallet_cf0a12",
+    "snapshot_id": "snapshot_wallet_cf0a12"
+  },
+  "files": {
+    "portfolio": {
+      "path": "portfolio.json",
+      "schema": "../../schemas/v1/portfolio.schema.json"
+    },
+    "market_snapshot": {
+      "path": "market_snapshot.json",
+      "schema": "../../schemas/v1/market_snapshot.schema.json"
+    },
+    "dependency_graph": {
+      "path": "dependency_graph.json",
+      "schema": "../../schemas/v1/dependency_graph.schema.json"
+    },
+    "scenario_request": {
+      "path": "scenario_request.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_carry": {
+      "path": "scenario_request_carry.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_cascade": {
+      "path": "scenario_request_cascade.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_combined": {
+      "path": "scenario_request_combined.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_governance": {
+      "path": "scenario_request_governance.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_liquidity": {
+      "path": "scenario_request_liquidity.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_node_shock": {
+      "path": "scenario_request_node_shock.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "scenario_request_severe": {
+      "path": "scenario_request_severe.json",
+      "schema": "../../schemas/v1/scenario_request.schema.json"
+    },
+    "risk_analytics": {
+      "path": "risk_analytics.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result": {
+      "path": "risk_result.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics_carry": {
+      "path": "risk_analytics_carry.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result_carry": {
+      "path": "risk_result_carry.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics_cascade": {
+      "path": "risk_analytics_cascade.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result_cascade": {
+      "path": "risk_result_cascade.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics_combined": {
+      "path": "risk_analytics_combined.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result_combined": {
+      "path": "risk_result_combined.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics_governance": {
+      "path": "risk_analytics_governance.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result_governance": {
+      "path": "risk_result_governance.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics_liquidity": {
+      "path": "risk_analytics_liquidity.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result_liquidity": {
+      "path": "risk_result_liquidity.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics_node_shock": {
+      "path": "risk_analytics_node_shock.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result_node_shock": {
+      "path": "risk_result_node_shock.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_analytics_severe": {
+      "path": "risk_analytics_severe.json",
+      "schema": "../../schemas/v1/risk_analytics.schema.json"
+    },
+    "risk_result_severe": {
+      "path": "risk_result_severe.json",
+      "schema": "../../schemas/v1/risk_result.schema.json"
+    },
+    "risk_surface": {
+      "path": "risk_surface.json",
+      "schema": "../../schemas/v1/risk_surface.schema.json"
+    }
+  },
+  "golden": false
+}

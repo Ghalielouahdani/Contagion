@@ -256,8 +256,8 @@
         "low_value": "2.0000",
         "high_value": "0.5000",
         "loss_at_low_usd": "4764442.16",
-        "loss_at_high_usd": "4977785.10",
-        "swing_usd": "213342.93",
+        "loss_at_high_usd": "4989060.36",
+        "swing_usd": "224618.20",
         "base_loss_usd": "4792307.82"
       },
       {
@@ -469,8 +469,8 @@
           "4590995.07",
           "4667773.01",
           "4745110.30",
-          "4802060.06",
-          "4855426.37",
+          "4827646.08",
+          "4866620.89",
           "4907963.21",
           "4959670.87",
           "5010549.67",
@@ -492,8 +492,8 @@
           "4850426.10",
           "4899557.99",
           "4947909.13",
-          "4995480.98",
-          "5042275.03",
+          "5021116.23",
+          "5053550.30",
           "5088292.79",
           "5133535.78",
           "5178005.53",
@@ -625,9 +625,9 @@
     "seed": 20261010,
     "method": "uniform draws of unverified model assumptions within their ranges; scenario parameters fixed",
     "portfolio": {
-      "p05_usd": "4767421.84",
+      "p05_usd": "4767575.95",
       "p25_usd": "4811818.31",
-      "p50_usd": "4860835.21",
+      "p50_usd": "4863617.26",
       "p75_usd": "4927579.14",
       "p95_usd": "5106353.58",
       "min_usd": "4740379.30",
@@ -680,32 +680,32 @@
       {
         "from_usd": "4740379.30",
         "to_usd": "4769868.80",
-        "draws": 18
+        "draws": 17
       },
       {
         "from_usd": "4769868.80",
         "to_usd": "4799358.31",
-        "draws": 33
+        "draws": 32
       },
       {
         "from_usd": "4799358.31",
         "to_usd": "4828847.82",
-        "draws": 40
+        "draws": 42
       },
       {
         "from_usd": "4828847.82",
         "to_usd": "4858337.32",
-        "draws": 35
+        "draws": 32
       },
       {
         "from_usd": "4858337.32",
         "to_usd": "4887826.83",
-        "draws": 37
+        "draws": 39
       },
       {
         "from_usd": "4887826.83",
         "to_usd": "4917316.34",
-        "draws": 24
+        "draws": 25
       },
       {
         "from_usd": "4917316.34",
@@ -762,25 +762,25 @@
         "assumption": "venue:susde_usdc depth (quoted)",
         "low": "0.8000",
         "high": "1.2500",
-        "rank_correlation": "-0.3462"
+        "rank_correlation": "-0.3339"
       },
       {
         "assumption": "sUSDe beta to USDe",
         "low": "0.5000",
         "high": "1.5000",
-        "rank_correlation": "-0.2102"
+        "rank_correlation": "-0.2156"
       },
       {
         "assumption": "venue:usde_usdc depth (quoted)",
         "low": "0.8000",
         "high": "1.2500",
-        "rank_correlation": "0.1335"
+        "rank_correlation": "0.1251"
       },
       {
         "assumption": "venue:pendle_pt_susde depth (quoted)",
         "low": "0.8000",
         "high": "1.2500",
-        "rank_correlation": "-0.0683"
+        "rank_correlation": "-0.0738"
       }
     ],
     "fixed_because_verified": [

@@ -235,3 +235,12 @@ def test_gemini_request_is_deterministic(monkeypatch):
     monkeypatch.setattr(httpx, "post", lambda url, **k: sent.update(k["json"]) or httpx.Response(500))
     advise(*inputs(), llm=GeminiClient(api_key="test-key", model="gemini-test"))
     assert sent["generationConfig"]["temperature"] == 0 and "seed" in sent["generationConfig"]
+
+
+def test_loss_components_given_to_the_ai_add_up_to_the_loss_if_kept():
+    # Holding sells nothing: the forced-sale haircut is not part of what keeping costs.
+    llm = FakeLLM(answer())
+    advise(*inputs("_liquidity"), llm=llm)
+    for p in llm.calls[0][1]["positions"]:
+        assert "execution_haircut" not in p["loss_components"]
+        assert sum(D(v) for v in p["loss_components"].values()) == pytest.approx(D(p["loss_if_kept_usd"]), abs=D("0.02"))

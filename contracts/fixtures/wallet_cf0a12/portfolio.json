@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "portfolio_id": "wallet_cf0a12_portfolio",
+  "as_of": "2026-10-11T02:29:23Z",
+  "quote_currency": "USD",
+  "positions": [
+    {
+      "position_id": "morpho_susde_pyusd",
+      "protocol": "morpho",
+      "chain_id": 1,
+      "position_type": "collateralized_borrow",
+      "market_id": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+      "collateral_asset": "sUSDe",
+      "collateral_quantity": "15983700.405075",
+      "debt_asset": "PYUSD",
+      "debt_quantity": "17881269.310954",
+      "gross_value_usd": "20010612.31",
+      "debt_value_usd": "17881323.85",
+      "net_equity_usd": "2129288.46",
+      "exit_venue_id": "venue:susde_usdc",
+      "data_origin": "observed"
+    },
+    {
+      "position_id": "morpho_usde_rlusd",
+      "protocol": "morpho",
+      "chain_id": 1,
+      "position_type": "collateralized_borrow",
+      "market_id": "0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+      "collateral_asset": "USDe",
+      "collateral_quantity": "7262288.65",
+      "debt_asset": "RLUSD",
+      "debt_quantity": "6498215.330744",
+      "gross_value_usd": "7259360.64",
+      "debt_value_usd": "6498358.29",
+      "net_equity_usd": "761002.35",
+      "exit_venue_id": "venue:usde_usdc",
+      "data_origin": "observed"
+    },
+    {
+      "position_id": "aave_usde_usdc",
+      "protocol": "aave",
+      "chain_id": 1,
+      "position_type": "collateralized_borrow",
+      "market_id": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+      "collateral_asset": "USDe",
+      "collateral_quantity": "9955512.670021",
+      "debt_asset": "USDC",
+      "debt_quantity": "6839146.512006",
+      "gross_value_usd": "9951498.81",
+      "debt_value_usd": "6838329.03",
+      "net_equity_usd": "3113169.78",
+      "exit_venue_id": "venue:usde_usdc",
+      "data_origin": "observed"
+    },
+    {
+      "position_id": "aave_usde_usdt",
+      "protocol": "aave",
+      "chain_id": 1,
+      "position_type": "collateralized_borrow",
+      "market_id": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+      "collateral_asset": "USDe",
+      "collateral_quantity": "21433263.643163",
+      "debt_asset": "USDT",
+      "debt_quantity": "14724026.290224",
+      "gross_value_usd": "21424622.18",
+      "debt_value_usd": "14709672.87",
+      "net_equity_usd": "6714949.31",
+      "exit_venue_id": "venue:usde_usdc",
+      "data_origin": "observed"
+    }
+  ],
+  "totals": {
+    "gross_value_usd": "58646093.94",
+    "debt_value_usd": "45927684.04",
+    "net_equity_usd": "12718409.90"
+  }
+}

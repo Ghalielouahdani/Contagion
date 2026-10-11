@@ -1,0 +1,2091 @@
+{
+  "schema_version": "1.0",
+  "graph_id": "graph_wallet_cf0a12",
+  "portfolio_id": "wallet_cf0a12_portfolio",
+  "as_of": "2026-10-11T02:29:23Z",
+  "chain_id": 1,
+  "block_number": 26166225,
+  "nodes": [
+    {
+      "id": "asset:PYUSD",
+      "type": "asset",
+      "label": "PYUSD",
+      "attributes": {
+        "address": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+        "chain_id": 1,
+        "decimals": 6,
+        "name": "PayPal USD"
+      }
+    },
+    {
+      "id": "asset:RLUSD",
+      "type": "asset",
+      "label": "RLUSD",
+      "attributes": {
+        "address": "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+        "chain_id": 1,
+        "decimals": 18,
+        "name": "RLUSD"
+      }
+    },
+    {
+      "id": "asset:USDC",
+      "type": "asset",
+      "label": "USDC",
+      "attributes": {
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "chain_id": 1,
+        "decimals": 6,
+        "name": "USD Coin"
+      }
+    },
+    {
+      "id": "asset:USDT",
+      "type": "asset",
+      "label": "USDT",
+      "attributes": {
+        "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "chain_id": 1,
+        "decimals": 6,
+        "name": "Tether USD"
+      }
+    },
+    {
+      "id": "asset:USDe",
+      "type": "asset",
+      "label": "USDe",
+      "attributes": {
+        "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "chain_id": 1,
+        "decimals": 18,
+        "name": "USDe",
+        "total_supply": "4763361755724201073523503861"
+      }
+    },
+    {
+      "id": "asset:sUSDe",
+      "type": "asset",
+      "label": "sUSDe",
+      "attributes": {
+        "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "chain_id": 1,
+        "decimals": 18,
+        "name": "Staked USDe",
+        "exchange_rate_to_USDe": "1.252443613052",
+        "cooldown_seconds": 86400,
+        "rewards_vesting": "52598969523809523809523"
+      }
+    },
+    {
+      "id": "chain:ethereum",
+      "type": "chain",
+      "label": "Ethereum mainnet",
+      "attributes": {
+        "chain_id": 1,
+        "block_number": 26166225,
+        "block_timestamp": "2026-10-11T02:29:23Z",
+        "check": "eth_chainId matches the portfolio's chain_id"
+      }
+    },
+    {
+      "id": "contract:ethena_minting.e3490297",
+      "type": "contract",
+      "label": "Ethena minting contract",
+      "attributes": {
+        "address": "0xe3490297a08d6fc8da46edb7b6142e4f461b62d3",
+        "chain_id": 1
+      }
+    },
+    {
+      "id": "market:aave_usde_usdc",
+      "type": "market",
+      "label": "Aave Aave Ethereum Market: USDe collateral / USDC debt (eMode 10 PT-USDe Stablecoins July 2025)",
+      "attributes": {
+        "chain_id": 1,
+        "protocol": "aave",
+        "pool": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "pool_addresses_provider": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e",
+        "market_name": "Aave Ethereum Market",
+        "emode_category": 10,
+        "ltv": "0.91",
+        "liquidation_threshold": "0.93",
+        "liquidation_bonus": "0.021",
+        "collateral_reserve": {
+          "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+          "reserve_id": 30,
+          "base_ltv": "0",
+          "base_lt": "0.75",
+          "base_liquidation_bonus": "0.085",
+          "collateral_enabled": true,
+          "borrowing_enabled": true,
+          "active": true,
+          "frozen": false,
+          "paused": false,
+          "supply_cap": 50000000,
+          "borrow_cap": 550000000,
+          "supply_apy": "0.002473",
+          "variable_borrow_apy": "0.068374"
+        },
+        "debt_reserve": {
+          "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "reserve_id": 3,
+          "base_ltv": "0.75",
+          "base_lt": "0.78",
+          "base_liquidation_bonus": "0.045",
+          "collateral_enabled": true,
+          "borrowing_enabled": true,
+          "active": true,
+          "frozen": false,
+          "paused": false,
+          "supply_cap": 2700000000,
+          "borrow_cap": 3000000000,
+          "supply_apy": "0.041464",
+          "variable_borrow_apy": "0.04907"
+        }
+      }
+    },
+    {
+      "id": "market:aave_usde_usdt",
+      "type": "market",
+      "label": "Aave Aave Ethereum Market: USDe collateral / USDT debt (eMode 10 PT-USDe Stablecoins July 2025)",
+      "attributes": {
+        "chain_id": 1,
+        "protocol": "aave",
+        "pool": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "pool_addresses_provider": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e",
+        "market_name": "Aave Ethereum Market",
+        "emode_category": 10,
+        "ltv": "0.91",
+        "liquidation_threshold": "0.93",
+        "liquidation_bonus": "0.021",
+        "collateral_reserve": {
+          "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+          "reserve_id": 30,
+          "base_ltv": "0",
+          "base_lt": "0.75",
+          "base_liquidation_bonus": "0.085",
+          "collateral_enabled": true,
+          "borrowing_enabled": true,
+          "active": true,
+          "frozen": false,
+          "paused": false,
+          "supply_cap": 50000000,
+          "borrow_cap": 550000000,
+          "supply_apy": "0.002473",
+          "variable_borrow_apy": "0.068374"
+        },
+        "debt_reserve": {
+          "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "reserve_id": 8,
+          "base_ltv": "0.75",
+          "base_lt": "0.78",
+          "base_liquidation_bonus": "0.045",
+          "collateral_enabled": true,
+          "borrowing_enabled": true,
+          "active": true,
+          "frozen": false,
+          "paused": false,
+          "supply_cap": 3090000000,
+          "borrow_cap": 3480000000,
+          "supply_apy": "0.03467",
+          "variable_borrow_apy": "0.043001"
+        }
+      }
+    },
+    {
+      "id": "market:morpho_susde_pyusd",
+      "type": "market",
+      "label": "Morpho sUSDe/PYUSD market (LLTV 91.5%)",
+      "attributes": {
+        "market_id": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+        "chain_id": 1,
+        "protocol": "morpho",
+        "lltv": "0.915",
+        "oracle": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+        "irm": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+        "total_supply": "109007445.36",
+        "total_borrow": "96963609.18",
+        "utilization": "0.8895",
+        "borrow_apy": "0.041754",
+        "collateral_usd": "111454553.99",
+        "listed": true,
+        "context_only": false
+      }
+    },
+    {
+      "id": "market:morpho_usde_rlusd",
+      "type": "market",
+      "label": "Morpho USDe/RLUSD market (LLTV 91.5%)",
+      "attributes": {
+        "market_id": "0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+        "chain_id": 1,
+        "protocol": "morpho",
+        "lltv": "0.915",
+        "oracle": "0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7",
+        "irm": "0x870ac11d48b15db9a138cf899d20f13f79ba00bc",
+        "total_supply": "50017116.38",
+        "total_borrow": "45701052.32",
+        "utilization": "0.9137",
+        "borrow_apy": "0.048398",
+        "collateral_usd": "51947598.83",
+        "listed": true,
+        "context_only": false
+      }
+    },
+    {
+      "id": "offchain:circle",
+      "type": "offchain_entity",
+      "label": "Circle (USDC issuer and reserves)",
+      "attributes": {
+        "docs": "https://www.circle.com/usdc"
+      }
+    },
+    {
+      "id": "offchain:ethena_backing",
+      "type": "offchain_entity",
+      "label": "Ethena backing (custody, hedges, reserve fund)",
+      "attributes": {
+        "docs": "https://docs.ethena.fi/"
+      }
+    },
+    {
+      "id": "offchain:paxos",
+      "type": "offchain_entity",
+      "label": "Paxos (PYUSD issuer and reserves)",
+      "attributes": {
+        "docs": "https://www.paypal.com/pyusd"
+      }
+    },
+    {
+      "id": "offchain:ripple",
+      "type": "offchain_entity",
+      "label": "Ripple (RLUSD issuer and reserves)",
+      "attributes": {
+        "docs": "https://ripple.com/solutions/stablecoin/"
+      }
+    },
+    {
+      "id": "offchain:tether",
+      "type": "offchain_entity",
+      "label": "Tether (USDT issuer and reserves)",
+      "attributes": {
+        "docs": "https://tether.to/"
+      }
+    },
+    {
+      "id": "oracle:aave.Capped-USDC-USD.3f73f03a",
+      "type": "oracle",
+      "label": "Aave price adapter: Capped USDC / USD",
+      "attributes": {
+        "address": "0x3f73f03aa83b2a48ed27e964ed0fdb590332095b",
+        "chain_id": 1,
+        "oracle_kind": "aave_capped_feed",
+        "description": "Capped USDC / USD",
+        "price_cap": "104000000",
+        "is_capped": false
+      }
+    },
+    {
+      "id": "oracle:aave.Capped-USDT-USD.260326c2",
+      "type": "oracle",
+      "label": "Aave price adapter: Capped USDT/USD",
+      "attributes": {
+        "address": "0x260326c220e469358846b187ee53328303efe19c",
+        "chain_id": 1,
+        "oracle_kind": "aave_capped_feed",
+        "description": "Capped USDT/USD",
+        "price_cap": "104000000",
+        "is_capped": false
+      }
+    },
+    {
+      "id": "oracle:aave.Capped-USDT-USD.c26d4a1c",
+      "type": "oracle",
+      "label": "Aave price adapter: Capped USDT/USD",
+      "attributes": {
+        "address": "0xc26d4a1c46d884cff6de9800b6ae7a8cf48b4ff8",
+        "chain_id": 1,
+        "oracle_kind": "aave_capped_feed",
+        "description": "Capped USDT/USD",
+        "is_capped": false
+      }
+    },
+    {
+      "id": "oracle:chainlink.PYUSD-USD.8f1df6d7",
+      "type": "oracle",
+      "label": "Chainlink PYUSD / USD feed",
+      "attributes": {
+        "address": "0x8f1df6d7f2db73eece86a18b4381f4707b918fb1",
+        "chain_id": 1,
+        "oracle_kind": "chainlink_feed",
+        "description": "PYUSD / USD",
+        "decimals": 8,
+        "answer": "100000305",
+        "updated_at_unix": 1791662015,
+        "aggregator": "0x39e31761911b9aabaef5fb81b18fd1c24a60e884",
+        "age_s": 23748
+      }
+    },
+    {
+      "id": "oracle:chainlink.RLUSD-USD.26c46b7a",
+      "type": "oracle",
+      "label": "Chainlink RLUSD / USD feed",
+      "attributes": {
+        "address": "0x26c46b7ad0012ca71f2298ada567dc9af14e7f2a",
+        "chain_id": 1,
+        "oracle_kind": "chainlink_feed",
+        "description": "RLUSD / USD",
+        "decimals": 8,
+        "answer": "100002200",
+        "updated_at_unix": 1791607763,
+        "aggregator": "0x7d95b7bf7bb7750d818f42df114739b6c88cf9bc",
+        "age_s": 78000
+      }
+    },
+    {
+      "id": "oracle:chainlink.USDC-USD.ea674bbc",
+      "type": "oracle",
+      "label": "Chainlink USDC / USD feed",
+      "attributes": {
+        "address": "0xea674bbc33ae708bc9eb4ba348b04e4eb55b496b",
+        "chain_id": 1,
+        "oracle_kind": "chainlink_feed",
+        "description": "USDC / USD",
+        "decimals": 8,
+        "answer": "99984927",
+        "updated_at_unix": 1791643091,
+        "aggregator": "0xcc31418a98f7afc4a9e2f8ea8fa6cbd4dbb4c9f7",
+        "age_s": 42672
+      }
+    },
+    {
+      "id": "oracle:chainlink.USDT-USD.3e7d1eab",
+      "type": "oracle",
+      "label": "Chainlink USDT / USD feed",
+      "attributes": {
+        "address": "0x3e7d1eab13ad0104d2750b8863b489d65364e32d",
+        "chain_id": 1,
+        "oracle_kind": "chainlink_feed",
+        "description": "USDT / USD",
+        "decimals": 8,
+        "answer": "99902517",
+        "updated_at_unix": 1791643163,
+        "aggregator": "0x9c41663bb8d6800c8050e2fbf98e86ad01c973e3",
+        "age_s": 42600
+      }
+    },
+    {
+      "id": "oracle:chainlink.USDe-USD.a569d910",
+      "type": "oracle",
+      "label": "Chainlink USDe / USD feed",
+      "attributes": {
+        "address": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+        "chain_id": 1,
+        "oracle_kind": "chainlink_feed",
+        "description": "USDe / USD",
+        "decimals": 8,
+        "answer": "99959682",
+        "updated_at_unix": 1791604751,
+        "aggregator": "0xcc16f670129f965b396f2e81312f6e339ffdb18e",
+        "age_s": 81012
+      }
+    },
+    {
+      "id": "oracle:morpho_oracle.0c13eec9",
+      "type": "oracle",
+      "label": "Morpho ChainlinkOracleV2",
+      "attributes": {
+        "address": "0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7",
+        "chain_id": 1,
+        "oracle_kind": "morpho_chainlink_v2",
+        "scale_factor": "1000000000000000000000000000000000000",
+        "price_raw": "999574829353754217407217041225093047",
+        "base_feed_1": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+        "quote_feed_1": "0x26c46b7ad0012ca71f2298ada567dc9af14e7f2a"
+      }
+    },
+    {
+      "id": "oracle:morpho_oracle.e6212d05",
+      "type": "oracle",
+      "label": "Morpho ChainlinkOracleV2",
+      "attributes": {
+        "address": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+        "chain_id": 1,
+        "oracle_kind": "morpho_chainlink_v2",
+        "scale_factor": "1000000",
+        "price_raw": "1251934834435167399207931",
+        "base_feed_1": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+        "quote_feed_1": "0x8f1df6d7f2db73eece86a18b4381f4707b918fb1"
+      }
+    },
+    {
+      "id": "position:aave_usde_usdc",
+      "type": "position",
+      "label": "Aave USDe-collateral USDC borrow",
+      "attributes": {
+        "protocol": "aave",
+        "position_type": "collateralized_borrow",
+        "market_id": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+        "data_origin": "observed",
+        "collateral_asset": "USDe",
+        "collateral_quantity": "9955512.670021",
+        "debt_asset": "USDC",
+        "debt_quantity": "6839146.512006"
+      }
+    },
+    {
+      "id": "position:aave_usde_usdt",
+      "type": "position",
+      "label": "Aave USDe-collateral USDT borrow",
+      "attributes": {
+        "protocol": "aave",
+        "position_type": "collateralized_borrow",
+        "market_id": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+        "data_origin": "observed",
+        "collateral_asset": "USDe",
+        "collateral_quantity": "21433263.643163",
+        "debt_asset": "USDT",
+        "debt_quantity": "14724026.290224"
+      }
+    },
+    {
+      "id": "position:morpho_susde_pyusd",
+      "type": "position",
+      "label": "Morpho sUSDe-collateral PYUSD borrow",
+      "attributes": {
+        "protocol": "morpho",
+        "position_type": "collateralized_borrow",
+        "market_id": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+        "data_origin": "observed",
+        "collateral_asset": "sUSDe",
+        "collateral_quantity": "15983700.405075",
+        "debt_asset": "PYUSD",
+        "debt_quantity": "17881269.310954"
+      }
+    },
+    {
+      "id": "position:morpho_usde_rlusd",
+      "type": "position",
+      "label": "Morpho USDe-collateral RLUSD borrow",
+      "attributes": {
+        "protocol": "morpho",
+        "position_type": "collateralized_borrow",
+        "market_id": "0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+        "data_origin": "observed",
+        "collateral_asset": "USDe",
+        "collateral_quantity": "7262288.65",
+        "debt_asset": "RLUSD",
+        "debt_quantity": "6498215.330744"
+      }
+    },
+    {
+      "id": "protocol:aave",
+      "type": "protocol",
+      "label": "Aave v3",
+      "attributes": {
+        "docs": "https://aave.com/docs/resources/addresses"
+      }
+    },
+    {
+      "id": "protocol:ethena",
+      "type": "protocol",
+      "label": "Ethena",
+      "attributes": {
+        "docs": "https://docs.ethena.fi/"
+      }
+    },
+    {
+      "id": "protocol:morpho",
+      "type": "protocol",
+      "label": "Morpho Blue",
+      "attributes": {
+        "docs": "https://docs.morpho.org/get-started/resources/addresses"
+      }
+    },
+    {
+      "id": "venue:susde_usdc",
+      "type": "venue",
+      "label": "sUSDe -> PYUSD exit route",
+      "attributes": {
+        "chain_id": 1,
+        "sell_asset": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "quote_asset": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+        "joint_size_tokens": "15983700.405075",
+        "positions": [
+          "morpho_susde_pyusd"
+        ],
+        "resolution": "aggregator",
+        "quoted_size_usd": "20010612.31",
+        "quoted_out_usd": "2414274.38",
+        "quoted_loss_pct": "87.935",
+        "valued_at": "snapshot prices",
+        "route_exchanges": [
+          "aave-v3",
+          "curve-stable-meta-ng",
+          "curve-stable-ng",
+          "curve-stable-plain",
+          "dai-usds",
+          "ekubo-v3",
+          "erc4626",
+          "fluid-dex-t1",
+          "liquidity-party",
+          "lite-psm",
+          "metric-propamm/uniswapv3",
+          "supernova-v4",
+          "uniswap",
+          "uniswap-v4",
+          "uniswapv3"
+        ],
+        "route_pools": [
+          "0x0655977feb2f289a4ab78af67bab0d17aab84367",
+          "0x0fcb46a418903bca6840ea3801dc09b2f46b5f423450e5772fb1c9a0af3d4990",
+          "0x13e12bb0e6a2f1a3d6901a59a9d585e89a6243e1",
+          "0x167478921b907422f8e88b43c4af2b8bea278d3a",
+          "0x1d5cfcfe1b49852fb8ef9a64121ebdc94ff4434f25e049e65109ce0547ac8617",
+          "0x2289f64e11a3c6a3e23d5f0c705bb0bb7661278a",
+          "0x2754d915b5861c2f34c1314ccb3abc03e5a895af07833d17df7aa35cc025c4df",
+          "0x3225737a9bbb6473cb4a45b7244aca2befdb276a",
+          "0x383e6b4437b59fff47b619cba855ca29342a8559",
+          "0x390f3595bca2df7d23783dfd126427cceb997bf4",
+          "0x3b1b1f2e775a6db1664f8e7d59ad568605ea2406312c11aef03146c0cf89d5b9",
+          "0x3cef1afc0e8324b57293a6e7ce663781bbefbb79"
+        ]
+      }
+    },
+    {
+      "id": "venue:usde_usdc",
+      "type": "venue",
+      "label": "USDe -> RLUSD exit route",
+      "attributes": {
+        "chain_id": 1,
+        "sell_asset": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "quote_asset": "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+        "joint_size_tokens": "38651064.963184",
+        "positions": [
+          "morpho_usde_rlusd",
+          "aave_usde_usdc",
+          "aave_usde_usdt"
+        ],
+        "resolution": "aggregator",
+        "quoted_size_usd": "38635481.63",
+        "quoted_out_usd": "2654383.22",
+        "quoted_loss_pct": "93.1297",
+        "valued_at": "snapshot prices",
+        "route_exchanges": [
+          "aave-v3",
+          "curve-stable-ng",
+          "cypher-v4",
+          "dai-usds",
+          "ekubo-v3",
+          "erc4626",
+          "kyberswap-limit-order-v2",
+          "lite-psm",
+          "pmm-2",
+          "pmm-20",
+          "ringswap",
+          "uniswap",
+          "uniswap-v4",
+          "uniswapv3"
+        ],
+        "route_pools": [
+          "0x02950460e2b9529d0e00284a5fa2d7bdf3fa4d72",
+          "0x1e496fae4613b4e9c4f8fc31826812cdcbd03a90",
+          "0x2346b8786c599c3d71ba4444a51d13464698cf1f73a9de17c9b5de8cc47981e9",
+          "0x25559e6599506ee1a576fb5d4c40d34291d0ac07494fd6ce76b95a85ef93a49f",
+          "0x3225737a9bbb6473cb4a45b7244aca2befdb276a",
+          "0x3306984f2c89224cee3510f709682ea1e590b642a33bca5ec4b8e49b2c54311b",
+          "0x3b1b1f2e775a6db1664f8e7d59ad568605ea2406312c11aef03146c0cf89d5b9",
+          "0x42271fca1fa435b176d46a5544b2698a1e261782",
+          "0x435664008f38b0650fbc1c9fc971d0a3bc2f1e47",
+          "0x4f5923fc5fd4a93352581b38b7cd26943012decf",
+          "0x539bac0745de77f8bff38326eecb8c36553e6c58",
+          "0x56fc29b86900aa0afa6e20b020429bffba1105cfb45070492c67529b46eb48c1"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:deployed_on.8a3527c559",
+      "source": "asset:PYUSD",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (1506 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:issued_by.a2058fe16a",
+      "source": "asset:PYUSD",
+      "target": "offchain:paxos",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://www.paypal.com/pyusd",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "PYUSD contract published by its issuer; symbol/decimals verified on-chain; reserves are off-chain"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:deployed_on.586cf436bf",
+      "source": "asset:RLUSD",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (238 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:issued_by.19a520cb97",
+      "source": "asset:RLUSD",
+      "target": "offchain:ripple",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://ripple.com/solutions/stablecoin/",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "RLUSD contract published by its issuer; symbol/decimals verified on-chain; reserves are off-chain"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:deployed_on.99e3eb2e04",
+      "source": "asset:USDC",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (2186 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:issued_by.35a73c7216",
+      "source": "asset:USDC",
+      "target": "offchain:circle",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://www.circle.com/usdc",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "USDC contract published by its issuer; symbol/decimals verified on-chain; reserves are off-chain"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:deployed_on.96d4c0e634",
+      "source": "asset:USDT",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (11075 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:issued_by.ce97830f01",
+      "source": "asset:USDT",
+      "target": "offchain:tether",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://tether.to/",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "USDT contract published by its issuer; symbol/decimals verified on-chain; reserves are off-chain"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:backed_by.4722a5da8c",
+      "source": "asset:USDe",
+      "target": "offchain:ethena_backing",
+      "relation": "backed_by",
+      "risk_channel": "custody",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "USDe is backed by off-chain custody, delta-hedging derivative positions and a reserve fund; not observable on-chain"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:deployed_on.c9b43dd930",
+      "source": "asset:USDe",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (7567 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:issued_by.b1004b38f0",
+      "source": "asset:USDe",
+      "target": "contract:ethena_minting.e3490297",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "minter()",
+        "note": "USDe.minter() is the minting contract Ethena publishes: mint/redeem of USDe goes through it"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:issued_by.4900293e16",
+      "source": "asset:USDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "issuer_backing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "minter()",
+        "note": "on-chain minter matches https://docs.ethena.fi/solution-design/key-addresses"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:deployed_on.c8ee78a46b",
+      "source": "asset:sUSDe",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (17299 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:issued_by.64084fb045",
+      "source": "asset:sUSDe",
+      "target": "protocol:ethena",
+      "relation": "issued_by",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/solution-design/key-addresses",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "staking vault listed in Ethena key addresses; symbol/decimals verified on-chain"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:redeemable_for.b3886eb0f1",
+      "source": "asset:sUSDe",
+      "target": "asset:USDe",
+      "relation": "redeemable_for",
+      "risk_channel": "exchange_rate",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "asset()",
+        "note": "ERC-4626 vault over USDe; 1 sUSDe = 1.252444 USDe; redemption needs a cooldown of 24 h: not an instant exit"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:yield_generated_by.45fb21458d",
+      "source": "asset:sUSDe",
+      "target": "protocol:ethena",
+      "relation": "yield_generated_by",
+      "risk_channel": "yield_source",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "vestingAmount()",
+        "note": "Ethena pushes protocol rewards into the vault; 52,599 USDe currently vesting (2,937 still unvested)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:part_of_protocol.27f66af1af",
+      "source": "contract:ethena_minting.e3490297",
+      "target": "protocol:ethena",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/solution-design/key-addresses",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "listed in Ethena's published key addresses"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:collateral_asset.ddc5aa6768",
+      "source": "market:aave_usde_usdc",
+      "target": "asset:USDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x0a16f2fcc0d44fae41cc54e079281d84a363becd",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getReserveConfigurationData(address)",
+        "note": "USDe is an active reserve usable as collateral; eMode 10 'PT-USDe Stablecoins July 2025' lists USDe as collateral and USDC as borrowable (category bitmaps); LT 93.00%"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:debt_asset.1fa0f23dd6",
+      "source": "market:aave_usde_usdc",
+      "target": "asset:USDC",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x0a16f2fcc0d44fae41cc54e079281d84a363becd",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getReserveConfigurationData(address)",
+        "note": "USDC borrowing enabled (variable APY 4.91%)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:deployed_on.f1638a66a0",
+      "source": "market:aave_usde_usdc",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (2400 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:part_of_protocol.73803f8435",
+      "source": "market:aave_usde_usdc",
+      "target": "protocol:aave",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getPool()",
+        "note": "pool of 'Aave Ethereum Market' from its PoolAddressesProvider (https://aave.com/docs/resources/addresses)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:prices_collateral_with.4abf5a6631",
+      "source": "market:aave_usde_usdc",
+      "target": "oracle:aave.Capped-USDT-USD.c26d4a1c",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x54586be62e3c3580375ae3723c145253060ca0c2",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getSourceOfAsset(address)",
+        "note": "AaveOracle price source of the collateral asset, used for the health factor; no USDe market feed on the active path; inputs: feed:USDT/USD"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:prices_debt_with.175430d3c6",
+      "source": "market:aave_usde_usdc",
+      "target": "oracle:aave.Capped-USDC-USD.3f73f03a",
+      "relation": "prices_debt_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x54586be62e3c3580375ae3723c145253060ca0c2",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getSourceOfAsset(address)",
+        "note": "AaveOracle price source of the debt asset, used for the health factor; no USDe market feed on the active path; inputs: feed:USDC/USD"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:collateral_asset.dbc63b5cda",
+      "source": "market:aave_usde_usdt",
+      "target": "asset:USDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x0a16f2fcc0d44fae41cc54e079281d84a363becd",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getReserveConfigurationData(address)",
+        "note": "USDe is an active reserve usable as collateral; eMode 10 'PT-USDe Stablecoins July 2025' lists USDe as collateral and USDT as borrowable (category bitmaps); LT 93.00%"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:debt_asset.b10e8fdac1",
+      "source": "market:aave_usde_usdt",
+      "target": "asset:USDT",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x0a16f2fcc0d44fae41cc54e079281d84a363becd",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getReserveConfigurationData(address)",
+        "note": "USDT borrowing enabled (variable APY 4.30%)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:deployed_on.393afff556",
+      "source": "market:aave_usde_usdt",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (2400 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:part_of_protocol.43b8390c6e",
+      "source": "market:aave_usde_usdt",
+      "target": "protocol:aave",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getPool()",
+        "note": "pool of 'Aave Ethereum Market' from its PoolAddressesProvider (https://aave.com/docs/resources/addresses)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:prices_collateral_with.9ed0774294",
+      "source": "market:aave_usde_usdt",
+      "target": "oracle:aave.Capped-USDT-USD.c26d4a1c",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x54586be62e3c3580375ae3723c145253060ca0c2",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getSourceOfAsset(address)",
+        "note": "AaveOracle price source of the collateral asset, used for the health factor; no USDe market feed on the active path; inputs: feed:USDT/USD"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:prices_debt_with.7e457f6769",
+      "source": "market:aave_usde_usdt",
+      "target": "oracle:aave.Capped-USDT-USD.260326c2",
+      "relation": "prices_debt_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x54586be62e3c3580375ae3723c145253060ca0c2",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "getSourceOfAsset(address)",
+        "note": "AaveOracle price source of the debt asset, used for the health factor; no USDe market feed on the active path; inputs: feed:USDT/USD"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:collateral_asset.fbae4daf99",
+      "source": "market:morpho_susde_pyusd",
+      "target": "asset:sUSDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "MarketParams.collateralToken"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:debt_asset.4f4d57b708",
+      "source": "market:morpho_susde_pyusd",
+      "target": "asset:PYUSD",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "MarketParams.loanToken; borrow rate from IRM 0x870ac11d48b15db9a138cf899d20f13f79ba00bc"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:deployed_on.8c1c696018",
+      "source": "market:morpho_susde_pyusd",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (15623 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:part_of_protocol.a78fa758cf",
+      "source": "market:morpho_susde_pyusd",
+      "target": "protocol:morpho",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "market lives in the Morpho Blue singleton listed at https://docs.morpho.org/get-started/resources/addresses"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:prices_collateral_with.4ddb076453",
+      "source": "market:morpho_susde_pyusd",
+      "target": "oracle:morpho_oracle.e6212d05",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "MarketParams.oracle: the only price used for LTV and liquidations; reads a USDe market feed (USDe/USD); inputs: rate:sUSDe, feed:USDe/USD, feed:PYUSD/USD (quote)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:collateral_asset.9718fc6889",
+      "source": "market:morpho_usde_rlusd",
+      "target": "asset:USDe",
+      "relation": "collateral_asset",
+      "risk_channel": "mark_to_market",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "MarketParams.collateralToken"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:debt_asset.937793033f",
+      "source": "market:morpho_usde_rlusd",
+      "target": "asset:RLUSD",
+      "relation": "debt_asset",
+      "risk_channel": "debt_cost",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "MarketParams.loanToken; borrow rate from IRM 0x870ac11d48b15db9a138cf899d20f13f79ba00bc"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:deployed_on.464dc812e6",
+      "source": "market:morpho_usde_rlusd",
+      "target": "chain:ethereum",
+      "relation": "deployed_on",
+      "risk_channel": "settlement",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "eth_getCode",
+        "note": "contract code present (15623 bytes) at the pinned block"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:part_of_protocol.1c64690500",
+      "source": "market:morpho_usde_rlusd",
+      "target": "protocol:morpho",
+      "relation": "part_of_protocol",
+      "risk_channel": "smart_contract",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "market lives in the Morpho Blue singleton listed at https://docs.morpho.org/get-started/resources/addresses"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:prices_collateral_with.87c3e14d8f",
+      "source": "market:morpho_usde_rlusd",
+      "target": "oracle:morpho_oracle.0c13eec9",
+      "relation": "prices_collateral_with",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "idToMarketParams(bytes32)",
+        "note": "MarketParams.oracle: the only price used for LTV and liquidations; reads a USDe market feed (USDe/USD); inputs: feed:USDe/USD, feed:RLUSD/USD (quote)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:uses_feed.a91277579f",
+      "source": "oracle:aave.Capped-USDC-USD.3f73f03a",
+      "target": "oracle:chainlink.USDC-USD.ea674bbc",
+      "relation": "uses_feed",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x3f73f03aa83b2a48ed27e964ed0fdb590332095b",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "ASSET_TO_USD_AGGREGATOR()",
+        "note": "underlying USD feed component of the oracle"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:uses_feed.04187a1bff",
+      "source": "oracle:aave.Capped-USDT-USD.260326c2",
+      "target": "oracle:chainlink.USDT-USD.3e7d1eab",
+      "relation": "uses_feed",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x260326c220e469358846b187ee53328303efe19c",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "ASSET_TO_USD_AGGREGATOR()",
+        "note": "underlying USD feed component of the oracle"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:uses_feed.0a8be5e604",
+      "source": "oracle:aave.Capped-USDT-USD.c26d4a1c",
+      "target": "oracle:chainlink.USDT-USD.3e7d1eab",
+      "relation": "uses_feed",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xc26d4a1c46d884cff6de9800b6ae7a8cf48b4ff8",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "ASSET_TO_USD_AGGREGATOR()",
+        "note": "underlying USD feed component of the oracle"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:reads_price_of.593d6c035b",
+      "source": "oracle:chainlink.PYUSD-USD.8f1df6d7",
+      "target": "asset:PYUSD",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x8f1df6d7f2db73eece86a18b4381f4707b918fb1",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "to_verify",
+        "block_number": 26166225,
+        "call": "description()",
+        "note": "feed description 'PYUSD / USD' names PYUSD; mapped to the registry's PYUSD contract by symbol (inference, not an on-chain link)"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:reads_price_of.31ed25d040",
+      "source": "oracle:chainlink.RLUSD-USD.26c46b7a",
+      "target": "asset:RLUSD",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x26c46b7ad0012ca71f2298ada567dc9af14e7f2a",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "to_verify",
+        "block_number": 26166225,
+        "call": "description()",
+        "note": "feed description 'RLUSD / USD' names RLUSD; mapped to the registry's RLUSD contract by symbol (inference, not an on-chain link)"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:reads_price_of.4e84a95654",
+      "source": "oracle:chainlink.USDC-USD.ea674bbc",
+      "target": "asset:USDC",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xea674bbc33ae708bc9eb4ba348b04e4eb55b496b",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "to_verify",
+        "block_number": 26166225,
+        "call": "description()",
+        "note": "feed description 'USDC / USD' names USDC; mapped to the registry's USDC contract by symbol (inference, not an on-chain link)"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:reads_price_of.1e66323999",
+      "source": "oracle:chainlink.USDT-USD.3e7d1eab",
+      "target": "asset:USDT",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x3e7d1eab13ad0104d2750b8863b489d65364e32d",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "to_verify",
+        "block_number": 26166225,
+        "call": "description()",
+        "note": "feed description 'USDT / USD' names USDT; mapped to the registry's USDT contract by symbol (inference, not an on-chain link)"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:reads_price_of.b5f7748e17",
+      "source": "oracle:chainlink.USDe-USD.a569d910",
+      "target": "asset:USDe",
+      "relation": "reads_price_of",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xa569d910839ae8865da8f8e70fffb0cba869f961",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "to_verify",
+        "block_number": 26166225,
+        "call": "description()",
+        "note": "feed description 'USDe / USD' names USDe; mapped to the registry's USDe contract by symbol (inference, not an on-chain link)"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:uses_feed.f788926cbe",
+      "source": "oracle:morpho_oracle.0c13eec9",
+      "target": "oracle:chainlink.RLUSD-USD.26c46b7a",
+      "relation": "uses_feed",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "QUOTE_FEED_1()",
+        "note": "QUOTE_FEED_1 component of the oracle"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:uses_feed.decd594f97",
+      "source": "oracle:morpho_oracle.0c13eec9",
+      "target": "oracle:chainlink.USDe-USD.a569d910",
+      "relation": "uses_feed",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x0c13eec9b02cd9d85facc9edf17e71feafc3d8d7",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "BASE_FEED_1()",
+        "note": "BASE_FEED_1 component of the oracle"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:reads_price_of.7cbd287b58",
+      "source": "oracle:morpho_oracle.e6212d05",
+      "target": "asset:sUSDe",
+      "relation": "reads_price_of",
+      "risk_channel": "exchange_rate",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "BASE_VAULT()",
+        "note": "oracle converts through the base vault's exchange rate (ERC-4626 convertToAssets)"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:uses_feed.5444417dde",
+      "source": "oracle:morpho_oracle.e6212d05",
+      "target": "oracle:chainlink.PYUSD-USD.8f1df6d7",
+      "relation": "uses_feed",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "QUOTE_FEED_1()",
+        "note": "QUOTE_FEED_1 component of the oracle"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:uses_feed.2831556786",
+      "source": "oracle:morpho_oracle.e6212d05",
+      "target": "oracle:chainlink.USDe-USD.a569d910",
+      "relation": "uses_feed",
+      "risk_channel": "oracle_repricing",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xe6212d05cb5af3c821fef1c1a233a678724f9e7e",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "BASE_FEED_1()",
+        "note": "BASE_FEED_1 component of the oracle"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:exits_via.dd28b79a97",
+      "source": "position:aave_usde_usdc",
+      "target": "venue:usde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "third_party_api",
+        "reference": "https://aggregator-api.kyberswap.com/ethereum/api/v1/routes",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "note": "the position's asset is sold through this quoted route"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:position_in.ec88099754",
+      "source": "position:aave_usde_usdc",
+      "target": "market:aave_usde_usdc",
+      "relation": "position_in",
+      "risk_channel": "collateral_liquidation",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "market_id",
+        "note": "position aave_usde_usdc read on-chain from the wallet (data_origin=observed); its market_id resolves on-chain to this market"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:exits_via.5dd09cfce4",
+      "source": "position:aave_usde_usdt",
+      "target": "venue:usde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "third_party_api",
+        "reference": "https://aggregator-api.kyberswap.com/ethereum/api/v1/routes",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "note": "the position's asset is sold through this quoted route"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:position_in.4ba445a6a1",
+      "source": "position:aave_usde_usdt",
+      "target": "market:aave_usde_usdt",
+      "relation": "position_in",
+      "risk_channel": "collateral_liquidation",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "market_id",
+        "note": "position aave_usde_usdt read on-chain from the wallet (data_origin=observed); its market_id resolves on-chain to this market"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:exits_via.a955deaada",
+      "source": "position:morpho_susde_pyusd",
+      "target": "venue:susde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "third_party_api",
+        "reference": "https://aggregator-api.kyberswap.com/ethereum/api/v1/routes",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "note": "the position's asset is sold through this quoted route"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:position_in.659c03e4e3",
+      "source": "position:morpho_susde_pyusd",
+      "target": "market:morpho_susde_pyusd",
+      "relation": "position_in",
+      "risk_channel": "collateral_liquidation",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "market_id",
+        "note": "position morpho_susde_pyusd read on-chain from the wallet (data_origin=observed); its market_id resolves on-chain to this market"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:exits_via.59f41bf931",
+      "source": "position:morpho_usde_rlusd",
+      "target": "venue:usde_usdc",
+      "relation": "exits_via",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "third_party_api",
+        "reference": "https://aggregator-api.kyberswap.com/ethereum/api/v1/routes",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "note": "the position's asset is sold through this quoted route"
+      },
+      "confidence": "inferred"
+    },
+    {
+      "id": "edge:position_in.a1f866f38d",
+      "source": "position:morpho_usde_rlusd",
+      "target": "market:morpho_usde_rlusd",
+      "relation": "position_in",
+      "risk_channel": "collateral_liquidation",
+      "evidence": {
+        "method": "onchain_call",
+        "reference": "0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "block_number": 26166225,
+        "call": "market_id",
+        "note": "position morpho_usde_rlusd read on-chain from the wallet (data_origin=observed); its market_id resolves on-chain to this market"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:yield_generated_by.3aa23893f4",
+      "source": "protocol:ethena",
+      "target": "offchain:ethena_backing",
+      "relation": "yield_generated_by",
+      "risk_channel": "yield_source",
+      "evidence": {
+        "method": "protocol_documentation",
+        "reference": "https://docs.ethena.fi/",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "documented",
+        "note": "protocol revenue comes from the hedged backing (funding/basis and staking/reserve yield), per Ethena documentation"
+      },
+      "confidence": "documented"
+    },
+    {
+      "id": "edge:pools_asset.8b48b5aa7a",
+      "source": "venue:susde_usdc",
+      "target": "asset:sUSDe",
+      "relation": "pools_asset",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "third_party_api",
+        "reference": "https://aggregator-api.kyberswap.com/ethereum/api/v1/routes",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "call": "GET routes (joint size)",
+        "note": "selling 15983700.41 sUSDe (mark 20,010,612 USD) returns 2,414,274 USD via aave-v3, curve-stable-meta-ng, curve-stable-ng, curve-stable-plain, dai-usds, ekubo-v3, erc4626, fluid-dex-t1, liquidity-party, lite-psm, metric-propamm/uniswapv3, supernova-v4, uniswap, uniswap-v4, uniswapv3: 87.935% all-in loss"
+      },
+      "confidence": "verified"
+    },
+    {
+      "id": "edge:pools_asset.cc0285277d",
+      "source": "venue:usde_usdc",
+      "target": "asset:USDe",
+      "relation": "pools_asset",
+      "risk_channel": "exit_liquidity",
+      "evidence": {
+        "method": "third_party_api",
+        "reference": "https://aggregator-api.kyberswap.com/ethereum/api/v1/routes",
+        "observed_at": "2026-10-11T02:30:10Z",
+        "status": "verified",
+        "call": "GET routes (joint size)",
+        "note": "selling 38651064.96 USDe (mark 38,635,482 USD) returns 2,654,383 USD via aave-v3, curve-stable-ng, cypher-v4, dai-usds, ekubo-v3, erc4626, kyberswap-limit-order-v2, lite-psm, pmm-2, pmm-20, ringswap, uniswap, uniswap-v4, uniswapv3: 93.130% all-in loss"
+      },
+      "confidence": "verified"
+    }
+  ],
+  "warnings": [
+    "Positions read from a real wallet on chain 1 at block 26166225; markets, tokens, oracles and venues are real, read at the same block.",
+    "Protocol API data (Pendle, Morpho, KyberSwap) is read at observed_at, not at the pinned block."
+  ],
+  "coverage": {
+    "morpho_susde_pyusd": {
+      "layers": {
+        "settlement_chain": {
+          "status": "verified",
+          "nodes": [
+            "chain:ethereum"
+          ],
+          "edges": [
+            "edge:deployed_on.8a3527c559",
+            "edge:deployed_on.8c1c696018",
+            "edge:deployed_on.c8ee78a46b",
+            "edge:deployed_on.c9b43dd930"
+          ],
+          "note": "PYUSD -deployed_on-> Ethereum mainnet [verified]; USDe -deployed_on-> Ethereum mainnet [verified]; sUSDe -deployed_on-> Ethereum mainnet [verified]; Morpho sUSDe/PYUSD market (LLTV 91.5%) -deployed_on-> Ethereum mainnet [verified]"
+        },
+        "yield_source_and_issuer": {
+          "status": "documented",
+          "nodes": [
+            "asset:USDe",
+            "contract:ethena_minting.e3490297",
+            "offchain:ethena_backing",
+            "offchain:paxos",
+            "protocol:ethena"
+          ],
+          "edges": [
+            "edge:backed_by.4722a5da8c",
+            "edge:issued_by.4900293e16",
+            "edge:issued_by.64084fb045",
+            "edge:issued_by.a2058fe16a",
+            "edge:issued_by.b1004b38f0",
+            "edge:redeemable_for.b3886eb0f1",
+            "edge:yield_generated_by.3aa23893f4",
+            "edge:yield_generated_by.45fb21458d"
+          ],
+          "note": "USDe -backed_by-> Ethena backing (custody, hedges, reserve fund) [documented]; PYUSD -issued_by-> Paxos (PYUSD issuer and reserves) [documented]; USDe -issued_by-> Ethena minting contract [verified]; USDe -issued_by-> Ethena [verified]; sUSDe -issued_by-> Ethena [documented]; sUSDe -yield_generated_by-> Ethena [verified]; Ethena -yield_generated_by-> Ethena backing (custody, hedges, reserve fund) [documented]"
+        },
+        "oracle": {
+          "status": "verified",
+          "nodes": [
+            "asset:PYUSD",
+            "asset:USDe",
+            "asset:sUSDe",
+            "oracle:chainlink.PYUSD-USD.8f1df6d7",
+            "oracle:chainlink.USDe-USD.a569d910",
+            "oracle:morpho_oracle.e6212d05"
+          ],
+          "edges": [
+            "edge:prices_collateral_with.4ddb076453",
+            "edge:reads_price_of.593d6c035b",
+            "edge:reads_price_of.7cbd287b58",
+            "edge:reads_price_of.b5f7748e17",
+            "edge:uses_feed.2831556786",
+            "edge:uses_feed.5444417dde"
+          ],
+          "note": "Morpho sUSDe/PYUSD market (LLTV 91.5%) -prices_collateral_with-> Morpho ChainlinkOracleV2 [verified]"
+        },
+        "market_and_liquidity": {
+          "status": "verified",
+          "nodes": [
+            "asset:sUSDe",
+            "market:morpho_susde_pyusd",
+            "protocol:morpho",
+            "venue:susde_usdc"
+          ],
+          "edges": [
+            "edge:exits_via.a955deaada",
+            "edge:part_of_protocol.a78fa758cf",
+            "edge:pools_asset.8b48b5aa7a",
+            "edge:position_in.659c03e4e3"
+          ],
+          "note": "sUSDe -> PYUSD exit route -pools_asset-> sUSDe [verified]; Morpho sUSDe-collateral PYUSD borrow -position_in-> Morpho sUSDe/PYUSD market (LLTV 91.5%) [verified]"
+        },
+        "lending_collateral_market": {
+          "status": "verified",
+          "nodes": [
+            "asset:PYUSD",
+            "asset:sUSDe"
+          ],
+          "edges": [
+            "edge:collateral_asset.fbae4daf99",
+            "edge:debt_asset.4f4d57b708"
+          ],
+          "note": "Morpho sUSDe/PYUSD market (LLTV 91.5%) -collateral_asset-> sUSDe [verified]; Morpho sUSDe/PYUSD market (LLTV 91.5%) -debt_asset-> PYUSD [verified]"
+        }
+      }
+    },
+    "morpho_usde_rlusd": {
+      "layers": {
+        "settlement_chain": {
+          "status": "verified",
+          "nodes": [
+            "chain:ethereum"
+          ],
+          "edges": [
+            "edge:deployed_on.464dc812e6",
+            "edge:deployed_on.586cf436bf",
+            "edge:deployed_on.c9b43dd930"
+          ],
+          "note": "RLUSD -deployed_on-> Ethereum mainnet [verified]; USDe -deployed_on-> Ethereum mainnet [verified]; Morpho USDe/RLUSD market (LLTV 91.5%) -deployed_on-> Ethereum mainnet [verified]"
+        },
+        "yield_source_and_issuer": {
+          "status": "documented",
+          "nodes": [
+            "contract:ethena_minting.e3490297",
+            "offchain:ethena_backing",
+            "offchain:ripple",
+            "protocol:ethena"
+          ],
+          "edges": [
+            "edge:backed_by.4722a5da8c",
+            "edge:issued_by.19a520cb97",
+            "edge:issued_by.4900293e16",
+            "edge:issued_by.b1004b38f0",
+            "edge:yield_generated_by.3aa23893f4"
+          ],
+          "note": "USDe -backed_by-> Ethena backing (custody, hedges, reserve fund) [documented]; RLUSD -issued_by-> Ripple (RLUSD issuer and reserves) [documented]; USDe -issued_by-> Ethena minting contract [verified]; USDe -issued_by-> Ethena [verified]; Ethena -yield_generated_by-> Ethena backing (custody, hedges, reserve fund) [documented]"
+        },
+        "oracle": {
+          "status": "verified",
+          "nodes": [
+            "asset:RLUSD",
+            "asset:USDe",
+            "oracle:chainlink.RLUSD-USD.26c46b7a",
+            "oracle:chainlink.USDe-USD.a569d910",
+            "oracle:morpho_oracle.0c13eec9"
+          ],
+          "edges": [
+            "edge:prices_collateral_with.87c3e14d8f",
+            "edge:reads_price_of.31ed25d040",
+            "edge:reads_price_of.b5f7748e17",
+            "edge:uses_feed.decd594f97",
+            "edge:uses_feed.f788926cbe"
+          ],
+          "note": "Morpho USDe/RLUSD market (LLTV 91.5%) -prices_collateral_with-> Morpho ChainlinkOracleV2 [verified]"
+        },
+        "market_and_liquidity": {
+          "status": "verified",
+          "nodes": [
+            "asset:USDe",
+            "market:morpho_usde_rlusd",
+            "protocol:morpho",
+            "venue:usde_usdc"
+          ],
+          "edges": [
+            "edge:exits_via.59f41bf931",
+            "edge:part_of_protocol.1c64690500",
+            "edge:pools_asset.cc0285277d",
+            "edge:position_in.a1f866f38d"
+          ],
+          "note": "USDe -> RLUSD exit route -pools_asset-> USDe [verified]; Morpho USDe-collateral RLUSD borrow -position_in-> Morpho USDe/RLUSD market (LLTV 91.5%) [verified]"
+        },
+        "lending_collateral_market": {
+          "status": "verified",
+          "nodes": [
+            "asset:RLUSD",
+            "asset:USDe"
+          ],
+          "edges": [
+            "edge:collateral_asset.9718fc6889",
+            "edge:debt_asset.937793033f"
+          ],
+          "note": "Morpho USDe/RLUSD market (LLTV 91.5%) -collateral_asset-> USDe [verified]; Morpho USDe/RLUSD market (LLTV 91.5%) -debt_asset-> RLUSD [verified]"
+        }
+      }
+    },
+    "aave_usde_usdc": {
+      "layers": {
+        "settlement_chain": {
+          "status": "verified",
+          "nodes": [
+            "chain:ethereum"
+          ],
+          "edges": [
+            "edge:deployed_on.96d4c0e634",
+            "edge:deployed_on.99e3eb2e04",
+            "edge:deployed_on.c9b43dd930",
+            "edge:deployed_on.f1638a66a0"
+          ],
+          "note": "USDC -deployed_on-> Ethereum mainnet [verified]; USDT -deployed_on-> Ethereum mainnet [verified]; USDe -deployed_on-> Ethereum mainnet [verified]; Aave Aave Ethereum Market: USDe collateral / USDC debt (eMode 10 PT-USDe Stablecoins July 2025) -deployed_on-> Ethereum mainnet [verified]"
+        },
+        "yield_source_and_issuer": {
+          "status": "documented",
+          "nodes": [
+            "contract:ethena_minting.e3490297",
+            "offchain:circle",
+            "offchain:ethena_backing",
+            "offchain:tether",
+            "protocol:ethena"
+          ],
+          "edges": [
+            "edge:backed_by.4722a5da8c",
+            "edge:issued_by.35a73c7216",
+            "edge:issued_by.4900293e16",
+            "edge:issued_by.b1004b38f0",
+            "edge:issued_by.ce97830f01",
+            "edge:yield_generated_by.3aa23893f4"
+          ],
+          "note": "USDe -backed_by-> Ethena backing (custody, hedges, reserve fund) [documented]; USDC -issued_by-> Circle (USDC issuer and reserves) [documented]; USDT -issued_by-> Tether (USDT issuer and reserves) [documented]; USDe -issued_by-> Ethena minting contract [verified]; USDe -issued_by-> Ethena [verified]; Ethena -yield_generated_by-> Ethena backing (custody, hedges, reserve fund) [documented]"
+        },
+        "oracle": {
+          "status": "verified",
+          "nodes": [
+            "asset:USDC",
+            "asset:USDT",
+            "oracle:aave.Capped-USDC-USD.3f73f03a",
+            "oracle:aave.Capped-USDT-USD.c26d4a1c",
+            "oracle:chainlink.USDC-USD.ea674bbc",
+            "oracle:chainlink.USDT-USD.3e7d1eab"
+          ],
+          "edges": [
+            "edge:prices_collateral_with.4abf5a6631",
+            "edge:prices_debt_with.175430d3c6",
+            "edge:reads_price_of.1e66323999",
+            "edge:reads_price_of.4e84a95654",
+            "edge:uses_feed.0a8be5e604",
+            "edge:uses_feed.a91277579f"
+          ],
+          "note": "Aave Aave Ethereum Market: USDe collateral / USDC debt (eMode 10 PT-USDe Stablecoins July 2025) -prices_collateral_with-> Aave price adapter: Capped USDT/USD [verified]; Aave Aave Ethereum Market: USDe collateral / USDC debt (eMode 10 PT-USDe Stablecoins July 2025) -prices_debt_with-> Aave price adapter: Capped USDC / USD [verified]"
+        },
+        "market_and_liquidity": {
+          "status": "verified",
+          "nodes": [
+            "asset:USDe",
+            "market:aave_usde_usdc",
+            "protocol:aave",
+            "venue:usde_usdc"
+          ],
+          "edges": [
+            "edge:exits_via.dd28b79a97",
+            "edge:part_of_protocol.73803f8435",
+            "edge:pools_asset.cc0285277d",
+            "edge:position_in.ec88099754"
+          ],
+          "note": "USDe -> RLUSD exit route -pools_asset-> USDe [verified]; Aave USDe-collateral USDC borrow -position_in-> Aave Aave Ethereum Market: USDe collateral / USDC debt (eMode 10 PT-USDe Stablecoins July 2025) [verified]"
+        },
+        "lending_collateral_market": {
+          "status": "verified",
+          "nodes": [
+            "asset:USDC",
+            "asset:USDe"
+          ],
+          "edges": [
+            "edge:collateral_asset.ddc5aa6768",
+            "edge:debt_asset.1fa0f23dd6"
+          ],
+          "note": "Aave Aave Ethereum Market: USDe collateral / USDC debt (eMode 10 PT-USDe Stablecoins July 2025) -collateral_asset-> USDe [verified]; Aave Aave Ethereum Market: USDe collateral / USDC debt (eMode 10 PT-USDe Stablecoins July 2025) -debt_asset-> USDC [verified]"
+        }
+      }
+    },
+    "aave_usde_usdt": {
+      "layers": {
+        "settlement_chain": {
+          "status": "verified",
+          "nodes": [
+            "chain:ethereum"
+          ],
+          "edges": [
+            "edge:deployed_on.393afff556",
+            "edge:deployed_on.96d4c0e634",
+            "edge:deployed_on.c9b43dd930"
+          ],
+          "note": "USDT -deployed_on-> Ethereum mainnet [verified]; USDe -deployed_on-> Ethereum mainnet [verified]; Aave Aave Ethereum Market: USDe collateral / USDT debt (eMode 10 PT-USDe Stablecoins July 2025) -deployed_on-> Ethereum mainnet [verified]"
+        },
+        "yield_source_and_issuer": {
+          "status": "documented",
+          "nodes": [
+            "contract:ethena_minting.e3490297",
+            "offchain:ethena_backing",
+            "offchain:tether",
+            "protocol:ethena"
+          ],
+          "edges": [
+            "edge:backed_by.4722a5da8c",
+            "edge:issued_by.4900293e16",
+            "edge:issued_by.b1004b38f0",
+            "edge:issued_by.ce97830f01",
+            "edge:yield_generated_by.3aa23893f4"
+          ],
+          "note": "USDe -backed_by-> Ethena backing (custody, hedges, reserve fund) [documented]; USDT -issued_by-> Tether (USDT issuer and reserves) [documented]; USDe -issued_by-> Ethena minting contract [verified]; USDe -issued_by-> Ethena [verified]; Ethena -yield_generated_by-> Ethena backing (custody, hedges, reserve fund) [documented]"
+        },
+        "oracle": {
+          "status": "verified",
+          "nodes": [
+            "asset:USDT",
+            "oracle:aave.Capped-USDT-USD.260326c2",
+            "oracle:aave.Capped-USDT-USD.c26d4a1c",
+            "oracle:chainlink.USDT-USD.3e7d1eab"
+          ],
+          "edges": [
+            "edge:prices_collateral_with.9ed0774294",
+            "edge:prices_debt_with.7e457f6769",
+            "edge:reads_price_of.1e66323999",
+            "edge:uses_feed.04187a1bff",
+            "edge:uses_feed.0a8be5e604"
+          ],
+          "note": "Aave Aave Ethereum Market: USDe collateral / USDT debt (eMode 10 PT-USDe Stablecoins July 2025) -prices_collateral_with-> Aave price adapter: Capped USDT/USD [verified]; Aave Aave Ethereum Market: USDe collateral / USDT debt (eMode 10 PT-USDe Stablecoins July 2025) -prices_debt_with-> Aave price adapter: Capped USDT/USD [verified]"
+        },
+        "market_and_liquidity": {
+          "status": "verified",
+          "nodes": [
+            "asset:USDe",
+            "market:aave_usde_usdt",
+            "protocol:aave",
+            "venue:usde_usdc"
+          ],
+          "edges": [
+            "edge:exits_via.5dd09cfce4",
+            "edge:part_of_protocol.43b8390c6e",
+            "edge:pools_asset.cc0285277d",
+            "edge:position_in.4ba445a6a1"
+          ],
+          "note": "USDe -> RLUSD exit route -pools_asset-> USDe [verified]; Aave USDe-collateral USDT borrow -position_in-> Aave Aave Ethereum Market: USDe collateral / USDT debt (eMode 10 PT-USDe Stablecoins July 2025) [verified]"
+        },
+        "lending_collateral_market": {
+          "status": "verified",
+          "nodes": [
+            "asset:USDT",
+            "asset:USDe"
+          ],
+          "edges": [
+            "edge:collateral_asset.dbc63b5cda",
+            "edge:debt_asset.b10e8fdac1"
+          ],
+          "note": "Aave Aave Ethereum Market: USDe collateral / USDT debt (eMode 10 PT-USDe Stablecoins July 2025) -collateral_asset-> USDe [verified]; Aave Aave Ethereum Market: USDe collateral / USDT debt (eMode 10 PT-USDe Stablecoins July 2025) -debt_asset-> USDT [verified]"
+        }
+      }
+    }
+  },
+  "unresolved": [],
+  "discovery": {
+    "mode": "live",
+    "observed_at": "2026-10-11T02:30:10Z",
+    "rpc": [
+      "https://ethereum-rpc.publicnode.com",
+      "https://eth.drpc.org"
+    ],
+    "limits": {
+      "max_depth": 10,
+      "max_entities": 200,
+      "time_budget_s": 600.0
+    },
+    "entities_explored": 10,
+    "rpc_calls": 182,
+    "http_calls": 25,
+    "adapters": [
+      "ethena",
+      "pendle",
+      "morpho",
+      "aave",
+      "collateral_scan",
+      "erc4626",
+      "erc20"
+    ],
+    "trace": [
+      {
+        "entity": "morpho_market:0x90ef0c5a0dc7c4de4ad4585002d44e9d411d212d2f6258e94948beecf8b4c0d5",
+        "adapter": "morpho",
+        "depth": 0,
+        "found": [
+          "token:0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+          "token:0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+          "token:0x9d39a5de30e57443bff2a8307a4256c8797a3497"
+        ]
+      },
+      {
+        "entity": "morpho_market:0xd9d2fc090bdbab1804ea960dd6669b62357787e5816f575f14ca4e6d999614bf",
+        "adapter": "morpho",
+        "depth": 0,
+        "found": [
+          "token:0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+          "token:0x8292bb45bf1ee4d140127049757c2e0ff06317ed"
+        ]
+      },
+      {
+        "entity": "aave_market:0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+        "adapter": "aave",
+        "depth": 0,
+        "found": [
+          "token:0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+          "token:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "token:0xdac17f958d2ee523a2206206994597c13d831ec7"
+        ]
+      },
+      {
+        "entity": "aave_market:0x2f39d218133afab8f2b819b1066c7e434ad94e9e#emode=10",
+        "adapter": "aave",
+        "depth": 0,
+        "found": [
+          "token:0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+          "token:0xdac17f958d2ee523a2206206994597c13d831ec7"
+        ]
+      },
+      {
+        "entity": "token:0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "adapter": "ethena",
+        "depth": 1,
+        "found": [
+          "token:0x4c9edd5852cd905f086c759e8383e09bff1e68b3"
+        ]
+      },
+      {
+        "entity": "token:0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+        "adapter": "erc20",
+        "depth": 1,
+        "found": []
+      },
+      {
+        "entity": "token:0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "adapter": "ethena",
+        "depth": 1,
+        "found": []
+      },
+      {
+        "entity": "token:0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+        "adapter": "erc20",
+        "depth": 1,
+        "found": []
+      },
+      {
+        "entity": "token:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "adapter": "erc20",
+        "depth": 1,
+        "found": []
+      },
+      {
+        "entity": "token:0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "adapter": "erc20",
+        "depth": 1,
+        "found": []
+      }
+    ]
+  }
+}

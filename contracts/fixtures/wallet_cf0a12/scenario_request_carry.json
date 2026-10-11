@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "request_id": "wallet_cf0a12_scenario_request_carry",
+  "portfolio_id": "wallet_cf0a12_portfolio",
+  "graph_id": "graph_wallet_cf0a12",
+  "snapshot_id": "snapshot_wallet_cf0a12",
+  "scenario": {
+    "scenario_id": "carry_squeeze",
+    "horizon_days": 30,
+    "parameters": {
+      "susde_apy": "0.00",
+      "borrow_apy_override": "0.60",
+      "collateral_supply_apy_override": null,
+      "pt_implied_apy_shock": "0.00"
+    }
+  },
+  "assumptions": {
+    "probability": null,
+    "source_type": "user_scenario"
+  }
+}

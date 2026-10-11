@@ -2,6 +2,7 @@
 
 python -m backend.discovery discover --portfolio PATH [--mode live|replay|fixture] [--cassette PATH] [--record]
                                      [--out DIR] [--revalue]
+python -m backend.discovery wallet   --address 0x... --set wallet_<name> [--mode live|replay] [--no-surface]
 python -m backend.discovery explain  --graph PATH --position ID
 python -m backend.discovery impacted --graph PATH --node NODE_ID
 """
@@ -83,7 +84,22 @@ def main(argv: list[str] | None = None) -> int:
     i.add_argument("--graph", type=Path, required=True)
     i.add_argument("--node", required=True)
 
+    w = sub.add_parser("wallet", help="real wallet -> fixture set (positions read on-chain, discovery, risk results)")
+    w.add_argument("--address", required=True)
+    w.add_argument("--set", required=True, help="fixture set name, e.g. wallet_cf0a12")
+    w.add_argument("--mode", choices=("live", "replay"), default="live")
+    w.add_argument("--no-surface", action="store_true", help="skip the offline risk surface (faster)")
+
     args = parser.parse_args(argv)
+    if args.command == "wallet":
+        from backend.discovery.wallet import FIXTURES, build_set
+
+        try:
+            print(json.dumps(build_set(args.address, FIXTURES / args.set, args.mode, not args.no_surface), indent=2))
+        except (DiscoveryError, ValueError) as exc:
+            print(f"wallet import failed: {exc}", file=sys.stderr)
+            return 1
+        return 0
     if args.command == "explain":
         print(explain(json.loads(args.graph.read_text()), args.position))
         return 0

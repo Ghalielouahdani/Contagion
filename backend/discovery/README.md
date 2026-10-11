@@ -39,6 +39,27 @@ uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -e ".[de
 DISCOVERY_LIVE=1 .venv/bin/python -m pytest backend/discovery/tests/test_live.py   # network
 ```
 
+## Import a real wallet
+
+```bash
+.venv/bin/python -m backend.discovery wallet --address 0x... --set wallet_<name>     # ~30 s, then pick the set in the dashboard
+.venv/bin/python -m backend.discovery wallet --address 0x... --set wallet_<name> --mode replay   # offline, from its recording
+```
+
+`backend/discovery/wallet.py` reads the wallet's Ethena-exposed positions at one pinned block: USDe / sUSDe held,
+Pendle PTs on them, Morpho Blue borrows against them and supplies to markets taking them (markets found with the
+Morpho API, amounts read from Morpho Blue itself), Aave v3 core aToken / variable-debt balances and the account's
+eMode. Positions get `data_origin: observed`. Anything outside the engine's Ethena scope is listed in the snapshot
+warnings, never dropped silently. Then the usual live discovery runs (Morpho markets now carry their real borrower
+LTV distribution, exit venues a quote ladder from 0.5m to 150m USD), the portfolio is revalued, the scenario presets
+are copied and every risk result, analytics file, crisis plan and the risk surface are generated. Both runs are
+recorded (`cassettes/<set>_wallet.json`, `cassettes/<set>.json`), so `discovery=replay` works for the set.
+
+Example: `contracts/fixtures/wallet_cf0a12` (0xCf0a12CB…cD69: Morpho sUSDe/PYUSD and USDe/RLUSD borrows, an Aave
+USDe eMode account; 12.7m USD of net equity). Limits: an Aave account is cross-margined but is split pro rata into one
+position per collateral/debt pair; only Ethereum mainnet; exits are priced on DEX liquidity only (no sUSDe cooldown
+or Ethena redemption), which for multi-million positions makes a full exit far costlier than holding.
+
 From Python (what the API layer calls):
 
 ```python

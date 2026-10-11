@@ -1,0 +1,1720 @@
+{
+  "schema_version": "1.0",
+  "simulation_id": "result_wallet_cf0a12_scenario_request_cascade",
+  "request_id": "wallet_cf0a12_scenario_request_cascade",
+  "portfolio_id": "wallet_cf0a12_portfolio",
+  "scenario_id": "liquidation_cascade",
+  "horizon_days": 7,
+  "currency": "USD",
+  "positions": [
+    {
+      "position_id": "morpho_susde_pyusd",
+      "gross_value_before_usd": "20010612.35",
+      "gross_value_after_usd": "18973476.01",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "17881323.85",
+      "net_equity_before_usd": "2129288.50",
+      "net_equity_after_usd": "624251.56",
+      "conditional_loss_usd": "1505036.94",
+      "loss_components": {
+        "market_repricing": "1037136.34",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "467900.60",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": {
+        "type": "ltv",
+        "before": "0.8936",
+        "after": "0.9424",
+        "threshold": "0.9150",
+        "liquidatable": true,
+        "distance_to_liquidation_before_pct": "0.0234",
+        "distance_to_liquidation_after_pct": "-0.0300"
+      },
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Liquidatable: 1 liquidation call(s) repay 17,881,324 USD of debt; penalty = collateral seized at market value - debt repaid."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_susde_pyusd",
+              "venue:susde_usdc",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:exits_via.a955deaada",
+              "edge:pools_asset.8b48b5aa7a",
+              "edge:redeemable_for.b3886eb0f1"
+            ],
+            "channels": [
+              "exit_liquidity",
+              "exit_liquidity",
+              "exchange_rate"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_susde_pyusd",
+              "market:morpho_susde_pyusd",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:position_in.659c03e4e3",
+              "edge:collateral_asset.fbae4daf99",
+              "edge:redeemable_for.b3886eb0f1"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "mark_to_market",
+              "exchange_rate"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_susde_pyusd",
+              "market:morpho_susde_pyusd",
+              "oracle:morpho_oracle.e6212d05",
+              "asset:sUSDe",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:position_in.659c03e4e3",
+              "edge:prices_collateral_with.4ddb076453",
+              "edge:reads_price_of.7cbd287b58",
+              "edge:redeemable_for.b3886eb0f1"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "oracle_repricing",
+              "exchange_rate",
+              "exchange_rate"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "price:sUSDe",
+          "label": "sUSDe market price after the shock",
+          "formula": "sUSDe price x (1 + beta x spot shock) x (1 + backing impairment) x (1 + sUSDe rate cut)",
+          "inputs": [
+            {
+              "name": "sUSDe price = sUSDe/USDe rate x USDe price",
+              "value": "1.251939",
+              "unit": "price",
+              "source": "observed"
+            },
+            {
+              "name": "sUSDe beta to USDe",
+              "value": "1.023003",
+              "unit": "ratio",
+              "source": "user_scenario"
+            },
+            {
+              "name": "USDe spot shock",
+              "value": "-0.050664",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "sUSDe rate cut",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "1.187052",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "price:PYUSD",
+          "label": "PYUSD market price after the shock",
+          "formula": "stablecoin price (not shocked by this scenario)",
+          "inputs": [
+            {
+              "name": "PYUSD price",
+              "value": "1.000003",
+              "unit": "price",
+              "source": "observed"
+            }
+          ],
+          "result": {
+            "value": "1.000003",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "value",
+          "label": "Collateral and debt after the shock",
+          "formula": "net equity = collateral quantity x collateral price - debt quantity x debt price",
+          "inputs": [
+            {
+              "name": "sUSDe collateral",
+              "value": "15983700.405075",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "collateral value after",
+              "value": "18973476.01",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "PYUSD debt",
+              "value": "17881269.310954",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "debt value after",
+              "value": "17881323.85",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net equity before",
+              "value": "2129288.50",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1092152.17",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "split",
+          "label": "Loss split by mechanism",
+          "formula": "market repricing = net before - net after the depeg alone; backing impairment = the rest of the move",
+          "inputs": [
+            {
+              "name": "net before",
+              "value": "2129288.50",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after the depeg alone",
+              "value": "1092152.17",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after all shocks",
+              "value": "1092152.17",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1037136.34",
+            "unit": "usd"
+          },
+          "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
+        },
+        {
+          "id": "oracle",
+          "label": "Collateral value seen by the protocol's oracle",
+          "formula": "collateral quantity x price before x (1 + pass-through x market move) x (1 + sUSDe rate cut)",
+          "inputs": [
+            {
+              "name": "collateral quantity",
+              "value": "15983700.405075",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "price before",
+              "value": "1.251939",
+              "unit": "price",
+              "source": "derived"
+            },
+            {
+              "name": "market move of the collateral",
+              "value": "-0.051829",
+              "unit": "pct",
+              "source": "derived"
+            },
+            {
+              "name": "oracle pass-through (exchange_rate_x_market_feed)",
+              "value": "1.000000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "sUSDe rate cut",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "18973476.01",
+            "unit": "usd"
+          },
+          "note": "Pass-through 1 = the oracle reads the market price; 0 = it ignores the depeg (exchange-rate oracle)."
+        },
+        {
+          "id": "metric",
+          "label": "ltv after the shock",
+          "formula": "LTV = debt / oracle collateral; liquidatable when LTV > LLTV",
+          "inputs": [
+            {
+              "name": "debt",
+              "value": "17881323.85",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "oracle collateral",
+              "value": "18973476.01",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "LLTV",
+              "value": "0.915000",
+              "unit": "ratio",
+              "source": "verified"
+            }
+          ],
+          "result": {
+            "value": "0.942438",
+            "unit": "ratio"
+          },
+          "note": "Before: 0.8936. Liquidatable: True. Distance to liquidation after: -3.00% of further oracle price drop."
+        },
+        {
+          "id": "liquidation_penalty",
+          "label": "Liquidation penalty",
+          "formula": "repeat while liquidatable: repay close factor x debt, seize repaid x (1 + incentive) at the oracle price (capped at the collateral left); penalty = collateral seized at market value - debt repaid",
+          "inputs": [
+            {
+              "name": "close factor at the breach",
+              "value": "1.000000",
+              "unit": "ratio",
+              "source": "protocol_rule"
+            },
+            {
+              "name": "debt after",
+              "value": "17881323.85",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation incentive",
+              "value": "0.026167",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "liquidation calls",
+              "value": "1.000000",
+              "unit": "count",
+              "source": "derived"
+            },
+            {
+              "name": "debt repaid",
+              "value": "17881323.85",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "collateral seized (market value)",
+              "value": "18349224.45",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "debt written off (collateral exhausted)",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "467900.60",
+            "unit": "usd"
+          },
+          "note": "Liquidators keep the incentive as a bonus taken from the collateral; a position whose collateral runs out loses all of it and its remaining debt becomes the lenders' bad debt."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "1037136.34",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "467900.60",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1505036.94",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "morpho_usde_rlusd",
+      "gross_value_before_usd": "7259360.64",
+      "gross_value_after_usd": "6891573.23",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "6498358.29",
+      "net_equity_before_usd": "761002.35",
+      "net_equity_after_usd": "223172.40",
+      "conditional_loss_usd": "537829.95",
+      "loss_components": {
+        "market_repricing": "367787.41",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "170042.54",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": {
+        "type": "ltv",
+        "before": "0.8952",
+        "after": "0.9429",
+        "threshold": "0.9150",
+        "liquidatable": true,
+        "distance_to_liquidation_before_pct": "0.0217",
+        "distance_to_liquidation_after_pct": "-0.0305"
+      },
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Liquidatable: 1 liquidation call(s) repay 6,498,358 USD of debt; penalty = collateral seized at market value - debt repaid."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_usde_rlusd",
+              "venue:usde_usdc",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:exits_via.59f41bf931",
+              "edge:pools_asset.cc0285277d"
+            ],
+            "channels": [
+              "exit_liquidity",
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_usde_rlusd",
+              "market:morpho_usde_rlusd",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:position_in.a1f866f38d",
+              "edge:collateral_asset.9718fc6889"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "mark_to_market"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:morpho_usde_rlusd",
+              "market:morpho_usde_rlusd",
+              "oracle:morpho_oracle.0c13eec9",
+              "oracle:chainlink.USDe-USD.a569d910",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:position_in.a1f866f38d",
+              "edge:prices_collateral_with.87c3e14d8f",
+              "edge:uses_feed.decd594f97",
+              "edge:reads_price_of.b5f7748e17"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "oracle_repricing",
+              "oracle_repricing",
+              "oracle_repricing"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": [
+              "edge:reads_price_of.b5f7748e17"
+            ]
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "price:USDe",
+          "label": "USDe market price after the shock",
+          "formula": "USDe price x (1 + spot shock) x (1 + backing impairment)",
+          "inputs": [
+            {
+              "name": "USDe price",
+              "value": "0.999597",
+              "unit": "price",
+              "source": "observed"
+            },
+            {
+              "name": "USDe spot shock",
+              "value": "-0.050664",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "0.948953",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "price:RLUSD",
+          "label": "RLUSD market price after the shock",
+          "formula": "stablecoin price (not shocked by this scenario)",
+          "inputs": [
+            {
+              "name": "RLUSD price",
+              "value": "1.000022",
+              "unit": "price",
+              "source": "observed"
+            }
+          ],
+          "result": {
+            "value": "1.000022",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "value",
+          "label": "Collateral and debt after the shock",
+          "formula": "net equity = collateral quantity x collateral price - debt quantity x debt price",
+          "inputs": [
+            {
+              "name": "USDe collateral",
+              "value": "7262288.650000",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "collateral value after",
+              "value": "6891573.23",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "RLUSD debt",
+              "value": "6498215.330744",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "debt value after",
+              "value": "6498358.29",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net equity before",
+              "value": "761002.35",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "393214.94",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "split",
+          "label": "Loss split by mechanism",
+          "formula": "market repricing = net before - net after the depeg alone; backing impairment = the rest of the move",
+          "inputs": [
+            {
+              "name": "net before",
+              "value": "761002.35",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after the depeg alone",
+              "value": "393214.94",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after all shocks",
+              "value": "393214.94",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "367787.41",
+            "unit": "usd"
+          },
+          "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
+        },
+        {
+          "id": "oracle",
+          "label": "Collateral value seen by the protocol's oracle",
+          "formula": "collateral quantity x price before x (1 + pass-through x market move) x (1 + sUSDe rate cut)",
+          "inputs": [
+            {
+              "name": "collateral quantity",
+              "value": "7262288.650000",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "price before",
+              "value": "0.999597",
+              "unit": "price",
+              "source": "derived"
+            },
+            {
+              "name": "market move of the collateral",
+              "value": "-0.050664",
+              "unit": "pct",
+              "source": "derived"
+            },
+            {
+              "name": "oracle pass-through (market_price_feed)",
+              "value": "1.000000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "sUSDe rate cut",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "6891573.23",
+            "unit": "usd"
+          },
+          "note": "Pass-through 1 = the oracle reads the market price; 0 = it ignores the depeg (exchange-rate oracle)."
+        },
+        {
+          "id": "metric",
+          "label": "ltv after the shock",
+          "formula": "LTV = debt / oracle collateral; liquidatable when LTV > LLTV",
+          "inputs": [
+            {
+              "name": "debt",
+              "value": "6498358.29",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "oracle collateral",
+              "value": "6891573.23",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "LLTV",
+              "value": "0.915000",
+              "unit": "ratio",
+              "source": "verified"
+            }
+          ],
+          "result": {
+            "value": "0.942943",
+            "unit": "ratio"
+          },
+          "note": "Before: 0.8952. Liquidatable: True. Distance to liquidation after: -3.05% of further oracle price drop."
+        },
+        {
+          "id": "liquidation_penalty",
+          "label": "Liquidation penalty",
+          "formula": "repeat while liquidatable: repay close factor x debt, seize repaid x (1 + incentive) at the oracle price (capped at the collateral left); penalty = collateral seized at market value - debt repaid",
+          "inputs": [
+            {
+              "name": "close factor at the breach",
+              "value": "1.000000",
+              "unit": "ratio",
+              "source": "protocol_rule"
+            },
+            {
+              "name": "debt after",
+              "value": "6498358.29",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation incentive",
+              "value": "0.026167",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "liquidation calls",
+              "value": "1.000000",
+              "unit": "count",
+              "source": "derived"
+            },
+            {
+              "name": "debt repaid",
+              "value": "6498358.29",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "collateral seized (market value)",
+              "value": "6668400.83",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "debt written off (collateral exhausted)",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "170042.54",
+            "unit": "usd"
+          },
+          "note": "Liquidators keep the incentive as a bonus taken from the collateral; a position whose collateral runs out loses all of it and its remaining debt becomes the lenders' bad debt."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "367787.41",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "170042.54",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "537829.95",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "aave_usde_usdc",
+      "gross_value_before_usd": "9951498.81",
+      "gross_value_after_usd": "9447317.21",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "6838329.03",
+      "net_equity_before_usd": "3113169.78",
+      "net_equity_after_usd": "2608988.19",
+      "conditional_loss_usd": "504181.59",
+      "loss_components": {
+        "market_repricing": "504181.59",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": {
+        "type": "health_factor",
+        "before": "1.3534",
+        "after": "1.3534",
+        "threshold": "1.0000",
+        "liquidatable": false,
+        "distance_to_liquidation_before_pct": "0.2611",
+        "distance_to_liquidation_after_pct": "0.2611"
+      },
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Oracle assumed to pass through 0 of the market move; if it fully follows the market, health_factor becomes 1.2848 (liquidatable: False)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:aave_usde_usdc",
+              "venue:usde_usdc",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:exits_via.dd28b79a97",
+              "edge:pools_asset.cc0285277d"
+            ],
+            "channels": [
+              "exit_liquidity",
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:aave_usde_usdc",
+              "market:aave_usde_usdc",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:position_in.ec88099754",
+              "edge:collateral_asset.ddc5aa6768"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "mark_to_market"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "price:USDe",
+          "label": "USDe market price after the shock",
+          "formula": "USDe price x (1 + spot shock) x (1 + backing impairment)",
+          "inputs": [
+            {
+              "name": "USDe price",
+              "value": "0.999597",
+              "unit": "price",
+              "source": "observed"
+            },
+            {
+              "name": "USDe spot shock",
+              "value": "-0.050664",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "0.948953",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "price:USDC",
+          "label": "USDC market price after the shock",
+          "formula": "stablecoin price (not shocked by this scenario)",
+          "inputs": [
+            {
+              "name": "USDC price",
+              "value": "0.999880",
+              "unit": "price",
+              "source": "observed"
+            }
+          ],
+          "result": {
+            "value": "0.999880",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "value",
+          "label": "Collateral and debt after the shock",
+          "formula": "net equity = collateral quantity x collateral price - debt quantity x debt price",
+          "inputs": [
+            {
+              "name": "USDe collateral",
+              "value": "9955512.670021",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "collateral value after",
+              "value": "9447317.21",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "USDC debt",
+              "value": "6839146.512006",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "debt value after",
+              "value": "6838329.03",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net equity before",
+              "value": "3113169.78",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "2608988.19",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "split",
+          "label": "Loss split by mechanism",
+          "formula": "market repricing = net before - net after the depeg alone; backing impairment = the rest of the move",
+          "inputs": [
+            {
+              "name": "net before",
+              "value": "3113169.78",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after the depeg alone",
+              "value": "2608988.19",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after all shocks",
+              "value": "2608988.19",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "504181.59",
+            "unit": "usd"
+          },
+          "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
+        },
+        {
+          "id": "oracle",
+          "label": "Collateral value seen by the protocol's oracle",
+          "formula": "collateral quantity x price before x (1 + pass-through x market move) x (1 + sUSDe rate cut)",
+          "inputs": [
+            {
+              "name": "collateral quantity",
+              "value": "9955512.670021",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "price before",
+              "value": "0.999597",
+              "unit": "price",
+              "source": "derived"
+            },
+            {
+              "name": "market move of the collateral",
+              "value": "-0.050664",
+              "unit": "pct",
+              "source": "derived"
+            },
+            {
+              "name": "oracle pass-through (proxy_asset_feed)",
+              "value": "0.000000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "sUSDe rate cut",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "9951498.81",
+            "unit": "usd"
+          },
+          "note": "Pass-through 1 = the oracle reads the market price; 0 = it ignores the depeg (exchange-rate oracle)."
+        },
+        {
+          "id": "metric",
+          "label": "health factor after the shock",
+          "formula": "HF = oracle collateral x liquidation threshold / debt; liquidatable when HF < 1",
+          "inputs": [
+            {
+              "name": "oracle collateral",
+              "value": "9951498.81",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation threshold",
+              "value": "0.930000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "debt",
+              "value": "6838329.03",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1.353385",
+            "unit": "ratio"
+          },
+          "note": "Before: 1.3534. Liquidatable: False. Distance to liquidation after: 26.11% of further oracle price drop."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "504181.59",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "504181.59",
+            "unit": "usd"
+          }
+        }
+      ]
+    },
+    {
+      "position_id": "aave_usde_usdt",
+      "gross_value_before_usd": "21424622.18",
+      "gross_value_after_usd": "20339167.58",
+      "executable_value_after_usd": null,
+      "debt_after_usd": "14709672.87",
+      "net_equity_before_usd": "6714949.31",
+      "net_equity_after_usd": "5629494.71",
+      "conditional_loss_usd": "1085454.60",
+      "loss_components": {
+        "market_repricing": "1085454.60",
+        "backing_impairment": "0.00",
+        "liquidation_penalty": "0.00",
+        "execution_haircut": "0.00"
+      },
+      "risk_metric": {
+        "type": "health_factor",
+        "before": "1.3545",
+        "after": "1.3545",
+        "threshold": "1.0000",
+        "liquidatable": false,
+        "distance_to_liquidation_before_pct": "0.2617",
+        "distance_to_liquidation_after_pct": "0.2617"
+      },
+      "source_type": "derived",
+      "calculation_status": "computed",
+      "warnings": [
+        "Oracle assumed to pass through 0 of the market move; if it fully follows the market, health_factor becomes 1.2859 (liquidatable: False)."
+      ],
+      "contagion": {
+        "paths": [
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:aave_usde_usdt",
+              "venue:usde_usdc",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:exits_via.5dd09cfce4",
+              "edge:pools_asset.cc0285277d"
+            ],
+            "channels": [
+              "exit_liquidity",
+              "exit_liquidity"
+            ],
+            "confidence": "inferred",
+            "unverified_edges": []
+          },
+          {
+            "factor": "usde_price",
+            "root": "asset:USDe",
+            "nodes": [
+              "position:aave_usde_usdt",
+              "market:aave_usde_usdt",
+              "asset:USDe"
+            ],
+            "edges": [
+              "edge:position_in.4ba445a6a1",
+              "edge:collateral_asset.dbc63b5cda"
+            ],
+            "channels": [
+              "collateral_liquidation",
+              "mark_to_market"
+            ],
+            "confidence": "verified",
+            "unverified_edges": []
+          }
+        ],
+        "evidence_confidence": "verified",
+        "graph_gaps": [],
+        "unmodeled_exposures": []
+      },
+      "trace": [
+        {
+          "id": "price:USDe",
+          "label": "USDe market price after the shock",
+          "formula": "USDe price x (1 + spot shock) x (1 + backing impairment)",
+          "inputs": [
+            {
+              "name": "USDe price",
+              "value": "0.999597",
+              "unit": "price",
+              "source": "observed"
+            },
+            {
+              "name": "USDe spot shock",
+              "value": "-0.050664",
+              "unit": "pct",
+              "source": "user_scenario"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "0.948953",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "price:USDT",
+          "label": "USDT market price after the shock",
+          "formula": "stablecoin price (not shocked by this scenario)",
+          "inputs": [
+            {
+              "name": "USDT price",
+              "value": "0.999025",
+              "unit": "price",
+              "source": "observed"
+            }
+          ],
+          "result": {
+            "value": "0.999025",
+            "unit": "price"
+          }
+        },
+        {
+          "id": "value",
+          "label": "Collateral and debt after the shock",
+          "formula": "net equity = collateral quantity x collateral price - debt quantity x debt price",
+          "inputs": [
+            {
+              "name": "USDe collateral",
+              "value": "21433263.643163",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "collateral value after",
+              "value": "20339167.58",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "USDT debt",
+              "value": "14724026.290224",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "debt value after",
+              "value": "14709672.87",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net equity before",
+              "value": "6714949.31",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "5629494.72",
+            "unit": "usd"
+          }
+        },
+        {
+          "id": "split",
+          "label": "Loss split by mechanism",
+          "formula": "market repricing = net before - net after the depeg alone; backing impairment = the rest of the move",
+          "inputs": [
+            {
+              "name": "net before",
+              "value": "6714949.31",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after the depeg alone",
+              "value": "5629494.72",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "net after all shocks",
+              "value": "5629494.72",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1085454.60",
+            "unit": "usd"
+          },
+          "note": "The depeg is applied alone first, so market repricing and backing loss are never counted twice."
+        },
+        {
+          "id": "oracle",
+          "label": "Collateral value seen by the protocol's oracle",
+          "formula": "collateral quantity x price before x (1 + pass-through x market move) x (1 + sUSDe rate cut)",
+          "inputs": [
+            {
+              "name": "collateral quantity",
+              "value": "21433263.643163",
+              "unit": "tokens",
+              "source": "fictional"
+            },
+            {
+              "name": "price before",
+              "value": "0.999597",
+              "unit": "price",
+              "source": "derived"
+            },
+            {
+              "name": "market move of the collateral",
+              "value": "-0.050664",
+              "unit": "pct",
+              "source": "derived"
+            },
+            {
+              "name": "oracle pass-through (proxy_asset_feed)",
+              "value": "0.000000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "sUSDe rate cut",
+              "value": "0.000000",
+              "unit": "pct",
+              "source": "user_scenario"
+            }
+          ],
+          "result": {
+            "value": "21424622.18",
+            "unit": "usd"
+          },
+          "note": "Pass-through 1 = the oracle reads the market price; 0 = it ignores the depeg (exchange-rate oracle)."
+        },
+        {
+          "id": "metric",
+          "label": "health factor after the shock",
+          "formula": "HF = oracle collateral x liquidation threshold / debt; liquidatable when HF < 1",
+          "inputs": [
+            {
+              "name": "oracle collateral",
+              "value": "21424622.18",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation threshold",
+              "value": "0.930000",
+              "unit": "ratio",
+              "source": "verified"
+            },
+            {
+              "name": "debt",
+              "value": "14709672.87",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1.354544",
+            "unit": "ratio"
+          },
+          "note": "Before: 1.3545. Liquidatable: False. Distance to liquidation after: 26.17% of further oracle price drop."
+        },
+        {
+          "id": "loss",
+          "label": "Conditional loss of the position",
+          "formula": "sum of the loss components",
+          "inputs": [
+            {
+              "name": "market repricing",
+              "value": "1085454.60",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "backing impairment",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "liquidation penalty",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            },
+            {
+              "name": "execution haircut",
+              "value": "0.00",
+              "unit": "usd",
+              "source": "derived"
+            }
+          ],
+          "result": {
+            "value": "1085454.60",
+            "unit": "usd"
+          }
+        }
+      ]
+    }
+  ],
+  "portfolio": {
+    "net_equity_before_usd": "12718409.94",
+    "net_equity_after_usd": "9085906.86",
+    "total_conditional_loss_usd": "3632503.08",
+    "shared_liquidity_penalty_usd": "0.00",
+    "aggregation_status": "complete"
+  },
+  "provenance": {
+    "model_version": "risk-v0.1",
+    "input_snapshot_id": "snapshot_wallet_cf0a12",
+    "input_graph_id": "graph_wallet_cf0a12"
+  },
+  "warnings": [
+    "Cascade model: liquidators are price takers (liquidate whenever profitable at the current price: worst case); one exit venue per collateral, no USDe/sUSDe arbitrage, borrower distribution as given in the snapshot."
+  ],
+  "cascade": {
+    "initial_moves": {
+      "USDe": "-0.0500",
+      "sUSDe": "-0.0500"
+    },
+    "final_moves": {
+      "USDe": "-0.0507",
+      "sUSDe": "-0.0518"
+    },
+    "trough_moves": {
+      "USDe": "-0.9905",
+      "sUSDe": "-0.9905"
+    },
+    "amplification": "1.0366",
+    "rounds": [
+      {
+        "round": 1,
+        "liquidated_debt_usd": "142664661.50",
+        "collateral_sold_usd": "8216914.37",
+        "moves": {
+          "USDe": "-0.9905",
+          "sUSDe": "-0.9905"
+        }
+      },
+      {
+        "round": 2,
+        "liquidated_debt_usd": "0.00",
+        "collateral_sold_usd": "0.00",
+        "moves": {
+          "USDe": "-0.0507",
+          "sUSDe": "-0.0518"
+        }
+      }
+    ],
+    "liquidated_debt_usd": "142664661.50",
+    "bad_debt_usd": "134657276.38",
+    "stuck_debt_usd": "0.00",
+    "converged": true
+  },
+  "trace": [
+    {
+      "id": "cascade",
+      "label": "Liquidation cascade: prices after forced selling",
+      "formula": "per round: liquidate borrowers the oracle flags, sell their collateral on its venue, move = (1 + initial move) x (1 - marginal discount at the selling still weighing) - 1",
+      "inputs": [
+        {
+          "name": "initial USDe move",
+          "value": "-0.050000",
+          "unit": "pct",
+          "source": "user_scenario"
+        },
+        {
+          "name": "initial sUSDe move",
+          "value": "-0.050000",
+          "unit": "pct",
+          "source": "user_scenario"
+        },
+        {
+          "name": "depth left",
+          "value": "0.500000",
+          "unit": "ratio",
+          "source": "user_scenario"
+        },
+        {
+          "name": "arbitrage absorption between rounds",
+          "value": "0.800000",
+          "unit": "ratio",
+          "source": "user_scenario"
+        },
+        {
+          "name": "liquidators internalize their impact",
+          "value": false,
+          "unit": "flag",
+          "source": "user_scenario"
+        }
+      ],
+      "result": {
+        "value": "-0.050664",
+        "unit": "pct"
+      },
+      "note": "Final sUSDe move -5.18%; positions are priced at these final moves.",
+      "rows": [
+        {
+          "round": "1.000000",
+          "liquidated_debt_usd": "142664661.50",
+          "collateral_sold_usd": "8216914.37",
+          "usde_move": "-0.990500",
+          "susde_move": "-0.990500"
+        },
+        {
+          "round": "2.000000",
+          "liquidated_debt_usd": "0.00",
+          "collateral_sold_usd": "0.00",
+          "usde_move": "-0.050664",
+          "susde_move": "-0.051829"
+        }
+      ]
+    },
+    {
+      "id": "portfolio_loss",
+      "label": "Portfolio conditional loss",
+      "formula": "sum of position losses + shared exit-venue penalty (computed on the whole portfolio, not per position)",
+      "inputs": [
+        {
+          "name": "morpho_susde_pyusd",
+          "value": "1505036.94",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "morpho_usde_rlusd",
+          "value": "537829.95",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "aave_usde_usdc",
+          "value": "504181.59",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "aave_usde_usdt",
+          "value": "1085454.60",
+          "unit": "usd",
+          "source": "derived"
+        },
+        {
+          "name": "shared exit-venue penalty",
+          "value": "0.00",
+          "unit": "usd",
+          "source": "derived"
+        }
+      ],
+      "result": {
+        "value": "3632503.08",
+        "unit": "usd"
+      },
+      "note": "28.56% of net equity (12718409.94 USD)."
+    }
+  ],
+  "comparison": {
+    "runs": [
+      {
+        "run_id": "initial_shock_only",
+        "description": "Same initial shock, no liquidation feedback.",
+        "total_conditional_loss_usd": "3570247.84"
+      }
+    ],
+    "excess_loss_usd": "62255.24",
+    "excess_meaning": "Loss added by the cascade: forced selling pushes prices further and triggers new liquidations."
+  },
+  "contagion": {
+    "graph_id": "graph_wallet_cf0a12",
+    "hubs": [
+      {
+        "node": "asset:USDe",
+        "label": "USDe",
+        "node_type": "asset",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt",
+          "morpho_susde_pyusd",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "58646093.94",
+        "net_equity_usd": "12718409.90"
+      },
+      {
+        "node": "chain:ethereum",
+        "label": "Ethereum mainnet",
+        "node_type": "chain",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt",
+          "morpho_susde_pyusd",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "58646093.94",
+        "net_equity_usd": "12718409.90"
+      },
+      {
+        "node": "contract:ethena_minting.e3490297",
+        "label": "Ethena minting contract",
+        "node_type": "contract",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt",
+          "morpho_susde_pyusd",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "58646093.94",
+        "net_equity_usd": "12718409.90"
+      },
+      {
+        "node": "offchain:ethena_backing",
+        "label": "Ethena backing (custody, hedges, reserve fund)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt",
+          "morpho_susde_pyusd",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "58646093.94",
+        "net_equity_usd": "12718409.90"
+      },
+      {
+        "node": "protocol:ethena",
+        "label": "Ethena",
+        "node_type": "protocol",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt",
+          "morpho_susde_pyusd",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "58646093.94",
+        "net_equity_usd": "12718409.90"
+      },
+      {
+        "node": "venue:usde_usdc",
+        "label": "USDe -> RLUSD exit route",
+        "node_type": "venue",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "38635481.63",
+        "net_equity_usd": "10589121.44"
+      },
+      {
+        "node": "asset:USDT",
+        "label": "USDT",
+        "node_type": "asset",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt"
+        ],
+        "gross_exposure_usd": "31376120.99",
+        "net_equity_usd": "9828119.09"
+      },
+      {
+        "node": "offchain:tether",
+        "label": "Tether (USDT issuer and reserves)",
+        "node_type": "offchain_entity",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt"
+        ],
+        "gross_exposure_usd": "31376120.99",
+        "net_equity_usd": "9828119.09"
+      },
+      {
+        "node": "oracle:aave.Capped-USDT-USD.c26d4a1c",
+        "label": "Aave price adapter: Capped USDT/USD",
+        "node_type": "oracle",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt"
+        ],
+        "gross_exposure_usd": "31376120.99",
+        "net_equity_usd": "9828119.09"
+      },
+      {
+        "node": "oracle:chainlink.USDT-USD.3e7d1eab",
+        "label": "Chainlink USDT / USD feed",
+        "node_type": "oracle",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt"
+        ],
+        "gross_exposure_usd": "31376120.99",
+        "net_equity_usd": "9828119.09"
+      },
+      {
+        "node": "protocol:aave",
+        "label": "Aave v3",
+        "node_type": "protocol",
+        "positions": [
+          "aave_usde_usdc",
+          "aave_usde_usdt"
+        ],
+        "gross_exposure_usd": "31376120.99",
+        "net_equity_usd": "9828119.09"
+      },
+      {
+        "node": "oracle:chainlink.USDe-USD.a569d910",
+        "label": "Chainlink USDe / USD feed",
+        "node_type": "oracle",
+        "positions": [
+          "morpho_susde_pyusd",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "27269972.95",
+        "net_equity_usd": "2890290.81"
+      },
+      {
+        "node": "protocol:morpho",
+        "label": "Morpho Blue",
+        "node_type": "protocol",
+        "positions": [
+          "morpho_susde_pyusd",
+          "morpho_usde_rlusd"
+        ],
+        "gross_exposure_usd": "27269972.95",
+        "net_equity_usd": "2890290.81"
+      }
+    ],
+    "warnings": []
+  }
+}

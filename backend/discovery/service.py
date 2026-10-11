@@ -146,8 +146,13 @@ class _Run:
         nodes, edges = g.to_contract()
         warnings = _dedupe(
             [
-                f"Positions are fictional (data_origin); markets, tokens, oracles and venues are real, read on chain "
-                f"{chain_id} at block {block}.",
+                (
+                    f"Positions read from a real wallet on chain {chain_id} at block {block}; markets, tokens, "
+                    "oracles and venues are real, read at the same block."
+                    if all(p["data_origin"] == "observed" for p in self.positions)
+                    else f"Positions are fictional (data_origin); markets, tokens, oracles and venues are real, "
+                    f"read on chain {chain_id} at block {block}."
+                ),
                 "Protocol API data (Pendle, Morpho, KyberSwap) is read at observed_at, not at the pinned block.",
                 *ctx.warnings,
                 *(f"conflict: {c}" for c in g.conflicts),
@@ -245,7 +250,7 @@ class _Run:
             elif kind == "pt_holding":
                 ctx.position_markets[market] = pid
                 seeds.append(Entity("pendle_market", market))
-            elif kind == "collateralized_borrow" and p["protocol"] == "morpho":
+            elif kind in ("collateralized_borrow", "lending_supply") and p["protocol"] == "morpho":
                 ctx.position_markets[market] = pid
                 seeds.append(Entity("morpho_market", market))
             elif kind == "collateralized_borrow" and p["protocol"] == "aave":
@@ -265,7 +270,11 @@ class _Run:
         for p in self.positions:
             pid, kind = p["position_id"], p["position_type"]
             node, market = f"position:{pid}", f"market:{pid}"
-            fictional = f"fictional position {pid} (data_origin={p['data_origin']}); "
+            fictional = (
+                f"position {pid} read on-chain from the wallet (data_origin=observed); "
+                if p["data_origin"] == "observed"
+                else f"fictional position {pid} (data_origin={p['data_origin']}); "
+            )
             if kind == "token_holding" and pid in self.held:
                 asset = g.node_for_address(ctx.chain_id, self.held[pid])
                 if asset:
@@ -292,7 +301,9 @@ class _Run:
                 or g.nodes[market].attributes.get("market_id")
                 or p["market_id"]
             )
-            channel = {"pt_holding": "maturity_redemption"}.get(kind, "collateral_liquidation")
+            channel = {"pt_holding": "maturity_redemption", "lending_supply": "borrower_default"}.get(
+                kind, "collateral_liquidation"
+            )
             g.edge(
                 node,
                 market,
@@ -324,8 +335,20 @@ class _Run:
                     ),
                     "verified",
                 )
+            elif kind == "lending_supply":
+                self._lender_yield(ctx, p)
             else:
                 self._check_borrow(ctx, p, market)
+
+    @staticmethod
+    def _lender_yield(ctx: Ctx, p: dict) -> None:
+        """A lender earns the market's supply APY (the adapter records the borrow side)."""
+        apy = (ctx.market_params.get(p["position_id"], {}).get("details") or {}).get("api_supply_apy")
+        if apy is None:
+            ctx.yields.pop(p["position_id"], None)
+            ctx.warnings.append(f"{p['position_id']}: supply APY unavailable from the Morpho API")
+            return
+        ctx.yields[p["position_id"]] = {"token_apy": decimal_str(apy, 6), "source_type": "observed"}
 
     @staticmethod
     def _check_borrow(ctx: Ctx, p: dict, market: str) -> None:
@@ -341,7 +364,7 @@ class _Run:
                 f"market is {sides.get('collateral_asset')}/{sides.get('debt_asset')} (conflict)"
             )
         borrowed = g.nodes[market].attributes.get("total_borrow")
-        if borrowed is not None and Decimal(p["debt_quantity"]) > Decimal(borrowed):
+        if p["data_origin"] != "observed" and borrowed is not None and Decimal(p["debt_quantity"]) > Decimal(borrowed):
             ctx.warnings.append(
                 f"{p['position_id']}: fictional debt {p['debt_quantity']} {p['debt_asset']} exceeds the "
                 f"market's total borrow ({borrowed}); the position could not exist at this size"
@@ -354,6 +377,8 @@ class _Run:
         legs: dict[str, list[venues.Leg]] = defaultdict(list)
         for p in self.positions:
             pid = p["position_id"]
+            if p["position_type"] == "lending_supply":  # a lender exits by withdrawing idle liquidity, not on a DEX
+                continue
             sell = self.held.get(pid) or self._side_address(ctx, f"market:{pid}", "collateral_asset")
             buy = self._side_address(ctx, f"market:{pid}", "debt_asset") or usdc
             if sell is None:
@@ -384,8 +409,12 @@ class _Run:
     # prices and yields -------------------------------------------------------------------
     def _prices(self, ctx: Ctx) -> tuple[dict, dict]:
         prices, rates = {}, {}
+        # Only the assets this portfolio touches (plus ETH, for gas): a feed added to the registry later is
+        # not read by discoveries it does not concern, so their recordings still replay.
         feeds = {
-            k: v for k, v in ctx.registry.raw["reference_feeds"].items() if not k.startswith("_") and k != "source"
+            k: v
+            for k, v in ctx.registry.raw["reference_feeds"].items()
+            if not k.startswith("_") and k != "source" and (k == "ETH" or f"asset:{k}" in ctx.graph.nodes)
         }
         for symbol, feed in feeds.items():
             desc = ctx.evm.try_call(feed, "description()(string)")

@@ -23,6 +23,9 @@ from backend.adapters.base import Ctx, decimal_str
 from backend.adapters.sources import SourceError
 
 NO_IMPACT_DEPTH_MULTIPLE = 10_000  # quote shows no measurable loss: depth capped at 10,000x the size
+# Standard sizes quoted on every venue besides the positions' own sizes: partial exits and the liquidation
+# cascade's forced sales are priced on a measured curve instead of an extrapolation from one point.
+LADDER_USD = (500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000, 20_000_000, 50_000_000, 150_000_000)
 
 
 @dataclass
@@ -105,14 +108,24 @@ def _curve(
     source,
     prices: dict[str, float],
 ) -> list[dict]:
-    """Quotes at each position's standalone size and at the joint size (the one depth is calibrated on)."""
+    """Quotes at each position's standalone size, at the joint size (the one depth is calibrated on) and
+    on a ladder of standard sizes. The ladder stops at the first size without a route."""
     sizes: dict[Decimal, list[str]] = {}
     for leg in legs:
         sizes.setdefault(leg.quantity, []).append(leg.position_id)
+    if len(legs) > 1:
+        sizes[joint] = [leg.position_id for leg in legs]
+    ladder = {Decimal(str(round(usd / prices[sell_sym], 6))) for usd in LADDER_USD} - set(sizes)
     rows = []
-    for size, owners in sorted(sizes.items()) + ([(joint, [leg.position_id for leg in legs])] if len(legs) > 1 else []):
+    for size in sorted(set(sizes) | ladder):
+        owners = sizes.get(size, [])
+        noted = len(ctx.warnings)
         quote = joint_quote if size == joint else source(ctx, sell, buy, size)
+        if quote is None and size in ladder:
+            del ctx.warnings[noted:]  # a ladder point is optional: no route there is not a data problem
         if quote is None:
+            if size in ladder and size > joint:
+                break  # no route at this size: larger ones will not route either
             continue
         size_usd, out_usd = float(size) * prices[sell_sym], float(quote.out_tokens) * prices[buy_sym]
         rows.append(
@@ -130,7 +143,10 @@ def _curve(
 def _warn_misfit(ctx: Ctx, venue_id: str, entry: dict) -> None:
     """Flag when the single constant-product depth misprices the standalone quotes by a wide margin."""
     depth = float(entry["effective_depth_usd"])
-    for row in entry["quotes"][:-1] if len(entry["quotes"]) > 1 else []:
+    every = max((set(row["positions"]) for row in entry["quotes"]), key=len, default=set())
+    for row in entry["quotes"]:
+        if not row["positions"] or (set(row["positions"]) == every and len(entry["quotes"]) > 1 and len(every) > 1):
+            continue  # ladder points and the joint row are not a position's standalone exit
         size = float(row["size_usd"])
         proxy = size / (depth + size) * 100
         quoted = float(row["loss_pct"])

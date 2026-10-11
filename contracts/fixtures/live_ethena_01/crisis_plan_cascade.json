@@ -1374,7 +1374,7 @@
       {
         "asset": "PYUSD",
         "issuer": "paxos",
-        "price_usd": "1.000067",
+        "price_usd": null,
         "shocked_in_scenario": false,
         "shock_reason": null,
         "usable_as_hedge": false,
@@ -1393,7 +1393,7 @@
       },
       {
         "asset": "RLUSD",
-        "issuer": null,
+        "issuer": "ripple",
         "price_usd": null,
         "shocked_in_scenario": false,
         "shock_reason": null,
@@ -1402,12 +1402,12 @@
           {
             "from": "USDe",
             "status": "unavailable",
-            "reason": "USDe or RLUSD not in P1 token registry"
+            "reason": "no quote in snapshot; on-demand quotes disabled"
           },
           {
             "from": "sUSDe",
             "status": "unavailable",
-            "reason": "sUSDe or RLUSD not in P1 token registry"
+            "reason": "no quote in snapshot; on-demand quotes disabled"
           }
         ]
       }

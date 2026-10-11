@@ -28,6 +28,11 @@
       "address": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
       "issuer": "paxos",
       "source": "https://www.paypal.com/pyusd"
+    },
+    "RLUSD": {
+      "address": "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+      "issuer": "ripple",
+      "source": "https://ripple.com/solutions/stablecoin/"
     }
   },
   "issuers": {
@@ -61,6 +66,12 @@
       "type": "offchain_entity",
       "label": "Paxos (PYUSD issuer and reserves)",
       "source": "https://www.paypal.com/pyusd"
+    },
+    "ripple": {
+      "node": "offchain:ripple",
+      "type": "offchain_entity",
+      "label": "Ripple (RLUSD issuer and reserves)",
+      "source": "https://ripple.com/solutions/stablecoin/"
     }
   },
   "protocols": {
@@ -97,6 +108,7 @@
     "USDC": "0x8fffffd4afb6115b954bd326cbe7b4ba576818f6",
     "USDT": "0x3e7d1eab13ad0104d2750b8863b489d65364e32d",
     "PYUSD": "0x8f1df6d7f2db73eece86a18b4381f4707b918fb1",
+    "RLUSD": "0x26c46b7ad0012ca71f2298ada567dc9af14e7f2a",
     "ETH": "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
     "source": "https://docs.chain.link/data-feeds/price-feeds/addresses"
   },
